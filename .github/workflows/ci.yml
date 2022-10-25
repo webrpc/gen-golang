@@ -1,0 +1,30 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - "**"
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        webrpc-gen: [v0.6.1]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+      - name: Install webrpc-gen
+        run: go install github.com/webrpc/webrpc/cmd/webrpc-gen@${{ matrix.webrpc-gen }}
+      - name: Regenerate example golang-basics
+        run: webrpc-gen -schema=./_examples/golang-basics/example.ridl -target=. -out=./_examples/golang-basics/example.gen.go
+      - name: Regenerate example golang-imports
+        run: webrpc-gen -schema=./_examples/golang-imports/proto/api.ridl -target=. -out=./_examples/golang-imports/api.gen.go
+      - name: Git diff of regenerated files
+        run: git diff --color --ignore-all-space --ignore-blank-lines --exit-code
