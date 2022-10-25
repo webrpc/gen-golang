@@ -23,8 +23,8 @@ jobs:
       - name: Install webrpc-gen
         run: go install github.com/webrpc/webrpc/cmd/webrpc-gen@${{ matrix.webrpc-gen }}
       - name: Regenerate example golang-basics
-        run: webrpc-gen -schema=./_examples/golang-basics/example.ridl -target=. -out=./_examples/golang-basics/example.gen.go
+        run: webrpc-gen -schema=./_examples/golang-basics/example.ridl -target=. -out=./_examples/golang-basics/example.gen.go -pkg=main -server -client
       - name: Regenerate example golang-imports
-        run: webrpc-gen -schema=./_examples/golang-imports/proto/api.ridl -target=. -out=./_examples/golang-imports/api.gen.go
+        run: webrpc-gen -schema=./_examples/golang-imports/proto/api.ridl -target=. -out=./_examples/golang-imports/api.gen.go -pkg=main -server -client
       - name: Git diff of regenerated files
         run: git diff --color --ignore-all-space --ignore-blank-lines --exit-code
