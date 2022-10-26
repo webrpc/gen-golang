@@ -22,7 +22,7 @@ jobs:
           go-version: 1.19
       - name: Install webrpc-gen
         run: go install github.com/webrpc/webrpc/cmd/webrpc-gen@${{ matrix.webrpc-gen }}
-      - name: Regenerate example golang-basics
+      - name: Regenerate examples
         run: cd _examples && make generate
       - name: Git diff of regenerated files
         run: cd _examples && make diff
