@@ -25,6 +25,20 @@ webrpc-gen -schema=example.ridl -target=./local-go-templates-on-disk -pkg=main -
 
 As you can see, the `-target` supports default `golang`, any git URI, or a local folder :)
 
+### Set custom template variables
+Change any of the following default values by passing `-Option="Value"` CLI flag to webrpc-gen.
+
+| Option               | Description                | Default value              |
+|----------------------|----------------------------|----------------------------|
+| `-Pkg=apiclient`     | package name               | `"proto"`                  |
+| `-Client`            | generate client code       | unset (false)              | 
+| `-Server`            | generate server code       | unset (false)              |
+
+Example:
+```
+webrpc-gen -schema=./proto.json -target=github.com/webrpc/gen-openapi@v0.6.0 -out openapi.gen.yaml -Pkg=apiclient -Client -Server
+```
+
 
 ## Examples
 
