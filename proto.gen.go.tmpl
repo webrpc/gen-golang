@@ -34,11 +34,11 @@ func WebRPCSchemaHash() string {
 
 {{template "types" .}}
 
-{{if .Opts.Server}}
+{{if exists .Opts "Server"}}
 	{{template "server" .}}
 {{end}}
 
-{{if .Opts.Client}}
+{{if exists .Opts "Client"}}
 	{{template "client" .}}
 {{end}}
 

@@ -9,13 +9,13 @@ const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
 {{end}}
 
 {{range .Services}}
-  {{ $serviceName := .Name | goClientServiceName}}
+  {{ $serviceName := (printf "%sClient" (.Name | firstLetterToLower)) }}
   type {{$serviceName}} struct {
     client HTTPClient
     urls   [{{.Methods | countMethods}}]string
   }
 
-  func {{.Name | goNewClientServiceName }}(addr string, client HTTPClient) {{.Name}} {
+  func New{{.Name | firstLetterToUpper }}Client(addr string, client HTTPClient) {{.Name}} {
     prefix := urlBase(addr) + {{.Name | constPathPrefix}}
     urls := [{{.Methods | countMethods}}]string{
       {{- range .Methods}}
