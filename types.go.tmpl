@@ -53,8 +53,14 @@
   {{end}}
   {{if .Type | isStruct  }}
     type {{.Name}} struct {
-      {{- range .Fields}}
-        {{. | goExportedField}} {{. | goFieldOptional}}{{. | goFieldTypeDef}} {{. | goFieldTags}}
+      {{- range $_, $field := .Fields -}}
+        {{- $fieldName := $field.Name | firstLetterToUpper -}}
+        {{- range $meta := $field.Meta -}}          
+          {{- if exists $meta "go.field.name" -}}
+            {{- $fieldName = get $meta "go.field.name" -}}
+          {{- end -}}
+        {{- end}}
+        {{$fieldName}} {{if and $field.Optional (isBaseType $field.Type)}}*{{end}}{{template "type" dict "Type" $field.Type "TypeDict" $type}} {{. | goFieldTags}}
       {{- end}}
     }
   {{end}}

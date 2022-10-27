@@ -1,9 +1,9 @@
 {{- define "proto" -}}
 {{- /* Options. Default values. */ -}}
 {{- $opts := dict -}}
-{{- set $opts "Pkg" (first .Opts.Pkg "proto") -}}
-{{- set $opts "Client" (first .Opts.Version false) -}}
-{{- set $opts "Server" (first .Opts.Version false) -}}
+{{- set $opts "Pkg" (coalesce .Opts.Pkg "proto") -}}
+{{- set $opts "Client" (coalesce .Opts.Version false) -}}
+{{- set $opts "Server" (coalesce .Opts.Version false) -}}
 
 {{- /* Print help on -Help. */ -}}
 {{- if exists .Opts "Help" -}}
@@ -19,7 +19,6 @@
     {{- exit 1 -}}
   {{- end -}}
 {{- end -}}
-
 
 {{- /* Type mapping. */ -}}
 {{- $type := dict }}

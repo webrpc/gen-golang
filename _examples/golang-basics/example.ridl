@@ -24,7 +24,7 @@ message User
 
   - role: string
     + go.tag.db = -
-  
+
   - createdAt: timestamp
     + go.tag.db = created_at
     

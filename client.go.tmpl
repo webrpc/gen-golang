@@ -39,7 +39,7 @@ const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
       {{- $inputVar = "in"}}
       in := struct {
         {{- range $i, $input := $inputs}}
-          Arg{{$i}} {{$input | goMethodArgType}} `json:"{{$input.Name | downcaseName}}"`
+          Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeDict" $type}} `json:"{{$input.Name | downcaseName}}"`
         {{- end}}          
       }{ {{range $i, $input := $inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}} }
       {{- end}}
@@ -47,7 +47,7 @@ const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
       {{- $outputVar = "&out"}}
       out := struct {
         {{- range $i, $output := .Outputs}}
-          Ret{{$i}} {{$output | goMethodArgType}} `json:"{{$output.Name | downcaseName}}"`
+          Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeDict" $type}} `json:"{{$output.Name | downcaseName}}"`
         {{- end}}          
       }{}
       {{- end}}

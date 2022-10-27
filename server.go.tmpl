@@ -1,4 +1,5 @@
 {{define "server"}}
+{{- $type := .TypeDict -}}
 {{if .Services}}
 //
 // Server
@@ -71,7 +72,7 @@ type WebRPCServer interface {
       {{- if .Inputs|len}}
       reqContent := struct {
       {{- range $i, $input := .Inputs}}
-        Arg{{$i}} {{. | goMethodArgType}} `json:"{{$input.Name | downcaseName}}"`
+        Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeDict" $type}} `json:"{{$input.Name | downcaseName}}"`
       {{- end}}
       }{}
 
@@ -93,7 +94,7 @@ type WebRPCServer interface {
 
       // Call service method
       {{- range $i, $output := .Outputs}}
-      var ret{{$i}} {{$output | goMethodArgType}}
+      var ret{{$i}} {{template "type" dict "Type" $output.Type "TypeDict" $type}}
       {{- end}}
       func() {
         defer func() {
@@ -108,7 +109,7 @@ type WebRPCServer interface {
       {{- if .Outputs | len}}
       respContent := struct {
       {{- range $i, $output := .Outputs}}
-        Ret{{$i}} {{$output | goMethodArgType}} `json:"{{$output.Name | downcaseName}}"`
+        Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeDict" $type}} `json:"{{$output.Name | downcaseName}}"`
       {{- end}}         
       }{ {{range $i, $_ := .Outputs}}{{if gt $i 0}}, {{end}}ret{{$i}}{{end}} }
       {{- end}}
