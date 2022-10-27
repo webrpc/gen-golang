@@ -24,6 +24,12 @@ message User
 
   - role: string
     + go.tag.db = -
+  
+  - createdAt: timestamp
+    + go.tag.db = created_at
+    
+  - updatedAt?: timestamp
+    + go.tag.db = updated_at
 
 message SearchFilter
   - q: string
