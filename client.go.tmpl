@@ -1,4 +1,5 @@
 {{define "client"}}
+{{- $type := .TypeDict -}}
 {{if .Services}}
 //
 // Client
@@ -29,7 +30,7 @@ const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
   }
 
   {{range $i, $method := .Methods}}
-    func (c *{{$serviceName}}) {{.Name}}({{.Inputs | goMethodInputs}}) ({{.Outputs | goMethodOutputs }}) {
+    func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := .Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeDict" $type}}{{end}}) ({{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeDict" $type}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error) {
       {{- $inputVar := "nil" -}}
       {{- $outputVar := "nil" -}}
       {{- if .Inputs | len}}

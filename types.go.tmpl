@@ -1,4 +1,5 @@
 {{define "types"}}
+{{- $type := .TypeDict -}}
 
 {{if .Messages}}
 //
@@ -62,8 +63,8 @@
 {{if .Services}}
   {{range .Services}}
     type {{.Name}} interface {
-      {{- range .Methods}}
-        {{.Name}}({{.Inputs | goMethodInputs}}) ({{.Outputs | goMethodOutputs}})
+      {{range $_, $method := .Methods}}
+        {{.Name}}(ctx context.Context{{range $_, $input := .Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeDict" $type}}{{end}}) ({{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeDict" $type}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error)
       {{- end}}
     }
   {{end}}
