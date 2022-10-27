@@ -103,14 +103,14 @@ type WebRPCServer interface {
             panic(rr)
           }
         }()
-        {{goArgsList .Outputs "ret"}}{{.Outputs | commaIfLen}} err = s.{{$name}}.{{.Name}}(ctx{{.Inputs | commaIfLen}}{{goArgsList .Inputs "reqContent.Arg"}})
+        {{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err = s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqContent.Arg{{$i}}{{end}})
       }()
       {{- if .Outputs | len}}
       respContent := struct {
       {{- range $i, $output := .Outputs}}
         Ret{{$i}} {{$output | goMethodArgType}} `json:"{{$output.Name | downcaseName}}"`
       {{- end}}         
-      }{ {{goArgsList .Outputs "ret"}} }
+      }{ {{range $i, $_ := .Outputs}}{{if gt $i 0}}, {{end}}ret{{$i}}{{end}} }
       {{- end}}
 
       if err != nil {

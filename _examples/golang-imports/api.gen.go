@@ -189,7 +189,7 @@ type WebRPCServer interface {
             panic(rr)
           }
         }()
-         err = s.ExampleAPI.Ping(ctx)
+        err = s.ExampleAPI.Ping(ctx)
       }()
 
       if err != nil {
@@ -356,14 +356,12 @@ const ExampleAPIPathPrefix = "/rpc/ExampleAPI/"
     }
   }
 
-  
-    func (c *exampleAPIClient) Ping(ctx context.Context) (error) {
+  func (c *exampleAPIClient) Ping(ctx context.Context) (error) {
 
       err := doJSONRequest(ctx, c.client, c.urls[0], nil, nil)
-      return  err
+      return err
     }
-  
-    func (c *exampleAPIClient) Status(ctx context.Context) (bool, error) {
+  func (c *exampleAPIClient) Status(ctx context.Context) (bool, error) {
       out := struct {
           Ret0 bool `json:"status"`          
       }{}
@@ -371,8 +369,7 @@ const ExampleAPIPathPrefix = "/rpc/ExampleAPI/"
       err := doJSONRequest(ctx, c.client, c.urls[1], nil, &out)
       return out.Ret0, err
     }
-  
-    func (c *exampleAPIClient) GetUsers(ctx context.Context) ([]*User, *Location, error) {
+  func (c *exampleAPIClient) GetUsers(ctx context.Context) ([]*User, *Location, error) {
       out := struct {
           Ret0 []*User `json:"users"`
           Ret1 *Location `json:"location"`          

@@ -30,18 +30,20 @@ const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
   }
 
   {{range $i, $method := .Methods}}
-    func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := .Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeDict" $type}}{{end}}) ({{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeDict" $type}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error) {
+	{{- $inputs := $method.Inputs -}}
+	{{- $outputs := $method.Outputs -}}
+    func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeDict" $type}}{{end}}) ({{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeDict" $type}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error) {
       {{- $inputVar := "nil" -}}
       {{- $outputVar := "nil" -}}
-      {{- if .Inputs | len}}
+      {{- if $inputs | len}}
       {{- $inputVar = "in"}}
       in := struct {
-        {{- range $i, $input := .Inputs}}
+        {{- range $i, $input := $inputs}}
           Arg{{$i}} {{$input | goMethodArgType}} `json:"{{$input.Name | downcaseName}}"`
         {{- end}}          
-      }{ {{.Inputs | goMethodArgNames}} }
+      }{ {{range $i, $input := $inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}} }
       {{- end}}
-      {{- if .Outputs | len}}
+      {{- if $outputs | len}}
       {{- $outputVar = "&out"}}
       out := struct {
         {{- range $i, $output := .Outputs}}
@@ -51,7 +53,7 @@ const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
       {{- end}}
 
       err := doJSONRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
-      return {{goArgsList .Outputs "out.Ret"}}{{commaIfLen .Outputs}} err
+      return {{range $i, $output := .Outputs}}out.Ret{{$i}}, {{end}}err
     }
   {{end}}
 {{end}}

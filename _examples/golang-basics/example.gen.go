@@ -237,7 +237,7 @@ type WebRPCServer interface {
             panic(rr)
           }
         }()
-         err = s.ExampleService.Ping(ctx)
+        err = s.ExampleService.Ping(ctx)
       }()
 
       if err != nil {
@@ -403,7 +403,7 @@ type WebRPCServer interface {
             panic(rr)
           }
         }()
-        ret0, ret1, err = s.ExampleService.GetUser(ctx,reqContent.Arg0, reqContent.Arg1)
+        ret0, ret1, err = s.ExampleService.GetUser(ctx, reqContent.Arg0, reqContent.Arg1)
       }()
       respContent := struct {
         Ret0 uint32 `json:"code"`
@@ -475,7 +475,7 @@ type WebRPCServer interface {
             panic(rr)
           }
         }()
-        ret0, ret1, err = s.ExampleService.FindUser(ctx,reqContent.Arg0)
+        ret0, ret1, err = s.ExampleService.FindUser(ctx, reqContent.Arg0)
       }()
       respContent := struct {
         Ret0 string `json:"name"`
@@ -549,14 +549,12 @@ const ExampleServicePathPrefix = "/rpc/ExampleService/"
     }
   }
 
-  
-    func (c *exampleServiceClient) Ping(ctx context.Context) (error) {
+  func (c *exampleServiceClient) Ping(ctx context.Context) (error) {
 
       err := doJSONRequest(ctx, c.client, c.urls[0], nil, nil)
-      return  err
+      return err
     }
-  
-    func (c *exampleServiceClient) Status(ctx context.Context) (bool, error) {
+  func (c *exampleServiceClient) Status(ctx context.Context) (bool, error) {
       out := struct {
           Ret0 bool `json:"status"`          
       }{}
@@ -564,8 +562,7 @@ const ExampleServicePathPrefix = "/rpc/ExampleService/"
       err := doJSONRequest(ctx, c.client, c.urls[1], nil, &out)
       return out.Ret0, err
     }
-  
-    func (c *exampleServiceClient) Version(ctx context.Context) (*Version, error) {
+  func (c *exampleServiceClient) Version(ctx context.Context) (*Version, error) {
       out := struct {
           Ret0 *Version `json:"version"`          
       }{}
@@ -573,8 +570,7 @@ const ExampleServicePathPrefix = "/rpc/ExampleService/"
       err := doJSONRequest(ctx, c.client, c.urls[2], nil, &out)
       return out.Ret0, err
     }
-  
-    func (c *exampleServiceClient) GetUser(ctx context.Context, header map[string]string, userID uint64) (uint32, *User, error) {
+  func (c *exampleServiceClient) GetUser(ctx context.Context, header map[string]string, userID uint64) (uint32, *User, error) {
       in := struct {
           Arg0 map[string]string `json:"header"`
           Arg1 uint64 `json:"userID"`          
@@ -587,8 +583,7 @@ const ExampleServicePathPrefix = "/rpc/ExampleService/"
       err := doJSONRequest(ctx, c.client, c.urls[3], in, &out)
       return out.Ret0, out.Ret1, err
     }
-  
-    func (c *exampleServiceClient) FindUser(ctx context.Context, s *SearchFilter) (string, *User, error) {
+  func (c *exampleServiceClient) FindUser(ctx context.Context, s *SearchFilter) (string, *User, error) {
       in := struct {
           Arg0 *SearchFilter `json:"s"`          
       }{ s }
