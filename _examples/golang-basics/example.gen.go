@@ -31,474 +31,437 @@ func WebRPCSchemaHash() string {
 	return "dcccc751757cc0ecf5b93c4a4fdc2b4d6f1fbb93"
 }
 
-
 //
 // Types
 //
 
+type Kind uint32
 
-  
-    
-    
-    type Kind uint32
+const (
+	Kind_USER  Kind = 0
+	Kind_ADMIN Kind = 1
+)
 
-    const (
-        Kind_USER Kind = 0
-        Kind_ADMIN Kind = 1
-    )
+var Kind_name = map[uint32]string{
+	0: "USER",
+	1: "ADMIN",
+}
 
-    var Kind_name = map[uint32]string {
-        0: "USER",
-        1: "ADMIN",
-    }
+var Kind_value = map[string]uint32{
+	"USER":  0,
+	"ADMIN": 1,
+}
 
-    var Kind_value = map[string]uint32 {
-        "USER": 0,
-        "ADMIN": 1,
-    }
+func (x Kind) String() string {
+	return Kind_name[uint32(x)]
+}
 
-    func (x Kind) String() string {
-      return Kind_name[uint32(x)]
-    }
+func (x Kind) MarshalJSON() ([]byte, error) {
+	buf := bytes.NewBufferString(`"`)
+	buf.WriteString(Kind_name[uint32(x)])
+	buf.WriteString(`"`)
+	return buf.Bytes(), nil
+}
 
-    func (x Kind) MarshalJSON() ([]byte, error) {
-      buf := bytes.NewBufferString(`"`)
-      buf.WriteString(Kind_name[uint32(x)])
-      buf.WriteString(`"`)
-      return buf.Bytes(), nil
-    }
+func (x *Kind) UnmarshalJSON(b []byte) error {
+	var j string
+	err := json.Unmarshal(b, &j)
+	if err != nil {
+		return err
+	}
+	*x = Kind(Kind_value[j])
+	return nil
+}
 
-    func (x *Kind) UnmarshalJSON(b []byte) error {
-      var j string
-      err := json.Unmarshal(b, &j)
-      if err != nil {
-        return err
-      }
-      *x = Kind(Kind_value[j])
-      return nil
-    }
-  
-  
+type Empty struct {
+}
+type User struct {
+	ID        uint64     `json:"id" db:"id"`
+	Username  string     `json:"USERNAME" db:"username"`
+	Role      string     `json:"role" db:"-"`
+	CreatedAt time.Time  `json:"createdAt" db:"created_at"`
+	UpdatedAt *time.Time `json:"updatedAt" db:"updated_at"`
+}
+type SearchFilter struct {
+	Q string `json:"q"`
+}
+type Version struct {
+	WebrpcVersion string `json:"webrpcVersion"`
+	SchemaVersion string `json:"schemaVersion"`
+	SchemaHash    string `json:"schemaHash"`
+}
+type ComplexType struct {
+	Meta              map[string]interface{}       `json:"meta"`
+	MetaNestedExample map[string]map[string]uint32 `json:"metaNestedExample"`
+	NamesList         []string                     `json:"namesList"`
+	NumsList          []int64                      `json:"numsList"`
+	DoubleArray       [][]string                   `json:"doubleArray"`
+	ListOfMaps        []map[string]uint32          `json:"listOfMaps"`
+	ListOfUsers       []*User                      `json:"listOfUsers"`
+	MapOfUsers        map[string]*User             `json:"mapOfUsers"`
+	User              *User                        `json:"user"`
+}
 
-  
-  
-    type Empty struct {
-    }
-  
+type ExampleService interface {
+	Ping(ctx context.Context) error
+	Status(ctx context.Context) (bool, error)
+	Version(ctx context.Context) (*Version, error)
+	GetUser(ctx context.Context, header map[string]string, userID uint64) (uint32, *User, error)
+	FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
+}
 
-  
-  
-    type User struct {
-        ID uint64 `json:"id" db:"id"`
-        Username string `json:"USERNAME" db:"username"`
-        Role string `json:"role" db:"-"`
-        CreatedAt time.Time `json:"createdAt" db:"created_at"`
-        UpdatedAt *time.Time `json:"updatedAt" db:"updated_at"`
-    }
-  
+var WebRPCServices = map[string][]string{
+	"ExampleService": {
+		"Ping",
+		"Status",
+		"Version",
+		"GetUser",
+		"FindUser",
+	},
+}
 
-  
-  
-    type SearchFilter struct {
-        Q string `json:"q"`
-    }
-  
-
-  
-  
-    type Version struct {
-        WebrpcVersion string `json:"webrpcVersion"`
-        SchemaVersion string `json:"schemaVersion"`
-        SchemaHash string `json:"schemaHash"`
-    }
-  
-
-  
-  
-    type ComplexType struct {
-        Meta map[string]interface{} `json:"meta"`
-        MetaNestedExample map[string]map[string]uint32 `json:"metaNestedExample"`
-        NamesList []string `json:"namesList"`
-        NumsList []int64 `json:"numsList"`
-        DoubleArray [][]string `json:"doubleArray"`
-        ListOfMaps []map[string]uint32 `json:"listOfMaps"`
-        ListOfUsers []*User `json:"listOfUsers"`
-        MapOfUsers map[string]*User `json:"mapOfUsers"`
-        User *User `json:"user"`
-    }
-  
-
-
-
-  
-    type ExampleService interface {
-      
-        Ping(ctx context.Context) (error)
-        Status(ctx context.Context) (bool, error)
-        Version(ctx context.Context) (*Version, error)
-        GetUser(ctx context.Context, header map[string]string, userID uint64) (uint32, *User, error)
-        FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
-    }
-  
-  var WebRPCServices = map[string][]string{
-      "ExampleService": {
-          "Ping",
-          "Status",
-          "Version",
-          "GetUser",
-          "FindUser",
-      },
-  }
-
-
-
-
-
-	
 //
 // Server
 //
 
 type WebRPCServer interface {
-  http.Handler
+	http.Handler
 }
 
-  type exampleServiceServer struct {
-    ExampleService
-  }
+type exampleServiceServer struct {
+	ExampleService
+}
 
-  func NewExampleServiceServer(svc ExampleService) WebRPCServer {
-    return &exampleServiceServer{
-      ExampleService: svc,
-    }
-  }
+func NewExampleServiceServer(svc ExampleService) WebRPCServer {
+	return &exampleServiceServer{
+		ExampleService: svc,
+	}
+}
 
-  func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    ctx := r.Context()
-    ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
-    ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
-    ctx = context.WithValue(ctx, ServiceNameCtxKey, "ExampleService")
+func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
+	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
+	ctx = context.WithValue(ctx, ServiceNameCtxKey, "ExampleService")
 
-    if r.Method != "POST" {
-      err := Errorf(ErrBadRoute, "unsupported method %q (only POST is allowed)", r.Method)
-      RespondWithError(w, err)
-      return
-    }
+	if r.Method != "POST" {
+		err := Errorf(ErrBadRoute, "unsupported method %q (only POST is allowed)", r.Method)
+		RespondWithError(w, err)
+		return
+	}
 
-    switch r.URL.Path {
-    case "/rpc/ExampleService/Ping":
-      s.servePing(ctx, w, r)
-      return
-    case "/rpc/ExampleService/Status":
-      s.serveStatus(ctx, w, r)
-      return
-    case "/rpc/ExampleService/Version":
-      s.serveVersion(ctx, w, r)
-      return
-    case "/rpc/ExampleService/GetUser":
-      s.serveGetUser(ctx, w, r)
-      return
-    case "/rpc/ExampleService/FindUser":
-      s.serveFindUser(ctx, w, r)
-      return
-    default:
-      err := Errorf(ErrBadRoute, "no handler for path %q", r.URL.Path)
-      RespondWithError(w, err)
-      return
-    }
-  }
+	switch r.URL.Path {
+	case "/rpc/ExampleService/Ping":
+		s.servePing(ctx, w, r)
+		return
+	case "/rpc/ExampleService/Status":
+		s.serveStatus(ctx, w, r)
+		return
+	case "/rpc/ExampleService/Version":
+		s.serveVersion(ctx, w, r)
+		return
+	case "/rpc/ExampleService/GetUser":
+		s.serveGetUser(ctx, w, r)
+		return
+	case "/rpc/ExampleService/FindUser":
+		s.serveFindUser(ctx, w, r)
+		return
+	default:
+		err := Errorf(ErrBadRoute, "no handler for path %q", r.URL.Path)
+		RespondWithError(w, err)
+		return
+	}
+}
 
-  
-    func (s *exampleServiceServer) servePing(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      header := r.Header.Get("Content-Type")
-      i := strings.Index(header, ";")
-      if i == -1 {
-        i = len(header)
-      }
+func (s *exampleServiceServer) servePing(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	header := r.Header.Get("Content-Type")
+	i := strings.Index(header, ";")
+	if i == -1 {
+		i = len(header)
+	}
 
-      switch strings.TrimSpace(strings.ToLower(header[:i])) {
-      case "application/json":
-        s.servePingJSON(ctx, w, r)
-      default:
-        err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
-        RespondWithError(w, err)
-      }
-    }
+	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	case "application/json":
+		s.servePingJSON(ctx, w, r)
+	default:
+		err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
+		RespondWithError(w, err)
+	}
+}
 
-    func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      var err error
-      ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
+func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	var err error
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
 
-      // Call service method
-      func() {
-        defer func() {
-          // In case of a panic, serve a 500 error and then panic.
-          if rr := recover(); rr != nil {
-            RespondWithError(w, ErrorInternal("internal service panic"))
-            panic(rr)
-          }
-        }()
-        err = s.ExampleService.Ping(ctx)
-      }()
+	// Call service method
+	func() {
+		defer func() {
+			// In case of a panic, serve a 500 error and then panic.
+			if rr := recover(); rr != nil {
+				RespondWithError(w, ErrorInternal("internal service panic"))
+				panic(rr)
+			}
+		}()
+		err = s.ExampleService.Ping(ctx)
+	}()
 
-      if err != nil {
-        RespondWithError(w, err)
-        return
-      }
+	if err != nil {
+		RespondWithError(w, err)
+		return
+	}
 
-      w.Header().Set("Content-Type", "application/json")
-      w.WriteHeader(http.StatusOK)
-    }
-  
-    func (s *exampleServiceServer) serveStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      header := r.Header.Get("Content-Type")
-      i := strings.Index(header, ";")
-      if i == -1 {
-        i = len(header)
-      }
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+}
 
-      switch strings.TrimSpace(strings.ToLower(header[:i])) {
-      case "application/json":
-        s.serveStatusJSON(ctx, w, r)
-      default:
-        err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
-        RespondWithError(w, err)
-      }
-    }
+func (s *exampleServiceServer) serveStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	header := r.Header.Get("Content-Type")
+	i := strings.Index(header, ";")
+	if i == -1 {
+		i = len(header)
+	}
 
-    func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      var err error
-      ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
+	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	case "application/json":
+		s.serveStatusJSON(ctx, w, r)
+	default:
+		err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
+		RespondWithError(w, err)
+	}
+}
 
-      // Call service method
-      var ret0 bool
-      func() {
-        defer func() {
-          // In case of a panic, serve a 500 error and then panic.
-          if rr := recover(); rr != nil {
-            RespondWithError(w, ErrorInternal("internal service panic"))
-            panic(rr)
-          }
-        }()
-        ret0, err = s.ExampleService.Status(ctx)
-      }()
-      respContent := struct {
-        Ret0 bool `json:"status"`         
-      }{ ret0 }
+func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	var err error
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
-      if err != nil {
-        RespondWithError(w, err)
-        return
-      }
-      respBody, err := json.Marshal(respContent)
-      if err != nil {
-        err = WrapError(ErrInternal, err, "failed to marshal json response")
-        RespondWithError(w, err)
-        return
-      }
+	// Call service method
+	var ret0 bool
+	func() {
+		defer func() {
+			// In case of a panic, serve a 500 error and then panic.
+			if rr := recover(); rr != nil {
+				RespondWithError(w, ErrorInternal("internal service panic"))
+				panic(rr)
+			}
+		}()
+		ret0, err = s.ExampleService.Status(ctx)
+	}()
+	respContent := struct {
+		Ret0 bool `json:"status"`
+	}{ret0}
 
-      w.Header().Set("Content-Type", "application/json")
-      w.WriteHeader(http.StatusOK)
-      w.Write(respBody)
-    }
-  
-    func (s *exampleServiceServer) serveVersion(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      header := r.Header.Get("Content-Type")
-      i := strings.Index(header, ";")
-      if i == -1 {
-        i = len(header)
-      }
+	if err != nil {
+		RespondWithError(w, err)
+		return
+	}
+	respBody, err := json.Marshal(respContent)
+	if err != nil {
+		err = WrapError(ErrInternal, err, "failed to marshal json response")
+		RespondWithError(w, err)
+		return
+	}
 
-      switch strings.TrimSpace(strings.ToLower(header[:i])) {
-      case "application/json":
-        s.serveVersionJSON(ctx, w, r)
-      default:
-        err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
-        RespondWithError(w, err)
-      }
-    }
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(respBody)
+}
 
-    func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      var err error
-      ctx = context.WithValue(ctx, MethodNameCtxKey, "Version")
+func (s *exampleServiceServer) serveVersion(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	header := r.Header.Get("Content-Type")
+	i := strings.Index(header, ";")
+	if i == -1 {
+		i = len(header)
+	}
 
-      // Call service method
-      var ret0 *Version
-      func() {
-        defer func() {
-          // In case of a panic, serve a 500 error and then panic.
-          if rr := recover(); rr != nil {
-            RespondWithError(w, ErrorInternal("internal service panic"))
-            panic(rr)
-          }
-        }()
-        ret0, err = s.ExampleService.Version(ctx)
-      }()
-      respContent := struct {
-        Ret0 *Version `json:"version"`         
-      }{ ret0 }
+	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	case "application/json":
+		s.serveVersionJSON(ctx, w, r)
+	default:
+		err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
+		RespondWithError(w, err)
+	}
+}
 
-      if err != nil {
-        RespondWithError(w, err)
-        return
-      }
-      respBody, err := json.Marshal(respContent)
-      if err != nil {
-        err = WrapError(ErrInternal, err, "failed to marshal json response")
-        RespondWithError(w, err)
-        return
-      }
+func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	var err error
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "Version")
 
-      w.Header().Set("Content-Type", "application/json")
-      w.WriteHeader(http.StatusOK)
-      w.Write(respBody)
-    }
-  
-    func (s *exampleServiceServer) serveGetUser(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      header := r.Header.Get("Content-Type")
-      i := strings.Index(header, ";")
-      if i == -1 {
-        i = len(header)
-      }
+	// Call service method
+	var ret0 *Version
+	func() {
+		defer func() {
+			// In case of a panic, serve a 500 error and then panic.
+			if rr := recover(); rr != nil {
+				RespondWithError(w, ErrorInternal("internal service panic"))
+				panic(rr)
+			}
+		}()
+		ret0, err = s.ExampleService.Version(ctx)
+	}()
+	respContent := struct {
+		Ret0 *Version `json:"version"`
+	}{ret0}
 
-      switch strings.TrimSpace(strings.ToLower(header[:i])) {
-      case "application/json":
-        s.serveGetUserJSON(ctx, w, r)
-      default:
-        err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
-        RespondWithError(w, err)
-      }
-    }
+	if err != nil {
+		RespondWithError(w, err)
+		return
+	}
+	respBody, err := json.Marshal(respContent)
+	if err != nil {
+		err = WrapError(ErrInternal, err, "failed to marshal json response")
+		RespondWithError(w, err)
+		return
+	}
 
-    func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      var err error
-      ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
-      reqContent := struct {
-        Arg0 map[string]string `json:"header"`
-        Arg1 uint64 `json:"userID"`
-      }{}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(respBody)
+}
 
-      reqBody, err := ioutil.ReadAll(r.Body)
-      if err != nil {
-        err = WrapError(ErrInternal, err, "failed to read request data")
-        RespondWithError(w, err)
-        return
-      }
-      defer r.Body.Close()
+func (s *exampleServiceServer) serveGetUser(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	header := r.Header.Get("Content-Type")
+	i := strings.Index(header, ";")
+	if i == -1 {
+		i = len(header)
+	}
 
-      err = json.Unmarshal(reqBody, &reqContent)
-      if err != nil {
-        err = WrapError(ErrInvalidArgument, err, "failed to unmarshal request data")
-        RespondWithError(w, err)
-        return
-      }
+	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	case "application/json":
+		s.serveGetUserJSON(ctx, w, r)
+	default:
+		err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
+		RespondWithError(w, err)
+	}
+}
 
-      // Call service method
-      var ret0 uint32
-      var ret1 *User
-      func() {
-        defer func() {
-          // In case of a panic, serve a 500 error and then panic.
-          if rr := recover(); rr != nil {
-            RespondWithError(w, ErrorInternal("internal service panic"))
-            panic(rr)
-          }
-        }()
-        ret0, ret1, err = s.ExampleService.GetUser(ctx, reqContent.Arg0, reqContent.Arg1)
-      }()
-      respContent := struct {
-        Ret0 uint32 `json:"code"`
-        Ret1 *User `json:"user"`         
-      }{ ret0, ret1 }
+func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	var err error
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
+	reqContent := struct {
+		Arg0 map[string]string `json:"header"`
+		Arg1 uint64            `json:"userID"`
+	}{}
 
-      if err != nil {
-        RespondWithError(w, err)
-        return
-      }
-      respBody, err := json.Marshal(respContent)
-      if err != nil {
-        err = WrapError(ErrInternal, err, "failed to marshal json response")
-        RespondWithError(w, err)
-        return
-      }
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		err = WrapError(ErrInternal, err, "failed to read request data")
+		RespondWithError(w, err)
+		return
+	}
+	defer r.Body.Close()
 
-      w.Header().Set("Content-Type", "application/json")
-      w.WriteHeader(http.StatusOK)
-      w.Write(respBody)
-    }
-  
-    func (s *exampleServiceServer) serveFindUser(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      header := r.Header.Get("Content-Type")
-      i := strings.Index(header, ";")
-      if i == -1 {
-        i = len(header)
-      }
+	err = json.Unmarshal(reqBody, &reqContent)
+	if err != nil {
+		err = WrapError(ErrInvalidArgument, err, "failed to unmarshal request data")
+		RespondWithError(w, err)
+		return
+	}
 
-      switch strings.TrimSpace(strings.ToLower(header[:i])) {
-      case "application/json":
-        s.serveFindUserJSON(ctx, w, r)
-      default:
-        err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
-        RespondWithError(w, err)
-      }
-    }
+	// Call service method
+	var ret0 uint32
+	var ret1 *User
+	func() {
+		defer func() {
+			// In case of a panic, serve a 500 error and then panic.
+			if rr := recover(); rr != nil {
+				RespondWithError(w, ErrorInternal("internal service panic"))
+				panic(rr)
+			}
+		}()
+		ret0, ret1, err = s.ExampleService.GetUser(ctx, reqContent.Arg0, reqContent.Arg1)
+	}()
+	respContent := struct {
+		Ret0 uint32 `json:"code"`
+		Ret1 *User  `json:"user"`
+	}{ret0, ret1}
 
-    func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      var err error
-      ctx = context.WithValue(ctx, MethodNameCtxKey, "FindUser")
-      reqContent := struct {
-        Arg0 *SearchFilter `json:"s"`
-      }{}
+	if err != nil {
+		RespondWithError(w, err)
+		return
+	}
+	respBody, err := json.Marshal(respContent)
+	if err != nil {
+		err = WrapError(ErrInternal, err, "failed to marshal json response")
+		RespondWithError(w, err)
+		return
+	}
 
-      reqBody, err := ioutil.ReadAll(r.Body)
-      if err != nil {
-        err = WrapError(ErrInternal, err, "failed to read request data")
-        RespondWithError(w, err)
-        return
-      }
-      defer r.Body.Close()
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(respBody)
+}
 
-      err = json.Unmarshal(reqBody, &reqContent)
-      if err != nil {
-        err = WrapError(ErrInvalidArgument, err, "failed to unmarshal request data")
-        RespondWithError(w, err)
-        return
-      }
+func (s *exampleServiceServer) serveFindUser(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	header := r.Header.Get("Content-Type")
+	i := strings.Index(header, ";")
+	if i == -1 {
+		i = len(header)
+	}
 
-      // Call service method
-      var ret0 string
-      var ret1 *User
-      func() {
-        defer func() {
-          // In case of a panic, serve a 500 error and then panic.
-          if rr := recover(); rr != nil {
-            RespondWithError(w, ErrorInternal("internal service panic"))
-            panic(rr)
-          }
-        }()
-        ret0, ret1, err = s.ExampleService.FindUser(ctx, reqContent.Arg0)
-      }()
-      respContent := struct {
-        Ret0 string `json:"name"`
-        Ret1 *User `json:"user"`         
-      }{ ret0, ret1 }
+	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	case "application/json":
+		s.serveFindUserJSON(ctx, w, r)
+	default:
+		err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
+		RespondWithError(w, err)
+	}
+}
 
-      if err != nil {
-        RespondWithError(w, err)
-        return
-      }
-      respBody, err := json.Marshal(respContent)
-      if err != nil {
-        err = WrapError(ErrInternal, err, "failed to marshal json response")
-        RespondWithError(w, err)
-        return
-      }
+func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	var err error
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "FindUser")
+	reqContent := struct {
+		Arg0 *SearchFilter `json:"s"`
+	}{}
 
-      w.Header().Set("Content-Type", "application/json")
-      w.WriteHeader(http.StatusOK)
-      w.Write(respBody)
-    }
-  
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		err = WrapError(ErrInternal, err, "failed to read request data")
+		RespondWithError(w, err)
+		return
+	}
+	defer r.Body.Close()
+
+	err = json.Unmarshal(reqBody, &reqContent)
+	if err != nil {
+		err = WrapError(ErrInvalidArgument, err, "failed to unmarshal request data")
+		RespondWithError(w, err)
+		return
+	}
+
+	// Call service method
+	var ret0 string
+	var ret1 *User
+	func() {
+		defer func() {
+			// In case of a panic, serve a 500 error and then panic.
+			if rr := recover(); rr != nil {
+				RespondWithError(w, ErrorInternal("internal service panic"))
+				panic(rr)
+			}
+		}()
+		ret0, ret1, err = s.ExampleService.FindUser(ctx, reqContent.Arg0)
+	}()
+	respContent := struct {
+		Ret0 string `json:"name"`
+		Ret1 *User  `json:"user"`
+	}{ret0, ret1}
+
+	if err != nil {
+		RespondWithError(w, err)
+		return
+	}
+	respBody, err := json.Marshal(respContent)
+	if err != nil {
+		err = WrapError(ErrInternal, err, "failed to marshal json response")
+		RespondWithError(w, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(respBody)
+}
 
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(Error)
@@ -515,120 +478,109 @@ func RespondWithError(w http.ResponseWriter, err error) {
 	w.Write(respBody)
 }
 
-
-
-
-
-	
 //
 // Client
 //
 
-
 const ExampleServicePathPrefix = "/rpc/ExampleService/"
 
+type exampleServiceClient struct {
+	client HTTPClient
+	urls   [5]string
+}
 
+func NewExampleServiceClient(addr string, client HTTPClient) ExampleService {
+	prefix := urlBase(addr) + ExampleServicePathPrefix
+	urls := [5]string{
+		prefix + "Ping",
+		prefix + "Status",
+		prefix + "Version",
+		prefix + "GetUser",
+		prefix + "FindUser",
+	}
+	return &exampleServiceClient{
+		client: client,
+		urls:   urls,
+	}
+}
 
-  
-  type exampleServiceClient struct {
-    client HTTPClient
-    urls   [5]string
-  }
+func (c *exampleServiceClient) Ping(ctx context.Context) error {
 
-  func NewExampleServiceClient(addr string, client HTTPClient) ExampleService {
-    prefix := urlBase(addr) + ExampleServicePathPrefix
-    urls := [5]string{
-      prefix + "Ping",
-      prefix + "Status",
-      prefix + "Version",
-      prefix + "GetUser",
-      prefix + "FindUser",
-    }
-    return &exampleServiceClient{
-      client: client,
-      urls:   urls,
-    }
-  }
+	err := doJSONRequest(ctx, c.client, c.urls[0], nil, nil)
+	return err
+}
+func (c *exampleServiceClient) Status(ctx context.Context) (bool, error) {
+	out := struct {
+		Ret0 bool `json:"status"`
+	}{}
 
-  func (c *exampleServiceClient) Ping(ctx context.Context) (error) {
+	err := doJSONRequest(ctx, c.client, c.urls[1], nil, &out)
+	return out.Ret0, err
+}
+func (c *exampleServiceClient) Version(ctx context.Context) (*Version, error) {
+	out := struct {
+		Ret0 *Version `json:"version"`
+	}{}
 
-      err := doJSONRequest(ctx, c.client, c.urls[0], nil, nil)
-      return err
-    }
-  func (c *exampleServiceClient) Status(ctx context.Context) (bool, error) {
-      out := struct {
-          Ret0 bool `json:"status"`          
-      }{}
+	err := doJSONRequest(ctx, c.client, c.urls[2], nil, &out)
+	return out.Ret0, err
+}
+func (c *exampleServiceClient) GetUser(ctx context.Context, header map[string]string, userID uint64) (uint32, *User, error) {
+	in := struct {
+		Arg0 map[string]string `json:"header"`
+		Arg1 uint64            `json:"userID"`
+	}{header, userID}
+	out := struct {
+		Ret0 uint32 `json:"code"`
+		Ret1 *User  `json:"user"`
+	}{}
 
-      err := doJSONRequest(ctx, c.client, c.urls[1], nil, &out)
-      return out.Ret0, err
-    }
-  func (c *exampleServiceClient) Version(ctx context.Context) (*Version, error) {
-      out := struct {
-          Ret0 *Version `json:"version"`          
-      }{}
+	err := doJSONRequest(ctx, c.client, c.urls[3], in, &out)
+	return out.Ret0, out.Ret1, err
+}
+func (c *exampleServiceClient) FindUser(ctx context.Context, s *SearchFilter) (string, *User, error) {
+	in := struct {
+		Arg0 *SearchFilter `json:"s"`
+	}{s}
+	out := struct {
+		Ret0 string `json:"name"`
+		Ret1 *User  `json:"user"`
+	}{}
 
-      err := doJSONRequest(ctx, c.client, c.urls[2], nil, &out)
-      return out.Ret0, err
-    }
-  func (c *exampleServiceClient) GetUser(ctx context.Context, header map[string]string, userID uint64) (uint32, *User, error) {
-      in := struct {
-          Arg0 map[string]string `json:"header"`
-          Arg1 uint64 `json:"userID"`          
-      }{ header, userID }
-      out := struct {
-          Ret0 uint32 `json:"code"`
-          Ret1 *User `json:"user"`          
-      }{}
-
-      err := doJSONRequest(ctx, c.client, c.urls[3], in, &out)
-      return out.Ret0, out.Ret1, err
-    }
-  func (c *exampleServiceClient) FindUser(ctx context.Context, s *SearchFilter) (string, *User, error) {
-      in := struct {
-          Arg0 *SearchFilter `json:"s"`          
-      }{ s }
-      out := struct {
-          Ret0 string `json:"name"`
-          Ret1 *User `json:"user"`          
-      }{}
-
-      err := doJSONRequest(ctx, c.client, c.urls[4], in, &out)
-      return out.Ret0, out.Ret1, err
-    }
-  
-
+	err := doJSONRequest(ctx, c.client, c.urls[4], in, &out)
+	return out.Ret0, out.Ret1, err
+}
 
 // HTTPClient is the interface used by generated clients to send HTTP requests.
 // It is fulfilled by *(net/http).Client, which is sufficient for most users.
 // Users can provide their own implementation for special retry policies.
 type HTTPClient interface {
-  Do(req *http.Request) (*http.Response, error)
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // urlBase helps ensure that addr specifies a scheme. If it is unparsable
 // as a URL, it returns addr unchanged.
 func urlBase(addr string) string {
-  // If the addr specifies a scheme, use it. If not, default to
-  // http. If url.Parse fails on it, return it unchanged.
-  url, err := url.Parse(addr)
-  if err != nil {
-    return addr
-  }
-  if url.Scheme == "" {
-    url.Scheme = "http"
-  }
-  return url.String()
+	// If the addr specifies a scheme, use it. If not, default to
+	// http. If url.Parse fails on it, return it unchanged.
+	url, err := url.Parse(addr)
+	if err != nil {
+		return addr
+	}
+	if url.Scheme == "" {
+		url.Scheme = "http"
+	}
+	return url.String()
 }
 
 // newRequest makes an http.Request from a client, adding common headers.
 func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType string) (*http.Request, error) {
-  req, err := http.NewRequest("POST", url, reqBody)
-  if err != nil {
-    return nil, err
-  }
-  req.Header.Set("Accept", contentType)
-  req.Header.Set("Content-Type", contentType)
+	req, err := http.NewRequest("POST", url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", contentType)
+	req.Header.Set("Content-Type", contentType)
 	if headers, ok := HTTPRequestHeaders(ctx); ok {
 		for k := range headers {
 			for _, v := range headers[k] {
@@ -636,7 +588,7 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 			}
 		}
 	}
-  return req, nil
+	return req, nil
 }
 
 // doJSONRequest is common code to make a request to the remote service.
@@ -745,11 +697,6 @@ func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 	h, ok := ctx.Value(HTTPClientRequestHeadersCtxKey).(http.Header)
 	return h, ok
 }
-
-
-
-
-
 
 //
 // Helpers
@@ -1039,4 +986,3 @@ var (
 
 	MethodNameCtxKey = &contextKey{"MethodName"}
 )
-
