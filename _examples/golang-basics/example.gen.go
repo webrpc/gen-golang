@@ -38,7 +38,7 @@ func WebRPCSchemaHash() string {
 type Kind uint32
 
 const (
-	Kind_USER  Kind = 0
+	Kind_USER Kind = 0
 	Kind_ADMIN Kind = 1
 )
 
@@ -48,7 +48,7 @@ var Kind_name = map[uint32]string{
 }
 
 var Kind_value = map[string]uint32{
-	"USER":  0,
+	"USER": 0,
 	"ADMIN": 1,
 }
 
@@ -75,31 +75,35 @@ func (x *Kind) UnmarshalJSON(b []byte) error {
 
 type Empty struct {
 }
+
 type User struct {
-	ID        uint64     `json:"id" db:"id"`
-	Username  string     `json:"USERNAME" db:"username"`
-	Role      string     `json:"role" db:"-"`
-	CreatedAt time.Time  `json:"createdAt" db:"created_at"`
+	ID uint64 `json:"id" db:"id"`
+	Username string `json:"USERNAME" db:"username"`
+	Role string `json:"role" db:"-"`
+	CreatedAt time.Time `json:"createdAt" db:"created_at"`
 	UpdatedAt *time.Time `json:"updatedAt" db:"updated_at"`
 }
+
 type SearchFilter struct {
 	Q string `json:"q"`
 }
+
 type Version struct {
 	WebrpcVersion string `json:"webrpcVersion"`
 	SchemaVersion string `json:"schemaVersion"`
-	SchemaHash    string `json:"schemaHash"`
+	SchemaHash string `json:"schemaHash"`
 }
+
 type ComplexType struct {
-	Meta              map[string]interface{}       `json:"meta"`
+	Meta map[string]interface{} `json:"meta"`
 	MetaNestedExample map[string]map[string]uint32 `json:"metaNestedExample"`
-	NamesList         []string                     `json:"namesList"`
-	NumsList          []int64                      `json:"numsList"`
-	DoubleArray       [][]string                   `json:"doubleArray"`
-	ListOfMaps        []map[string]uint32          `json:"listOfMaps"`
-	ListOfUsers       []*User                      `json:"listOfUsers"`
-	MapOfUsers        map[string]*User             `json:"mapOfUsers"`
-	User              *User                        `json:"user"`
+	NamesList []string `json:"namesList"`
+	NumsList []int64 `json:"numsList"`
+	DoubleArray [][]string `json:"doubleArray"`
+	ListOfMaps []map[string]uint32 `json:"listOfMaps"`
+	ListOfUsers []*User `json:"listOfUsers"`
+	MapOfUsers map[string]*User `json:"mapOfUsers"`
+	User *User `json:"user"`
 }
 
 type ExampleService interface {
@@ -339,7 +343,7 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
 	reqContent := struct {
 		Arg0 map[string]string `json:"header"`
-		Arg1 uint64            `json:"userID"`
+		Arg1 uint64 `json:"userID"`
 	}{}
 
 	reqBody, err := ioutil.ReadAll(r.Body)
@@ -372,7 +376,7 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 	}()
 	respContent := struct {
 		Ret0 uint32 `json:"code"`
-		Ret1 *User  `json:"user"`
+		Ret1 *User `json:"user"`
 	}{ret0, ret1}
 
 	if err != nil {
@@ -444,7 +448,7 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 	}()
 	respContent := struct {
 		Ret0 string `json:"name"`
-		Ret1 *User  `json:"user"`
+		Ret1 *User `json:"user"`
 	}{ret0, ret1}
 
 	if err != nil {
@@ -462,6 +466,7 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
+
 
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(Error)
@@ -486,7 +491,7 @@ const ExampleServicePathPrefix = "/rpc/ExampleService/"
 
 type exampleServiceClient struct {
 	client HTTPClient
-	urls   [5]string
+	urls	 [5]string
 }
 
 func NewExampleServiceClient(addr string, client HTTPClient) ExampleService {
@@ -500,10 +505,9 @@ func NewExampleServiceClient(addr string, client HTTPClient) ExampleService {
 	}
 	return &exampleServiceClient{
 		client: client,
-		urls:   urls,
+		urls:	 urls,
 	}
 }
-
 func (c *exampleServiceClient) Ping(ctx context.Context) error {
 
 	err := doJSONRequest(ctx, c.client, c.urls[0], nil, nil)
@@ -528,11 +532,11 @@ func (c *exampleServiceClient) Version(ctx context.Context) (*Version, error) {
 func (c *exampleServiceClient) GetUser(ctx context.Context, header map[string]string, userID uint64) (uint32, *User, error) {
 	in := struct {
 		Arg0 map[string]string `json:"header"`
-		Arg1 uint64            `json:"userID"`
+		Arg1 uint64 `json:"userID"`
 	}{header, userID}
 	out := struct {
 		Ret0 uint32 `json:"code"`
-		Ret1 *User  `json:"user"`
+		Ret1 *User `json:"user"`
 	}{}
 
 	err := doJSONRequest(ctx, c.client, c.urls[3], in, &out)
@@ -544,7 +548,7 @@ func (c *exampleServiceClient) FindUser(ctx context.Context, s *SearchFilter) (s
 	}{s}
 	out := struct {
 		Ret0 string `json:"name"`
-		Ret1 *User  `json:"user"`
+		Ret1 *User `json:"user"`
 	}{}
 
 	err := doJSONRequest(ctx, c.client, c.urls[4], in, &out)

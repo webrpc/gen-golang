@@ -1,93 +1,94 @@
 {{define "client"}}
 {{- $type := .TypeDict -}}
-{{if .Services}}
+{{- if .Services -}}
 //
 // Client
 //
 
-{{range .Services}}
-const {{.Name | constPathPrefix}} = "/rpc/{{.Name}}/"
+{{range .Services -}}
+const {{.Name}}PathPrefix = "/rpc/{{.Name}}/"
 {{end}}
 
-{{range .Services}}
-  {{ $serviceName := (printf "%sClient" (.Name | firstLetterToLower)) }}
-  type {{$serviceName}} struct {
-    client HTTPClient
-    urls   [{{.Methods | countMethods}}]string
-  }
+{{- range .Services -}}
 
-  func New{{.Name | firstLetterToUpper }}Client(addr string, client HTTPClient) {{.Name}} {
-    prefix := urlBase(addr) + {{.Name | constPathPrefix}}
-    urls := [{{.Methods | countMethods}}]string{
-      {{- range .Methods}}
-      prefix + "{{.Name}}",
-      {{- end}}
-    }
-    return &{{$serviceName}}{
-      client: client,
-      urls:   urls,
-    }
-  }
+{{ $serviceName := (printf "%sClient" (.Name | firstLetterToLower)) }}
+type {{$serviceName}} struct {
+	client HTTPClient
+	urls	 [{{len .Methods}}]string
+}
 
-  {{range $i, $method := .Methods}}
-	{{- $inputs := $method.Inputs -}}
-	{{- $outputs := $method.Outputs -}}
-    func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeDict" $type}}{{end}}) ({{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeDict" $type}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error) {
-      {{- $inputVar := "nil" -}}
-      {{- $outputVar := "nil" -}}
-      {{- if $inputs | len}}
-      {{- $inputVar = "in"}}
-      in := struct {
-        {{- range $i, $input := $inputs}}
-          Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeDict" $type}} `json:"{{$input.Name | downcaseName}}"`
-        {{- end}}          
-      }{ {{range $i, $input := $inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}} }
-      {{- end}}
-      {{- if $outputs | len}}
-      {{- $outputVar = "&out"}}
-      out := struct {
-        {{- range $i, $output := .Outputs}}
-          Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeDict" $type}} `json:"{{$output.Name | downcaseName}}"`
-        {{- end}}          
-      }{}
-      {{- end}}
+func New{{.Name | firstLetterToUpper }}Client(addr string, client HTTPClient) {{.Name}} {
+	prefix := urlBase(addr) + {{.Name}}PathPrefix
+	urls := [{{len .Methods}}]string{
+	{{- range .Methods}}
+		prefix + "{{.Name}}",
+	{{- end}}
+	}
+	return &{{$serviceName}}{
+		client: client,
+		urls:	 urls,
+	}
+}
 
-      err := doJSONRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
-      return {{range $i, $output := .Outputs}}out.Ret{{$i}}, {{end}}err
-    }
-  {{end}}
-{{end}}
+{{- range $i, $method := .Methods -}}
+{{- $inputs := $method.Inputs -}}
+{{- $outputs := $method.Outputs }}
+func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeDict" $type}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeDict" $type}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len .Outputs}}){{end}} {
+	{{- $inputVar := "nil" -}}
+	{{- $outputVar := "nil" -}}
+	{{- if $inputs | len}}
+	{{- $inputVar = "in"}}
+	in := struct {
+	{{- range $i, $input := $inputs}}
+		Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeDict" $type}} `json:"{{$input.Name | downcaseName}}"`
+	{{- end}}
+	}{ {{- range $i, $input := $inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}
+	{{- end}}
+	{{- if $outputs | len}}
+	{{- $outputVar = "&out"}}
+	out := struct {
+	{{- range $i, $output := .Outputs}}
+		Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeDict" $type}} `json:"{{$output.Name | downcaseName}}"`
+	{{- end}}
+	}{}
+	{{- end}}
+
+	err := doJSONRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
+	return {{range $i, $output := .Outputs}}out.Ret{{$i}}, {{end}}err
+}
+{{- end -}}
+{{- end }}
 
 // HTTPClient is the interface used by generated clients to send HTTP requests.
 // It is fulfilled by *(net/http).Client, which is sufficient for most users.
 // Users can provide their own implementation for special retry policies.
 type HTTPClient interface {
-  Do(req *http.Request) (*http.Response, error)
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // urlBase helps ensure that addr specifies a scheme. If it is unparsable
 // as a URL, it returns addr unchanged.
 func urlBase(addr string) string {
-  // If the addr specifies a scheme, use it. If not, default to
-  // http. If url.Parse fails on it, return it unchanged.
-  url, err := url.Parse(addr)
-  if err != nil {
-    return addr
-  }
-  if url.Scheme == "" {
-    url.Scheme = "http"
-  }
-  return url.String()
+	// If the addr specifies a scheme, use it. If not, default to
+	// http. If url.Parse fails on it, return it unchanged.
+	url, err := url.Parse(addr)
+	if err != nil {
+		return addr
+	}
+	if url.Scheme == "" {
+		url.Scheme = "http"
+	}
+	return url.String()
 }
 
 // newRequest makes an http.Request from a client, adding common headers.
 func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType string) (*http.Request, error) {
-  req, err := http.NewRequest("POST", url, reqBody)
-  if err != nil {
-    return nil, err
-  }
-  req.Header.Set("Accept", contentType)
-  req.Header.Set("Content-Type", contentType)
+	req, err := http.NewRequest("POST", url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", contentType)
+	req.Header.Set("Content-Type", contentType)
 	if headers, ok := HTTPRequestHeaders(ctx); ok {
 		for k := range headers {
 			for _, v := range headers[k] {
@@ -95,7 +96,7 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 			}
 		}
 	}
-  return req, nil
+	return req, nil
 }
 
 // doJSONRequest is common code to make a request to the remote service.
@@ -204,5 +205,6 @@ func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 	h, ok := ctx.Value(HTTPClientRequestHeadersCtxKey).(http.Header)
 	return h, ok
 }
-{{end}}
-{{end}}
+
+{{- end}}
+{{- end }}

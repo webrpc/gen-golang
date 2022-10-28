@@ -1,141 +1,140 @@
 {{define "server"}}
 {{- $type := .TypeDict -}}
-{{if .Services}}
+{{- if .Services }}
 //
 // Server
 //
 
 type WebRPCServer interface {
-  http.Handler
+	http.Handler
 }
 
 {{- range .Services}}
-  {{- $name := .Name -}}
-  {{ $serviceName := (printf "%sServer" (.Name | firstLetterToLower)) }}
+{{- $name := .Name -}}
+{{ $serviceName := (printf "%sServer" (.Name | firstLetterToLower)) }}
 
-  type {{$serviceName}} struct {
-    {{.Name}}
-  }
+type {{$serviceName}} struct {
+	{{.Name}}
+}
 
-  func New{{ .Name | firstLetterToUpper }}Server(svc {{.Name}}) WebRPCServer {
-    return &{{$serviceName}}{
-      {{.Name}}: svc,
-    }
-  }
+func New{{ .Name | firstLetterToUpper }}Server(svc {{.Name}}) WebRPCServer {
+	return &{{$serviceName}}{
+		{{.Name}}: svc,
+	}
+}
 
-  func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-    ctx := r.Context()
-    ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
-    ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
-    ctx = context.WithValue(ctx, ServiceNameCtxKey, "{{.Name}}")
+func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
+	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
+	ctx = context.WithValue(ctx, ServiceNameCtxKey, "{{.Name}}")
 
-    if r.Method != "POST" {
-      err := Errorf(ErrBadRoute, "unsupported method %q (only POST is allowed)", r.Method)
-      RespondWithError(w, err)
-      return
-    }
+	if r.Method != "POST" {
+		err := Errorf(ErrBadRoute, "unsupported method %q (only POST is allowed)", r.Method)
+		RespondWithError(w, err)
+		return
+	}
 
-    switch r.URL.Path {
-    {{- range .Methods}}
-    case "/rpc/{{$name}}/{{.Name}}":
-      s.serve{{.Name | firstLetterToUpper}}(ctx, w, r)
-      return
-    {{- end}}
-    default:
-      err := Errorf(ErrBadRoute, "no handler for path %q", r.URL.Path)
-      RespondWithError(w, err)
-      return
-    }
-  }
+	switch r.URL.Path {
+	{{- range .Methods}}
+	case "/rpc/{{$name}}/{{.Name}}":
+		s.serve{{.Name | firstLetterToUpper}}(ctx, w, r)
+		return
+	{{- end}}
+	default:
+		err := Errorf(ErrBadRoute, "no handler for path %q", r.URL.Path)
+		RespondWithError(w, err)
+		return
+	}
+}
+{{range .Methods }}
+func (s *{{$serviceName}}) serve{{.Name | firstLetterToUpper}}(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	header := r.Header.Get("Content-Type")
+	i := strings.Index(header, ";")
+	if i == -1 {
+		i = len(header)
+	}
 
-  {{range .Methods}}
-    func (s *{{$serviceName}}) serve{{.Name | firstLetterToUpper}}(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      header := r.Header.Get("Content-Type")
-      i := strings.Index(header, ";")
-      if i == -1 {
-        i = len(header)
-      }
+	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	case "application/json":
+		s.serve{{ .Name | firstLetterToUpper }}JSON(ctx, w, r)
+	default:
+		err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
+		RespondWithError(w, err)
+	}
+}
 
-      switch strings.TrimSpace(strings.ToLower(header[:i])) {
-      case "application/json":
-        s.serve{{ .Name | firstLetterToUpper }}JSON(ctx, w, r)
-      default:
-        err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
-        RespondWithError(w, err)
-      }
-    }
+func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	var err error
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{.Name}}")
 
-    func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-      var err error
-      ctx = context.WithValue(ctx, MethodNameCtxKey, "{{.Name}}")
+	{{- if .Inputs|len}}
+	reqContent := struct {
+	{{- range $i, $input := .Inputs}}
+		Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeDict" $type}} `json:"{{$input.Name | downcaseName}}"`
+	{{- end}}
+	}{}
 
-      {{- if .Inputs|len}}
-      reqContent := struct {
-      {{- range $i, $input := .Inputs}}
-        Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeDict" $type}} `json:"{{$input.Name | downcaseName}}"`
-      {{- end}}
-      }{}
+	reqBody, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		err = WrapError(ErrInternal, err, "failed to read request data")
+		RespondWithError(w, err)
+		return
+	}
+	defer r.Body.Close()
 
-      reqBody, err := ioutil.ReadAll(r.Body)
-      if err != nil {
-        err = WrapError(ErrInternal, err, "failed to read request data")
-        RespondWithError(w, err)
-        return
-      }
-      defer r.Body.Close()
+	err = json.Unmarshal(reqBody, &reqContent)
+	if err != nil {
+		err = WrapError(ErrInvalidArgument, err, "failed to unmarshal request data")
+		RespondWithError(w, err)
+		return
+	}
+	{{- end}}
 
-      err = json.Unmarshal(reqBody, &reqContent)
-      if err != nil {
-        err = WrapError(ErrInvalidArgument, err, "failed to unmarshal request data")
-        RespondWithError(w, err)
-        return
-      }
-      {{- end}}
+	// Call service method
+	{{- range $i, $output := .Outputs}}
+	var ret{{$i}} {{template "type" dict "Type" $output.Type "TypeDict" $type}}
+	{{- end}}
+	func() {
+		defer func() {
+			// In case of a panic, serve a 500 error and then panic.
+			if rr := recover(); rr != nil {
+				RespondWithError(w, ErrorInternal("internal service panic"))
+				panic(rr)
+			}
+		}()
+		{{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err = s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqContent.Arg{{$i}}{{end}})
+	}()
+	{{- if .Outputs | len}}
+	respContent := struct {
+	{{- range $i, $output := .Outputs}}
+		Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeDict" $type}} `json:"{{$output.Name | downcaseName}}"`
+	{{- end}}
+	}{ {{- range $i, $_ := .Outputs}}{{if gt $i 0}}, {{end}}ret{{$i}}{{end}}}
+	{{- end}}
 
-      // Call service method
-      {{- range $i, $output := .Outputs}}
-      var ret{{$i}} {{template "type" dict "Type" $output.Type "TypeDict" $type}}
-      {{- end}}
-      func() {
-        defer func() {
-          // In case of a panic, serve a 500 error and then panic.
-          if rr := recover(); rr != nil {
-            RespondWithError(w, ErrorInternal("internal service panic"))
-            panic(rr)
-          }
-        }()
-        {{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err = s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqContent.Arg{{$i}}{{end}})
-      }()
-      {{- if .Outputs | len}}
-      respContent := struct {
-      {{- range $i, $output := .Outputs}}
-        Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeDict" $type}} `json:"{{$output.Name | downcaseName}}"`
-      {{- end}}         
-      }{ {{range $i, $_ := .Outputs}}{{if gt $i 0}}, {{end}}ret{{$i}}{{end}} }
-      {{- end}}
+	if err != nil {
+		RespondWithError(w, err)
+		return
+	}
 
-      if err != nil {
-        RespondWithError(w, err)
-        return
-      }
+	{{- if .Outputs | len}}
+	respBody, err := json.Marshal(respContent)
+	if err != nil {
+		err = WrapError(ErrInternal, err, "failed to marshal json response")
+		RespondWithError(w, err)
+		return
+	}
+	{{- end}}
 
-      {{- if .Outputs | len}}
-      respBody, err := json.Marshal(respContent)
-      if err != nil {
-        err = WrapError(ErrInternal, err, "failed to marshal json response")
-        RespondWithError(w, err)
-        return
-      }
-      {{- end}}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 
-      w.Header().Set("Content-Type", "application/json")
-      w.WriteHeader(http.StatusOK)
-
-      {{- if .Outputs | len}}
-      w.Write(respBody)
-      {{- end}}
-    }
-  {{end}}
+	{{- if .Outputs | len}}
+	w.Write(respBody)
+	{{- end}}
+}
+{{end}}
 {{- end}}
 
 func RespondWithError(w http.ResponseWriter, err error) {
@@ -152,5 +151,6 @@ func RespondWithError(w http.ResponseWriter, err error) {
 	respBody, _ := json.Marshal(rpcErr.Payload())
 	w.Write(respBody)
 }
-{{end}}
-{{end}}
+
+{{- end -}}
+{{- end -}}

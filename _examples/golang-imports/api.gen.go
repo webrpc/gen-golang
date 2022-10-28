@@ -37,12 +37,13 @@ func WebRPCSchemaHash() string {
 
 type User struct {
 	Username string `json:"username"`
-	Age      uint32 `json:"age"`
+	Age uint32 `json:"age"`
 }
+
 type Location uint32
 
 const (
-	Location_TORONTO  Location = 0
+	Location_TORONTO Location = 0
 	Location_NEW_YORK Location = 1
 )
 
@@ -52,7 +53,7 @@ var Location_name = map[uint32]string{
 }
 
 var Location_value = map[string]uint32{
-	"TORONTO":  0,
+	"TORONTO": 0,
 	"NEW_YORK": 1,
 }
 
@@ -265,7 +266,7 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 		ret0, ret1, err = s.ExampleAPI.GetUsers(ctx)
 	}()
 	respContent := struct {
-		Ret0 []*User   `json:"users"`
+		Ret0 []*User `json:"users"`
 		Ret1 *Location `json:"location"`
 	}{ret0, ret1}
 
@@ -284,6 +285,7 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
+
 
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(Error)
@@ -308,7 +310,7 @@ const ExampleAPIPathPrefix = "/rpc/ExampleAPI/"
 
 type exampleAPIClient struct {
 	client HTTPClient
-	urls   [3]string
+	urls	 [3]string
 }
 
 func NewExampleAPIClient(addr string, client HTTPClient) ExampleAPI {
@@ -320,10 +322,9 @@ func NewExampleAPIClient(addr string, client HTTPClient) ExampleAPI {
 	}
 	return &exampleAPIClient{
 		client: client,
-		urls:   urls,
+		urls:	 urls,
 	}
 }
-
 func (c *exampleAPIClient) Ping(ctx context.Context) error {
 
 	err := doJSONRequest(ctx, c.client, c.urls[0], nil, nil)
@@ -339,7 +340,7 @@ func (c *exampleAPIClient) Status(ctx context.Context) (bool, error) {
 }
 func (c *exampleAPIClient) GetUsers(ctx context.Context) ([]*User, *Location, error) {
 	out := struct {
-		Ret0 []*User   `json:"users"`
+		Ret0 []*User `json:"users"`
 		Ret1 *Location `json:"location"`
 	}{}
 
