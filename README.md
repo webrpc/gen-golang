@@ -42,12 +42,18 @@ webrpc-gen -schema=./proto.json -target=golang -out openapi.gen.yaml -Pkg=main -
 | `+ go.tag.db = id`     | Set `db:"id"` struct tag        |
 
 Example:
-```
+```ridl
 message User
   - id: uint64
     + go.field.name = ID
     + go.tag.db = id
     + go.tag.json = id
+```
+will result in
+```go
+type User struct {
+	ID uint64 `json:"id" db:"id"`
+}
 ```
 
 ## Examples
