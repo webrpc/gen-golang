@@ -1,4 +1,10 @@
 {{- define "proto" -}}
+
+{{- if ne .WebrpcVersion "v1" -}}
+	{{- printfStderr "%s generator error: unsupported webrpc version %s\n" .WebrpcTarget .WebrpcVersion -}}
+	{{- exit 1 -}}
+{{- end -}}
+
 {{- /* Options. Default values. */ -}}
 {{- $opts := dict -}}
 {{- set $opts "Pkg" (coalesce .Opts.Pkg "proto") -}}
