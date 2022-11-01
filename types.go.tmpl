@@ -1,5 +1,5 @@
 {{define "types"}}
-{{- $type := .TypeDict -}}
+{{- $typeMap := .TypeMap -}}
 
 {{- if .Messages -}}
 //
@@ -12,7 +12,7 @@
 {{ end -}}
 
 {{- if isStruct .Type	}}
-{{template "struct" dict "Struct" . "TypeDict" $type}}
+{{template "struct" dict "Struct" . "TypeMap" $typeMap}}
 {{ end -}}
 
 {{- end -}}
@@ -22,7 +22,7 @@
 {{range .Services}}
 type {{.Name}} interface {
 	{{- range $_, $method := .Methods}}
-	{{.Name}}(ctx context.Context{{range $_, $input := .Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeDict" $type}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeDict" $type}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len .Outputs}}){{end}}
+	{{.Name}}(ctx context.Context{{range $_, $input := .Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeMap" $typeMap}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeMap" $typeMap}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len .Outputs}}){{end}}
 	{{- end}}
 }
 {{end}}

@@ -1,6 +1,6 @@
 {{- define "struct" -}}
 {{- $struct := .Struct -}}
-{{- $type := .TypeDict -}}
+{{- $typeMap := .TypeMap -}}
 
 type {{$struct.Name}} struct {
 {{- range $_, $field := $struct.Fields -}}
@@ -26,7 +26,7 @@ type {{$struct.Name}} struct {
 	{{if $dbName}}
 		{{- $dbTags = printf " db:%q" $dbName -}}
 	{{- end}}
-	{{$fieldName}} {{if and $field.Optional (isBaseType $field.Type)}}*{{end}}{{template "type" dict "Type" $field.Type "TypeDict" $type}} `{{$jsonTags}}{{$dbTags}}`
+	{{$fieldName}} {{if and $field.Optional (isBaseType $field.Type)}}*{{end}}{{template "type" dict "Type" $field.Type "TypeMap" $typeMap}} `{{$jsonTags}}{{$dbTags}}`
 {{- end}}
 }
 {{- end }}

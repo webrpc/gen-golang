@@ -1,19 +1,20 @@
 {{- define "type" -}}
+
 {{- /* Required args */ -}}
-{{- $type := .TypeDict -}}
+{{- $typeMap := .TypeMap -}}
 {{- /* .Type */ -}}
 
 {{- if isMapType .Type -}}
 
-    map[{{mapKeyType .Type}}]{{template "type" dict "Type" (mapValueType .Type) "TypeDict" $type}}
+    map[{{mapKeyType .Type}}]{{template "type" dict "Type" (mapValueType .Type) "TypeMap" $typeMap}}
 
 {{- else if isArrayType .Type -}}
 
-    []{{template "type" dict "Type" (arrayItemType .Type) "TypeDict" $type}}
+    []{{template "type" dict "Type" (arrayItemType .Type) "TypeMap" $typeMap}}
 
 {{- else if isBaseType .Type -}}
 
-    {{ get $type .Type }}
+    {{ get $typeMap .Type }}
 
 {{- else -}}
 
