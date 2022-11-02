@@ -1,7 +1,7 @@
 {{- define "proto" -}}
 
 {{- if ne .WebrpcVersion "v1" -}}
-	{{- printfStderr "%s generator error: unsupported webrpc version %s\n" .WebrpcTarget .WebrpcVersion -}}
+	{{- stderrPrintf "%s generator error: unsupported webrpc version %s\n" .WebrpcTarget .WebrpcVersion -}}
 	{{- exit 1 -}}
 {{- end -}}
 
@@ -20,7 +20,7 @@
 {{- /* Print help on unsupported option. */ -}}
 {{- range $k, $v := .Opts }}
   {{- if not (exists $opts $k) -}}
-    {{- printfStderr "  -%v=%q is not supported option\n" $k $v -}}
+    {{- stderrPrintf "  -%v=%q is not supported option\n" $k $v -}}
     {{- template "help" $opts -}}
     {{- exit 1 -}}
   {{- end -}}

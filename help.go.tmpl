@@ -1,11 +1,11 @@
 {{- define "help" -}}
-  {{- printfStderr "\n" -}}
-  {{- printfStderr "Available template options:\n" -}}
+  {{- stderrPrintf "\n" -}}
+  {{- stderrPrintf "Available template options:\n" -}}
   {{- range $k, $v := . -}}
   {{- if eq (printf "%v" $v) "" }}
-    {{- printfStderr "  -%v\n" $k -}}
+    {{- stderrPrintf "  -%v\n" $k -}}
   {{- else -}}
-    {{- printfStderr "  -%v=%q\n" $k $v -}}
+    {{- stderrPrintf "  -%v=%q\n" $k $v -}}
   {{- end -}}
   {{- end -}}
 {{- end -}}
