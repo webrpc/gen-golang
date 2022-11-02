@@ -1,4 +1,4 @@
-{{- define "proto" -}}
+{{- define "main" -}}
 
 {{- if ne .WebrpcVersion "v1" -}}
 	{{- stderrPrintf "%s generator error: unsupported webrpc version %s\n" .WebrpcTarget .WebrpcVersion -}}
