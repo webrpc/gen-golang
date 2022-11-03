@@ -1,8 +1,13 @@
 {{- define "main" -}}
 
 {{- if ne .WebrpcVersion "v1" -}}
-	{{- stderrPrintf "%s generator error: unsupported webrpc version %s\n" .WebrpcTarget .WebrpcVersion -}}
-	{{- exit 1 -}}
+  {{- stderrPrintf "%s generator error: unsupported webrpc version %s\n" .WebrpcTarget .WebrpcVersion -}}
+  {{- exit 1 -}}
+{{- end -}}
+
+{{- if not (minVersion .WebrpcGenVersion "v0.7.0") -}}
+  {{- stderrPrintf "%s generator error: unsupported webrpc-gen version %s, please update\n" .WebrpcTarget .WebrpcGenVersion -}}
+  {{- exit 1 -}}
 {{- end -}}
 
 {{- /* Options with default values. */ -}}
