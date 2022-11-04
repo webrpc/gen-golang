@@ -12,9 +12,9 @@
 
 {{- /* Options with default values. */ -}}
 {{- $opts := dict -}}
-{{- set $opts "Pkg" (coalesce .Opts.Pkg "proto") -}}
-{{- set $opts "Client" (coalesce .Opts.Version false) -}}
-{{- set $opts "Server" (coalesce .Opts.Version false) -}}
+{{- set $opts "Pkg" (default .Opts.Pkg "proto") -}}
+{{- set $opts "Client" (ternary (in .Opts.Client "" "true") true false) -}}
+{{- set $opts "Server" (ternary (in .Opts.Server "" "true") true false) -}}
 
 {{- /* Print help on -Help. */ -}}
 {{- if exists .Opts "Help" -}}
@@ -87,11 +87,11 @@ func WebRPCSchemaHash() string {
 
 {{ template "types" dict "Services" .Services "Messages" .Messages "TypeMap" $typeMap }}
 
-{{- if exists .Opts "Server"}}
+{{- if exists $opts "Server"}}
 {{ template "server" dict "Services" .Services "TypeMap" $typeMap }}
 {{ end -}}
 
-{{- if exists .Opts "Client" }}
+{{- if exists $opts "Client" }}
 {{ template "client" dict "Services" .Services "TypeMap" $typeMap }}
 {{ end -}}
 
