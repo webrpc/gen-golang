@@ -8,17 +8,17 @@
 
     map[{{mapKeyType .Type}}]{{template "type" dict "Type" (mapValueType .Type) "TypeMap" $typeMap}}
 
-{{- else if isArrayType .Type -}}
+{{- else if isListType .Type -}}
 
-    []{{template "type" dict "Type" (arrayItemType .Type) "TypeMap" $typeMap}}
+    []{{template "type" dict "Type" (listElemType .Type) "TypeMap" $typeMap}}
 
-{{- else if isBaseType .Type -}}
+{{- else if isStructType .Type -}}
 
-    {{ get $typeMap .Type }}
+    *{{.Type}}
 
 {{- else -}}
 
-    *{{.Type}}
+    {{ get $typeMap .Type }}
 
 {{- end -}}
 {{- end -}}

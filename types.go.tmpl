@@ -7,11 +7,11 @@
 //
 {{ range .Messages -}}
 
-{{- if isEnum .Type }}
+{{- if isEnumType .Type }}
 {{template "enum" .}}
 {{ end -}}
 
-{{- if isStruct .Type	}}
+{{- if isStructType .Type	}}
 {{template "struct" dict "Struct" . "TypeMap" $typeMap}}
 {{ end -}}
 
