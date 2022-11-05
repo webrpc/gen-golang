@@ -62,4 +62,4 @@ See [_examples](./_examples)
 
 ## LICENSE
 
-[LICENSE](./LICENSE)
+[MIT LICENSE](./LICENSE)

@@ -40,7 +40,7 @@ func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $i
 	{{- $inputVar = "in"}}
 	in := struct {
 	{{- range $i, $input := $inputs}}
-		Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeMap" $typeMap}} `json:"{{$input.Name | downcaseName}}"`
+		Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeMap" $typeMap}} `json:"{{firstLetterToLower $input.Name}}"`
 	{{- end}}
 	}{ {{- range $i, $input := $inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}
 	{{- end}}
@@ -48,7 +48,7 @@ func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $i
 	{{- $outputVar = "&out"}}
 	out := struct {
 	{{- range $i, $output := .Outputs}}
-		Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeMap" $typeMap}} `json:"{{$output.Name | downcaseName}}"`
+		Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeMap" $typeMap}} `json:"{{firstLetterToLower $output.Name}}"`
 	{{- end}}
 	}{}
 	{{- end}}

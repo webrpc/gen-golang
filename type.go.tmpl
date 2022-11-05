@@ -1,24 +1,23 @@
 {{- define "type" -}}
 
-{{- /* Required args */ -}}
+{{- $type := .Type -}}
 {{- $typeMap := .TypeMap -}}
-{{- /* .Type */ -}}
 
-{{- if isMapType .Type -}}
+{{- if isMapType $type -}}
 
-    map[{{mapKeyType .Type}}]{{template "type" dict "Type" (mapValueType .Type) "TypeMap" $typeMap}}
+    map[{{mapKeyType $type}}]{{template "type" dict "Type" (mapValueType $type) "TypeMap" $typeMap}}
 
-{{- else if isListType .Type -}}
+{{- else if isListType $type -}}
 
-    []{{template "type" dict "Type" (listElemType .Type) "TypeMap" $typeMap}}
+    []{{template "type" dict "Type" (listElemType $type) "TypeMap" $typeMap}}
 
-{{- else if isStructType .Type -}}
+{{- else if isStructType $type -}}
 
-    *{{.Type}}
+    *{{$type}}
 
 {{- else -}}
 
-    {{ get $typeMap .Type }}
+    {{ get $typeMap $type }}
 
 {{- end -}}
 {{- end -}}

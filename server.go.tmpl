@@ -71,7 +71,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	{{- if .Inputs|len}}
 	reqContent := struct {
 	{{- range $i, $input := .Inputs}}
-		Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeMap" $typeMap}} `json:"{{$input.Name | downcaseName}}"`
+		Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeMap" $typeMap}} `json:"{{firstLetterToLower $input.Name}}"`
 	{{- end}}
 	}{}
 
@@ -108,7 +108,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	{{- if .Outputs | len}}
 	respContent := struct {
 	{{- range $i, $output := .Outputs}}
-		Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeMap" $typeMap}} `json:"{{$output.Name | downcaseName}}"`
+		Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeMap" $typeMap}} `json:"{{firstLetterToLower $output.Name}}"`
 	{{- end}}
 	}{ {{- range $i, $_ := .Outputs}}{{if gt $i 0}}, {{end}}ret{{$i}}{{end}}}
 	{{- end}}

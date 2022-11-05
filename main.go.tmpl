@@ -87,11 +87,11 @@ func WebRPCSchemaHash() string {
 
 {{ template "types" dict "Services" .Services "Messages" .Messages "TypeMap" $typeMap }}
 
-{{- if exists $opts "Server"}}
+{{- if $opts.Server}}
 {{ template "server" dict "Services" .Services "TypeMap" $typeMap }}
 {{ end -}}
 
-{{- if exists $opts "Client" }}
+{{- if $opts.Client }}
 {{ template "client" dict "Services" .Services "TypeMap" $typeMap }}
 {{ end -}}
 
