@@ -135,7 +135,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	{{- end}}
 }
 {{end}}
-{{- end}}
+{{end -}}
 
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(Error)

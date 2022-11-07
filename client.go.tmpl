@@ -33,6 +33,7 @@ func New{{.Name | firstLetterToUpper }}Client(addr string, client HTTPClient) {{
 {{- range $i, $method := .Methods -}}
 {{- $inputs := $method.Inputs -}}
 {{- $outputs := $method.Outputs }}
+
 func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeMap" $typeMap}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeMap" $typeMap}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len .Outputs}}){{end}} {
 	{{- $inputVar := "nil" -}}
 	{{- $outputVar := "nil" -}}
