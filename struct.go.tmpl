@@ -4,8 +4,8 @@
 
 type {{$struct.Name}} struct {
 {{- range $_, $field := $struct.Fields -}}
-	{{- $fieldName := $field.Name | pascalCase -}}
-	{{- $jsonName := $field.Name | camelCase }}
+	{{- $fieldName := $field.Name | firstLetterToUpper -}}
+	{{- $jsonName := $field.Name | firstLetterToLower }}
 	{{- $dbName := "" }}
 	{{- range $meta := $field.Meta -}}
 		{{- if exists $meta "go.field.name" -}}
