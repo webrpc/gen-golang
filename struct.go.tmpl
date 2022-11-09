@@ -5,28 +5,27 @@
 type {{$struct.Name}} struct {
 {{- range $_, $field := $struct.Fields -}}
 	{{- $fieldName := $field.Name | firstLetterToUpper -}}
-	{{- $jsonName := $field.Name | firstLetterToLower }}
-	{{- $dbName := "" }}
+	{{- $fieldType := $field.Type -}}
+	{{- $jsonTags := printf "json:%q" ($field.Name | firstLetterToLower) }}
+	{{- $dbTags := "" }}
 	{{- range $meta := $field.Meta -}}
 		{{- if exists $meta "go.field.name" -}}
 			{{- $fieldName = get $meta "go.field.name" -}}
 		{{- end -}}
+		{{- if exists $meta "go.field.type" -}}
+			{{- $fieldType = get $meta "go.field.type" -}}
+		{{- end -}}
 		{{- if exists $meta "json" -}}
-			{{- $jsonName = get $meta "json" -}}
+			{{- $jsonTags = printf "json:%q" (get $meta "json") -}}
 		{{- end -}}
 		{{- if exists $meta "go.tag.json" -}}
-			{{- $jsonName = get $meta "go.tag.json" -}}
+			{{- $jsonTags = printf "json:%q" (get $meta "go.tag.json") -}}
 		{{- end -}}
 		{{- if exists $meta "go.tag.db" -}}
-			{{- $dbName = get $meta "go.tag.db" -}}
+			{{- $dbTags = printf " db:%q" (get $meta "go.tag.db") -}}
 		{{- end -}}
-	{{- end -}}
-	{{- $jsonTags := printf "json:%q" $jsonName -}}
-	{{- $dbTags := "" -}}
-	{{if $dbName}}
-		{{- $dbTags = printf " db:%q" $dbName -}}
-	{{- end}}
-	{{$fieldName}} {{if and $field.Optional (not (isStructType $field.Type))}}*{{end}}{{template "type" dict "Type" $field.Type "TypeMap" $typeMap}} `{{$jsonTags}}{{$dbTags}}`
+	{{- end }}
+	{{$fieldName}} {{if and $field.Optional (not (isStructType $field.Type))}}*{{end}}{{template "type" dict "Type" $fieldType "TypeMap" $typeMap}} `{{$jsonTags}}{{$dbTags}}`
 {{- end}}
 }
 {{- end }}
