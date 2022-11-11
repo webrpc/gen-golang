@@ -1,6 +1,7 @@
 {{- define "type" -}}
 
 {{- $type := .Type -}}
+{{- $optional := .Optional -}}
 {{- $typeMap := .TypeMap -}}
 
 {{- if isMapType $type -}}
@@ -17,7 +18,7 @@
 
 {{- else -}}
 
-    {{ get $typeMap $type }}
+    {{if and $optional (not (isStructType $type))}}*{{end}}{{ get $typeMap $type }}
 
 {{- end -}}
 {{- end -}}
