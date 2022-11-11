@@ -8,10 +8,6 @@ enum Kind: uint32
   - USER
   - ADMIN
 
-
-message Empty
-
-
 message User
   - id: uint64
     + json = id
@@ -26,9 +22,23 @@ message User
   - role: string
     + go.tag.db = -
 
+  - nicknames: []Nickname
+    + go.tag.db = "-"
+    + go.field.type = []Nickname
+
   - createdAt: timestamp
     + go.tag.db = created_at
     
+  - updatedAt?: timestamp
+    + go.tag.db = updated_at
+
+message Nickname
+  - id: uint64
+    + go.tag.db = id
+  - nickname: string
+    + go.tag.db = nickname
+  - createdAt: timestamp
+    + go.tag.db = created_at
   - updatedAt?: timestamp
     + go.tag.db = updated_at
 
