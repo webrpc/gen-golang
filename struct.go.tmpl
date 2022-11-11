@@ -5,7 +5,7 @@
 type {{$struct.Name}} struct {
 {{- range $_, $field := $struct.Fields -}}
 	{{- $fieldName := $field.Name | firstLetterToUpper -}}
-	{{- $fieldType := $field.Type -}}
+	{{- $customType := "" -}}
 	{{- $jsonTags := printf "json:%q" ($field.Name | firstLetterToLower) }}
 	{{- $dbTags := "" }}
 	{{- range $meta := $field.Meta -}}
@@ -13,7 +13,7 @@ type {{$struct.Name}} struct {
 			{{- $fieldName = get $meta "go.field.name" -}}
 		{{- end -}}
 		{{- if exists $meta "go.field.type" -}}
-			{{- $fieldType = get $meta "go.field.type" -}}
+			{{- $customType = get $meta "go.field.type" -}}
 		{{- end -}}
 		{{- if exists $meta "json" -}}
 			{{- $jsonTags = printf "json:%q" (get $meta "json") -}}
@@ -25,7 +25,7 @@ type {{$struct.Name}} struct {
 			{{- $dbTags = printf " db:%q" (get $meta "go.tag.db") -}}
 		{{- end -}}
 	{{- end }}
-	{{$fieldName}} {{if and $field.Optional (not (isStructType $field.Type))}}*{{end}}{{template "type" dict "Type" $fieldType "TypeMap" $typeMap}} `{{$jsonTags}}{{$dbTags}}`
+	{{$fieldName}} {{if ne $customType ""}}{{$customType}}{{else}}{{if and $field.Optional (not (isStructType $field.Type))}}*{{end}}{{template "type" dict "Type" $field.Type "TypeMap" $typeMap}}{{end}} `{{$jsonTags}}{{$dbTags}}`
 {{- end}}
 }
 {{- end }}
