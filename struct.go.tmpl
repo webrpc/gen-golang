@@ -25,7 +25,7 @@ type {{$struct.Name}} struct {
 			{{- $dbTags = printf " db:%q" (get $meta "go.tag.db") -}}
 		{{- end -}}
 	{{- end }}
-	{{$fieldName}} {{if ne $customType ""}}{{$customType}}{{else}}{{if and $field.Optional (not (isStructType $field.Type))}}*{{end}}{{template "type" dict "Type" $field.Type "TypeMap" $typeMap}}{{end}} `{{$jsonTags}}{{$dbTags}}`
+	{{$fieldName}} {{if ne $customType ""}}{{$customType}}{{else}}{{template "type" dict "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap}}{{end}} `{{$jsonTags}}{{$dbTags}}`
 {{- end}}
 }
 {{- end }}

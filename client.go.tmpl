@@ -34,14 +34,14 @@ func New{{.Name | firstLetterToUpper }}Client(addr string, client HTTPClient) {{
 {{- $inputs := $method.Inputs -}}
 {{- $outputs := $method.Outputs }}
 
-func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeMap" $typeMap}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeMap" $typeMap}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len .Outputs}}){{end}} {
+func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len .Outputs}}){{end}} {
 	{{- $inputVar := "nil" -}}
 	{{- $outputVar := "nil" -}}
 	{{- if $inputs | len}}
 	{{- $inputVar = "in"}}
 	in := struct {
 	{{- range $i, $input := $inputs}}
-		Arg{{$i}} {{template "type" dict "Type" $input.Type "TypeMap" $typeMap}} `json:"{{firstLetterToLower $input.Name}}"`
+		Arg{{$i}} {{template "type" dict "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap}} `json:"{{firstLetterToLower $input.Name}}"`
 	{{- end}}
 	}{ {{- range $i, $input := $inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}
 	{{- end}}
@@ -49,7 +49,7 @@ func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $i
 	{{- $outputVar = "&out"}}
 	out := struct {
 	{{- range $i, $output := .Outputs}}
-		Ret{{$i}} {{template "type" dict "Type" $output.Type "TypeMap" $typeMap}} `json:"{{firstLetterToLower $output.Name}}"`
+		Ret{{$i}} {{template "type" dict "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap}} `json:"{{firstLetterToLower $output.Name}}"`
 	{{- end}}
 	}{}
 	{{- end}}
