@@ -132,6 +132,8 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 
 	{{- if .Outputs | len}}
 	w.Write(respBody)
+	{{- else }}
+	w.Write([]byte("{}"))
 	{{- end}}
 }
 {{end}}

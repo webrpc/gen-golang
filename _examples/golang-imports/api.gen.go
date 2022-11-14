@@ -180,6 +180,7 @@ func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWri
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }
 
 func (s *exampleAPIServer) serveStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) {
