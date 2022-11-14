@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"log"
 	"net/http"
 
@@ -31,21 +30,22 @@ func startServer() error {
 	webrpcHandler := NewExampleServiceServer(&ExampleServiceRPC{})
 	r.Handle("/*", webrpcHandler)
 
+	log.Printf("Listening on :4242")
 	return http.ListenAndServe(":4242", r)
 }
 
 type ExampleServiceRPC struct {
 }
 
-func (s *ExampleServiceRPC) Ping(ctx context.Context) error {
+func (rpc *ExampleServiceRPC) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (s *ExampleServiceRPC) Status(ctx context.Context) (bool, error) {
+func (rpc *ExampleServiceRPC) Status(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (s *ExampleServiceRPC) Version(ctx context.Context) (*Version, error) {
+func (rpc *ExampleServiceRPC) Version(ctx context.Context) (*Version, error) {
 	return &Version{
 		WebrpcVersion: WebRPCVersion(),
 		SchemaVersion: WebRPCSchemaVersion(),
@@ -53,12 +53,9 @@ func (s *ExampleServiceRPC) Version(ctx context.Context) (*Version, error) {
 	}, nil
 }
 
-func (s *ExampleServiceRPC) GetUser(ctx context.Context, header map[string]string, userID uint64) (uint32, *User, error) {
+func (rpc *ExampleServiceRPC) GetUser(ctx context.Context, header map[string]string, userID uint64) (uint32, *User, error) {
 	if userID == 911 {
-		return 0, nil, WrapError(ErrInternal, errors.New("bad"), "app msg here")
-		// return 0, nil, ErrorNotFound("unknown userID %d", 911)
-		// return 0, nil, Errorf(ErrNotFound, "unknown userID %d", 911)
-		// return 0, nil, WrapError(ErrNotFound, nil, "unknown userID %d", 911)
+		return 0, nil, Errorf(ErrNotFound, "unknown userID %d", 911)
 	}
 
 	return 200, &User{
@@ -67,9 +64,13 @@ func (s *ExampleServiceRPC) GetUser(ctx context.Context, header map[string]strin
 	}, nil
 }
 
-func (s *ExampleServiceRPC) FindUser(ctx context.Context, f *SearchFilter) (string, *User, error) {
-	name := f.Q
-	return f.Q, &User{
-		ID: 123, Username: name,
+func (rpc *ExampleServiceRPC) FindUser(ctx context.Context, s *SearchFilter) (string, *User, error) {
+	if s == nil {
+		return "", nil, Errorf(ErrInvalidArgument, "s search filter required")
+	}
+	name := s.Q
+	return s.Q, &User{
+		ID:       123,
+		Username: name,
 	}, nil
 }
