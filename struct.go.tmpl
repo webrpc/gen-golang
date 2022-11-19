@@ -6,7 +6,7 @@ type {{$struct.Name}} struct {
 {{- range $_, $field := $struct.Fields -}}
 	{{- $fieldName := $field.Name | firstLetterToUpper -}}
 	{{- $customType := "" -}}
-	{{- $jsonTags := printf "json:%q" ($field.Name | firstLetterToLower) }}
+	{{- $jsonTags := printf "json:%q" $field.Name }}
 	{{- $dbTags := "" }}
 	{{- range $meta := $field.Meta -}}
 		{{- if exists $meta "go.field.name" -}}

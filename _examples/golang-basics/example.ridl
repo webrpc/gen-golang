@@ -33,7 +33,7 @@ message User
     + go.tag.db = updated_at
 
 message Nickname
-  - id: uint64
+  - ID: uint64
     + go.tag.db = id
   - nickname: string
     + go.tag.db = nickname
