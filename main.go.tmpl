@@ -26,7 +26,7 @@
   {{- exit 1 -}}
 {{- end -}}
 
-{{- if not (minVersion .WebrpcGenVersion "v0.7.0") -}}
+{{- if not (minVersion .WebrpcGenVersion "v0.8.0") -}}
   {{- stderrPrintf "%s generator error: unsupported webrpc-gen version %s, please update\n" .WebrpcTarget .WebrpcGenVersion -}}
   {{- exit 1 -}}
 {{- end -}}

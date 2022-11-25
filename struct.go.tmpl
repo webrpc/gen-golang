@@ -7,7 +7,7 @@ type {{$struct.Name}} struct {
 	{{- $fieldName := $field.Name | firstLetterToUpper -}}
 	{{- $customType := "" -}}
 	{{- $jsonTags := printf "json:%q" $field.Name }}
-	{{- $dbTags := "" }}
+	{{- $structTags := array -}}
 	{{- range $meta := $field.Meta -}}
 		{{- if exists $meta "go.field.name" -}}
 			{{- $fieldName = get $meta "go.field.name" -}}
@@ -18,14 +18,13 @@ type {{$struct.Name}} struct {
 		{{- if exists $meta "json" -}}
 			{{- $jsonTags = printf "json:%q" (get $meta "json") -}}
 		{{- end -}}
-		{{- if exists $meta "go.tag.json" -}}
-			{{- $jsonTags = printf "json:%q" (get $meta "go.tag.json") -}}
-		{{- end -}}
-		{{- if exists $meta "go.tag.db" -}}
-			{{- $dbTags = printf " db:%q" (get $meta "go.tag.db") -}}
+		{{- range $metaKey, $metaValue := $meta -}}
+			{{- if hasPrefix $metaKey "go.tag." -}}
+				{{- $structTags = append $structTags (printf "%s:%q" (trimPrefix $metaKey "go.tag.") $metaValue) -}}
+			{{- end -}}
 		{{- end -}}
 	{{- end }}
-	{{$fieldName}} {{if ne $customType ""}}{{$customType}}{{else}}{{template "type" dict "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap}}{{end}} `{{$jsonTags}}{{$dbTags}}`
+	{{$fieldName}} {{if ne $customType ""}}{{$customType}}{{else}}{{template "type" dict "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap}}{{end}} `{{$jsonTags}}{{if len $structTags}} {{end}}{{join (sort $structTags) " "}}`
 {{- end}}
 }
 {{- end }}
