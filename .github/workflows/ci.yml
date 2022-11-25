@@ -12,7 +12,7 @@ jobs:
   test:
     strategy:
       matrix:
-        webrpc-gen: [v0.7.3]
+        webrpc-gen: [v0.8.0]
         go-version: [1.16, 1.19]
     runs-on: ubuntu-latest
     steps:
