@@ -21,13 +21,13 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: ${{ matrix.go-version }}
-      - name: Install webrpc-gen
-        run: go install github.com/webrpc/webrpc/cmd/webrpc-gen@${{ matrix.webrpc-gen }}
-      # - name: Install webrpc-gen (development)
-      #   run: |
-      #     git clone --single-branch https://github.com/golang-cz/webrpc.git --branch templates_v0.7.0
-      #     cd webrpc
-      #     make install
+      # - name: Install webrpc-gen
+      #   run: go install github.com/webrpc/webrpc/cmd/webrpc-gen@${{ matrix.webrpc-gen }}
+      - name: Install webrpc-gen (development)
+        run: |
+          git clone --single-branch https://github.com/golang-cz/webrpc.git --branch message_to_struct
+          cd webrpc
+          make install
       - name: Regenerate examples
         run: cd _examples && make generate
       - name: Git diff of regenerated files
