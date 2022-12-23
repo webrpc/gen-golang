@@ -85,7 +85,7 @@ func WebRPCSchemaHash() string {
 	return "{{.SchemaHash}}"
 }
 
-{{ template "types" dict "Services" .Services "Messages" .Messages "TypeMap" $typeMap }}
+{{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap }}
 
 {{- if $opts.server}}
 {{ template "server" dict "Services" .Services "TypeMap" $typeMap }}
