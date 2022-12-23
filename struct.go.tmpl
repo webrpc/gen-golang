@@ -1,9 +1,11 @@
 {{- define "struct" -}}
-{{- $struct := .Struct -}}
+
+{{- $name := .Name -}}
+{{- $fields := .Fields -}}
 {{- $typeMap := .TypeMap -}}
 
-type {{$struct.Name}} struct {
-{{- range $_, $field := $struct.Fields -}}
+type {{$name}} struct {
+{{- range $_, $field := $fields -}}
 	{{- $fieldName := $field.Name | firstLetterToUpper -}}
 	{{- $customType := "" -}}
 	{{- $jsonTag := printf "json:%q" $field.Name }}

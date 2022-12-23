@@ -8,11 +8,11 @@
 {{ range $_, $type := .Types -}}
 
 {{- if eq $type.Kind "enum" }}
-{{template "enum" $type }}
+{{template "enum" dict "Name" $type.Name "Type" $type.Type "Fields" $type.Fields }}
 {{ end -}}
 
 {{- if eq $type.Kind "struct" }}
-{{template "struct" dict "Struct" $type "TypeMap" $typeMap}}
+{{template "struct" dict "Name" $type.Name "Fields" $type.Fields "TypeMap" $typeMap}}
 {{ end -}}
 
 {{- end -}}
