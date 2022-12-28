@@ -31,7 +31,7 @@
   {{- exit 1 -}}
 {{- end -}}
 
-{{- /* Map webrpc data types to Go. */ -}}
+{{- /* Map webrpc core types to Go. */ -}}
 {{- $typeMap := dict }}
 {{- set $typeMap "null" "struct{}" -}}
 {{- set $typeMap "any" "interface{}" -}}

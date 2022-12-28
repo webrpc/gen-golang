@@ -12,13 +12,13 @@
 
     []{{template "type" dict "Type" (listElemType $type) "TypeMap" $typeMap}}
 
-{{- else if isStructType $type -}}
+{{- else if isCoreType $type -}}
 
-    *{{$type}}
+    {{if $optional}}*{{end}}{{ get $typeMap $type }}
 
 {{- else -}}
 
-    {{if $optional}}*{{end}}{{ get $typeMap $type }}
+    *{{$type}}
 
 {{- end -}}
 {{- end -}}
