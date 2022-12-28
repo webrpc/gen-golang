@@ -1,18 +1,18 @@
 {{define "types"}}
 {{- $typeMap := .TypeMap -}}
 
-{{- if .Messages -}}
+{{- if .Types -}}
 //
 // Types
 //
-{{ range .Messages -}}
+{{ range $_, $type := .Types -}}
 
-{{- if isEnumType .Type }}
-{{template "enum" .}}
+{{- if eq $type.Kind "enum" }}
+{{template "enum" dict "Name" $type.Name "Type" $type.Type "Fields" $type.Fields }}
 {{ end -}}
 
-{{- if isStructType .Type	}}
-{{template "struct" dict "Struct" . "TypeMap" $typeMap}}
+{{- if eq $type.Kind "struct" }}
+{{template "struct" dict "Name" $type.Name "Fields" $type.Fields "TypeMap" $typeMap}}
 {{ end -}}
 
 {{- end -}}

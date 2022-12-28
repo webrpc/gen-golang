@@ -26,12 +26,12 @@
   {{- exit 1 -}}
 {{- end -}}
 
-{{- if not (minVersion .WebrpcGenVersion "v0.8.0") -}}
+{{- if not (minVersion .WebrpcGenVersion "v0.9.0") -}}
   {{- stderrPrintf "%s generator error: unsupported webrpc-gen version %s, please update\n" .WebrpcTarget .WebrpcGenVersion -}}
   {{- exit 1 -}}
 {{- end -}}
 
-{{- /* Map webrpc data types to Go. */ -}}
+{{- /* Map webrpc core types to Go. */ -}}
 {{- $typeMap := dict }}
 {{- set $typeMap "null" "struct{}" -}}
 {{- set $typeMap "any" "interface{}" -}}
@@ -85,7 +85,7 @@ func WebRPCSchemaHash() string {
 	return "{{.SchemaHash}}"
 }
 
-{{ template "types" dict "Services" .Services "Messages" .Messages "TypeMap" $typeMap }}
+{{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap }}
 
 {{- if $opts.server}}
 {{ template "server" dict "Services" .Services "TypeMap" $typeMap }}

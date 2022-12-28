@@ -8,7 +8,7 @@ enum Kind: uint32
   - USER
   - ADMIN
 
-message User
+struct User
   - id: uint64
     + json = id
     + go.field.name = ID
@@ -32,7 +32,7 @@ message User
   - updatedAt?: timestamp
     + go.tag.db = updated_at
 
-message Nickname
+struct Nickname
   - ID: uint64
     + go.tag.db = id
   - nickname: string
@@ -42,15 +42,15 @@ message Nickname
   - updatedAt?: timestamp
     + go.tag.db = updated_at
 
-message SearchFilter
+struct SearchFilter
   - q: string
 
-message Version
+struct Version
   - webrpcVersion: string
   - schemaVersion: string
   - schemaHash: string
 
-message ComplexType
+struct ComplexType
   - meta: map<string,any>
   - metaNestedExample: map<string,map<string,uint32>>
   - namesList: []string

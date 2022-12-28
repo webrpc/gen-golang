@@ -1,46 +1,47 @@
 {{- define "enum" -}}
 
-{{- $enumName := .Name -}}
-{{- $enumType := .EnumType -}}
+{{- $name := .Name -}}
+{{- $type := .Type -}}
+{{- $fields := .Fields -}}
 
-type {{$enumName}} {{$enumType}}
+type {{$name}} {{$type}}
 
 const (
-{{- range .Fields}}
-	{{$enumName}}_{{.Name}} {{$enumName}} = {{.Value}}
+{{- range $fields}}
+	{{$name}}_{{.Name}} {{$name}} = {{.Value}}
 {{- end}}
 )
 
-var {{$enumName}}_name = map[{{$enumType}}]string{
-{{- range .Fields}}
+var {{$name}}_name = map[{{$type}}]string{
+{{- range $fields}}
 	{{.Value}}: "{{.Name}}",
 {{- end}}
 }
 
-var {{$enumName}}_value = map[string]{{$enumType}}{
-{{- range .Fields}}
+var {{$name}}_value = map[string]{{$type}}{
+{{- range $fields}}
 	"{{.Name}}": {{.Value}},
 {{- end}}
 }
 
-func (x {{$enumName}}) String() string {
-	return {{$enumName}}_name[{{$enumType}}(x)]
+func (x {{$name}}) String() string {
+	return {{$name}}_name[{{$type}}(x)]
 }
 
-func (x {{$enumName}}) MarshalJSON() ([]byte, error) {
+func (x {{$name}}) MarshalJSON() ([]byte, error) {
 	buf := bytes.NewBufferString(`"`)
-	buf.WriteString({{$enumName}}_name[{{$enumType}}(x)])
+	buf.WriteString({{$name}}_name[{{$type}}(x)])
 	buf.WriteString(`"`)
 	return buf.Bytes(), nil
 }
 
-func (x *{{$enumName}}) UnmarshalJSON(b []byte) error {
+func (x *{{$name}}) UnmarshalJSON(b []byte) error {
 	var j string
 	err := json.Unmarshal(b, &j)
 	if err != nil {
 		return err
 	}
-	*x = {{$enumName}}({{$enumName}}_value[j])
+	*x = {{$name}}({{$name}}_value[j])
 	return nil
 }
 
