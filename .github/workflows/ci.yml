@@ -30,7 +30,7 @@ jobs:
       - name: Git diff of regenerated files
         run: cd _examples && make diff
 
-  webrpc-interoperability-test:
+  webrpc-interoperability:
     strategy:
       matrix:
         webrpc-version: [v0.10.0]
@@ -51,4 +51,6 @@ jobs:
           cd tests
           go generate ./...
           go test ./...
+          ./download.sh ${{ matrix.webrpc-version }} bin/${{ matrix.webrpc-version }}
+          export PATH="bin/${{ matrix.webrpc-version }}:$PATH"
           ./test.sh ${{ matrix.webrpc-version }}
