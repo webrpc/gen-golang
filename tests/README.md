@@ -40,7 +40,8 @@ These tests are ensuring that
 ```bash
 go generate ./...
 
-for webrpcVersion in v0.10.0 v0.11.0; do
-    ./test.sh $webrpcVersion
+for webrpcVersion in v0.10.0; do
+    ./download.sh $webrpcVersion bin/$webrpcVersion
+    PATH="bin/$webrpcVersion:$PATH" ./test.sh
 done
 ```
