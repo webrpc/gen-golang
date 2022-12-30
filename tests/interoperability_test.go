@@ -1,69 +1,46 @@
 package tests
 
 import (
+	"flag"
 	"fmt"
-	"os"
-	"os/exec"
-	"runtime"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/webrpc/gen-golang/tests/client"
+	"github.com/webrpc/gen-golang/tests/server"
 )
 
-const port = "8899"
+var (
+	serverFlag = flag.Bool("server", true, "run server")
+	portFlag   = flag.Int("port", 9889, "run server at port")
+	// -serverTimeout, not to be confused with -timeout flag provided by go test
+	serverTimeoutFlag = flag.Duration("serverTimeout", 2*time.Second, "exit after given timeout")
+
+	clientFlag = flag.Bool("client", true, "run client tests")
+	urlFlag    = flag.String("url", "http://localhost:9889", "run client tests against given server URL")
+)
 
 func TestInteroperability(t *testing.T) {
-	// webrpc server <=> generated client
-	{
-		version := "v0.9.1"
-		webrpcGen := fmt.Sprintf("./bin/webrpc-gen@%s", version)
-		webrpcTest := fmt.Sprintf("./bin/webrpc-test@%s", version)
+	if *serverFlag {
+		bind := fmt.Sprintf("0.0.0.0:%v", *portFlag)
 
-		{ // Download webrpc-gen binary.
-			if _, err := os.Stat(webrpcGen); err != nil && os.IsNotExist(err) {
-				binaryURL := fmt.Sprintf("https://github.com/webrpc/webrpc/releases/download/%s/webrpc-gen.%s-%s", version, runtime.GOOS, runtime.GOARCH)
-				if out, err := exec.Command("curl", "-o", webrpcGen, "-LJO", binaryURL).CombinedOutput(); err != nil {
-					t.Fatalf("%v:\n%s", err, string(out))
-				}
-				if out, err := exec.Command("chmod", "+x", webrpcGen).CombinedOutput(); err != nil {
-					t.Fatalf("%v:\n%s", err, string(out))
-				}
-			}
+		fmt.Printf("Running generated test server at %v\n", bind)
+		srv, err := server.RunTestServer(bind, *serverTimeoutFlag)
+		assert.NoError(t, err)
+
+		if *clientFlag {
+			// Close server after we finish running client tests.
+			defer srv.Close()
 		}
 
-		{ // Download webrpc-test binary.
-			if _, err := os.Stat(webrpcTest); err != nil && os.IsNotExist(err) {
-				binaryURL := fmt.Sprintf("https://github.com/webrpc/webrpc/releases/download/%s/webrpc-test.%s-%s", version, runtime.GOOS, runtime.GOARCH)
-				if out, err := exec.Command("curl", "-o", webrpcTest, "-LJO", binaryURL).CombinedOutput(); err != nil {
-					t.Fatalf("%v:\n%s", err, string(out))
-				}
-				if out, err := exec.Command("chmod", "+x", webrpcTest).CombinedOutput(); err != nil {
-					t.Fatalf("%v:\n%s", err, string(out))
-				}
-			}
-		}
+		defer srv.Wait()
+	}
 
-		if out, err := exec.Command("bash", "-c", fmt.Sprintf("%s -print-schema > api.ridl", webrpcTest)).CombinedOutput(); err != nil {
-			t.Fatalf("%v:\n%s", err, string(out))
-		}
+	if *clientFlag {
+		fmt.Println("Running generated client tests against", *urlFlag)
 
-		if out, err := exec.Command("bash", "-c", fmt.Sprintf("%s -schema=./api.ridl -target=golang -pkg=tests -client -server -out=./test.gen.go", webrpcGen)).CombinedOutput(); err != nil {
-			t.Fatalf("%v:\n%s", err, string(out))
-		}
-
-		// Run server.
-		server := exec.Command(webrpcTest, "-server", fmt.Sprintf("-port=%v", port))
-		if err := server.Start(); err != nil {
-			t.Fatal(err)
-		}
-		defer server.Process.Kill()
-
-		// Wait for server to be ready.
-		if out, err := exec.Command("bash", "-c", fmt.Sprintf("until nc -z localhost %v; do sleep 0.1; done;", port)).CombinedOutput(); err != nil {
-			t.Fatalf("%v:\n%s", err, string(out))
-		}
-
-		err := RunTests(fmt.Sprintf("http://localhost:%v", port))
+		err := client.RunTests(*urlFlag)
 		assert.NoError(t, err)
 	}
 }

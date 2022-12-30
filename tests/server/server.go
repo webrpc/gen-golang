@@ -1,10 +1,31 @@
-// Code generated - Copy of https://github.com/webrpc/webrpc/blob/master/tests/server/server.go. DO NOT EDIT.
+package server
 
-package tests
-
-import "context"
+import (
+	"context"
+	"fmt"
+	"net"
+	"net/http"
+	"time"
+)
 
 type ComplexServer struct{}
+
+func (c *ComplexServer) GetComplex(ctx context.Context) (*ComplexType, error) {
+	status := Status_AVAILABLE
+
+	return &ComplexType{
+		Meta:              c.GetMeta(),
+		MetaNestedExample: c.GetMetaNestedExample(),
+		NamesList:         c.GetNamesList(),
+		NumsList:          c.GetNumsList(),
+		DoubleArray:       c.GetDoubleArray(),
+		ListOfMaps:        c.ListOfMaps(),
+		ListOfUsers:       c.ListOfUsers(),
+		MapOfUsers:        c.MapOfUsers(),
+		User:              c.GetUser(),
+		Enum:              &status,
+	}, nil
+}
 
 func (*ComplexServer) GetMeta() map[string]interface{} {
 	return map[string]interface{}{
@@ -174,19 +195,57 @@ func (c *ComplexServer) SendComplex(ctx context.Context, complexType *ComplexTyp
 	return nil
 }
 
-func (c *ComplexServer) GetComplex(ctx context.Context) (*ComplexType, error) {
-	status := Status_AVAILABLE
+func RunTestServer(addr string, timeout time.Duration) (*testServer, error) {
+	srv := &testServer{
+		Server: &http.Server{
+			Addr:    addr,
+			Handler: NewComplexApiServer(&ComplexServer{}),
+		},
+		closed: make(chan struct{}),
+	}
 
-	return &ComplexType{
-		Meta:              c.GetMeta(),
-		MetaNestedExample: c.GetMetaNestedExample(),
-		NamesList:         c.GetNamesList(),
-		NumsList:          c.GetNumsList(),
-		DoubleArray:       c.GetDoubleArray(),
-		ListOfMaps:        c.ListOfMaps(),
-		ListOfUsers:       c.ListOfUsers(),
-		MapOfUsers:        c.MapOfUsers(),
-		User:              c.GetUser(),
-		Enum:              &status,
-	}, nil
+	if timeout > 0 {
+		go func() {
+			timeoutCtx, cancel := context.WithTimeout(context.Background(), timeout)
+			defer cancel()
+
+			select {
+			case <-srv.closed:
+
+			case <-timeoutCtx.Done():
+				gracefulShutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+				defer cancel()
+
+				srv.err = srv.Shutdown(gracefulShutdownCtx)
+				close(srv.closed)
+			}
+		}()
+	}
+
+	l, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, fmt.Errorf("failed to bind %v: %w", addr, err)
+	}
+
+	go srv.Serve(l)
+
+	return srv, nil
+}
+
+type testServer struct {
+	*http.Server
+	closed chan struct{}
+	err    error
+}
+
+func (srv *testServer) Wait() error {
+	<-srv.closed
+	return srv.err
+}
+
+func (srv *testServer) Close() error {
+	gracefulShutdownCtx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	return srv.Shutdown(gracefulShutdownCtx)
 }

@@ -1,6 +1,4 @@
-// Code generated - Copy of https://github.com/webrpc/webrpc/blob/master/tests/client/client.go. DO NOT EDIT.
-
-package tests
+package client
 
 import (
 	"context"
