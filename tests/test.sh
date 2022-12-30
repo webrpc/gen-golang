@@ -7,7 +7,7 @@ VERSION="${1}"
 [[ -z "$VERSION" ]] && { echo "Usage: $0 <webrpc-version>"; exit 1; }
 
 OS=$(basename $(uname -o | tr A-Z a-z))
-ARCH=$(uname -m)
+ARCH=$(uname -m | sed 's/x86_64/amd64/')
 PORT=9889
 
 WEBRPC_GEN="bin/webrpc-gen@$VERSION.$OS-$ARCH"

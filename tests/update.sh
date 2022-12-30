@@ -4,7 +4,7 @@ set -e
 VERSION=v0.10.0
 
 OS=$(basename $(uname -o | tr A-Z a-z))
-ARCH=$(uname -m)
+ARCH=$(uname -m | sed 's/x86_64/amd64/')
 PORT=9889
 
 # Update test suite from https://github.com/webrpc/webrpc.
