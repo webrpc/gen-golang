@@ -30,8 +30,20 @@ jobs:
       - name: Git diff of regenerated files
         run: cd _examples && make diff
 
+  webrpc-interoperability-test:
+    strategy:
+      matrix:
+        webrpc-version: [v0.10.0]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
       - name: Interoperability tests
         run: |
           cd tests
+          go generate ./...
           go test ./...
-          ./test.sh
+          ./test.sh ${{ matrix.webrpc-version }}
