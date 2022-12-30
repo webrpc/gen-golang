@@ -1,20 +1,31 @@
 # Interoperability tests
 
-This folder implements the webrpc interoperability tests.
+This folder implements webrpc interoperability tests.
 
-Since [webrpc](github.com/webrpc/webrpc) itself is written in Go, we have copied test/server test suite from the upstream repository.
+Since [webrpc](github.com/webrpc/webrpc) itself is written in Go and has interoperability tests, we have simply copied the test cases from the upstream repository via `./update.sh` script.
 
-Run `./update.sh` to update the test suite.
+We compile the test cases against a fresh client/server code generated from this repository. To regenerate client/server code, run:
+
+```bash
+go generate ./...
+```
+
+To update the test cases, edit the `VERSION` variable in `./update.sh` script and run it:
+
+```bash
+./update.sh
+```
 
 ## Self-test
 
-This unit test is ensuring that the client/server code generated from this repository can talk to each other.
+The basic interoperability unit test is ensuring that the client and server code generated from this repository can talk to each other.
 
 1. Generate code
 2. Test generated client/server code against each other
 
 ```bash
-$ go test
+go generate ./...
+go test ./...
 ```
 
 ## Test matrix against webrpc-test reference binary
@@ -27,7 +38,9 @@ These tests are ensuring that
 2. Test generated client and server code against multiple versions of `webrpc-test` reference binaries via [test.sh](./test.sh) script
 
 ```bash
-for webrpc in v0.10.0 v0.11.0; do
-    ./test.sh $webrpc
+go generate ./...
+
+for webrpcVersion in v0.10.0 v0.11.0; do
+    ./test.sh $webrpcVersion
 done
 ```

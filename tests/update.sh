@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-OS=$(uname -o | tr A-Z a-z)
+VERSION=v0.10.0
+
+OS=$(basename $(uname -o | tr A-Z a-z))
 ARCH=$(uname -m)
 PORT=9889
-
-VERSION=v0.10.0
 
 # Update test suite from https://github.com/webrpc/webrpc.
 curl -o schema/test.ridl -fLJO https://raw.githubusercontent.com/webrpc/webrpc/$VERSION/tests/schema/test.ridl

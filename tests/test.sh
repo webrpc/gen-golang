@@ -4,10 +4,9 @@ set -e
 ### Run interoperability tests against specific version of webrpc-test.
 
 VERSION="${1}"
-
 [[ -z "$VERSION" ]] && { echo "Usage: $0 <webrpc-version>"; exit 1; }
 
-OS=$(uname -o | tr A-Z a-z)
+OS=$(basename $(uname -o | tr A-Z a-z))
 ARCH=$(uname -m)
 PORT=9889
 
