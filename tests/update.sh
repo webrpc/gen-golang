@@ -8,9 +8,9 @@ PORT=9889
 VERSION=v0.10.0
 
 # Update test suite from https://github.com/webrpc/webrpc.
-curl -o schema/test.ridl -LJO https://raw.githubusercontent.com/webrpc/webrpc/$VERSION/tests/schema/test.ridl
-curl -o client/client.go -LJO https://raw.githubusercontent.com/webrpc/webrpc/$VERSION/tests/client/client.go
-curl -o server/server.go -LJO https://raw.githubusercontent.com/webrpc/webrpc/$VERSION/tests/server/server.go
+curl -o schema/test.ridl -fLJO https://raw.githubusercontent.com/webrpc/webrpc/$VERSION/tests/schema/test.ridl
+curl -o client/client.go -fLJO https://raw.githubusercontent.com/webrpc/webrpc/$VERSION/tests/client/client.go
+curl -o server/server.go -fLJO https://raw.githubusercontent.com/webrpc/webrpc/$VERSION/tests/server/server.go
 
 WEBRPC_GEN="bin/webrpc-gen@$VERSION.$OS-$ARCH"
 WEBRPC_TEST="bin/webrpc-test@$VERSION.$OS-$ARCH"
