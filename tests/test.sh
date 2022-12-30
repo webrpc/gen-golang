@@ -21,7 +21,7 @@ WEBRPC_TEST_URL="https://github.com/webrpc/webrpc/releases/download/$VERSION/web
 [[ ! -f $WEBRPC_TEST ]] && curl -o $WEBRPC_TEST -fLJO "$WEBRPC_TEST_URL" && chmod +x $WEBRPC_TEST
 
 echo "###"
-echo "### webrpc@$VERSION reference server <=> generated client"
+echo "### webrpc-test@$VERSION reference server <=> generated client"
 echo "###"
 echo
 
@@ -29,8 +29,8 @@ echo
 echo "Running reference webrpc-test@$VERSION server at 0.0.0.0:$PORT"
 $WEBRPC_TEST -server -port=$PORT -timeout=2s &
 
-# Wait until http://localhost:$PORT is available.
-until nc -z localhost $PORT; do sleep 0.1; done
+# Wait until http://localhost:$PORT is available, up to 10s.
+for (( i=0; i<100; i++ )); do nc -z localhost $PORT && break || sleep 0.1; done
 
 # Run generated client tests
 go test -v -server=false -client=true -url=http://localhost:$PORT
@@ -39,13 +39,15 @@ wait
 echo
 
 echo "###"
-echo "### generated server <=> webrpc@$VERSION reference client"
+echo "### generated server <=> webrpc-test@$VERSION reference client"
 echo "###"
 echo
 
 # Run generated server
 go test -v -server=true -client=false -httptest.serve=0.0.0.0:$PORT -serverTimeout=2s &
-until nc -z localhost $PORT; do sleep 0.1; done
+
+# Wait until http://localhost:$PORT is available, up to 10s.
+for (( i=0; i<100; i++ )); do nc -z localhost $PORT && break || sleep 0.1; done
 
 # Run reference webrpc-test@VERSION client and wait for it to be ready
 echo "Running reference webrpc-test@$VERSION client tests against http://localhost:$PORT"
