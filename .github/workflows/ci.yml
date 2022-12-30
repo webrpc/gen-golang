@@ -29,3 +29,8 @@ jobs:
         run: cd _examples && make generate
       - name: Git diff of regenerated files
         run: cd _examples && make diff
+
+      - name: Interoperability tests
+        run: |
+          cd tests
+          go test ./...
