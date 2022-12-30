@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"testing"
@@ -40,7 +41,7 @@ func TestInteroperability(t *testing.T) {
 	if *clientFlag {
 		fmt.Println("Running generated client tests against", *urlFlag)
 
-		err := client.RunTests(*urlFlag)
+		err := client.RunTests(context.Background(), *urlFlag)
 		assert.NoError(t, err)
 	}
 }

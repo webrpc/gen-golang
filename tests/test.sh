@@ -44,7 +44,7 @@ for VERSION in v0.9.0 v0.9.1; do
 
     # Run generated server
     go test -v -server=true -client=false -httptest.serve=0.0.0.0:$PORT -serverTimeout=2s &
-    until nc -z localhost $PORT; do sleep 0.1; echo "waiting.."; done
+    until nc -z localhost $PORT; do sleep 0.1; done
 
     # Run webrpc-test@VERSION client and wait for it to be ready
     echo "Running webrpc-test@$VERSION client tests against http://localhost:$PORT"
