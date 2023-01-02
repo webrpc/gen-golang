@@ -22,7 +22,7 @@ jobs:
           go-version: ${{ matrix.go-version }}
 
       - name: Install webrpc-gen
-        run: go install github.com/webrpc/webrpc/cmd/webrpc-gen@v0.9.0
+        run: go install github.com/webrpc/webrpc/cmd/webrpc-gen@v0.10.0
         #run: git clone --single-branch https://github.com/webrpc/webrpc.git --branch master && cd webrpc && make install
 
       - name: Regenerate examples
