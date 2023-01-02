@@ -10,20 +10,21 @@ on:
 
 jobs:
   test:
-    strategy:
-      matrix:
-        go-version: [1.16, 1.19]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Go
-        uses: actions/setup-go@v3
-        with:
-          go-version: ${{ matrix.go-version }}
-
       - name: Install webrpc-gen
-        run: go install github.com/webrpc/webrpc/cmd/webrpc-gen@v0.10.0
-        #run: git clone --single-branch https://github.com/webrpc/webrpc.git --branch master && cd webrpc && make install
+        run: |
+          curl -o ./webrpc-gen -fLJO https://github.com/webrpc/webrpc/releases/download/v0.10.0/webrpc-gen.linux-amd64
+          chmod +x ./webrpc-gen
+          echo $PWD >> $GITHUB_PATH
+
+      # - name: Set up Go
+      #   uses: actions/setup-go@v3
+      #   with:
+      #     go-version: 1.19
+      # - name: Install webrpc-gen (development)
+      #   run: git clone --single-branch https://github.com/webrpc/webrpc.git --branch master && cd webrpc && make install
 
       - name: Regenerate examples
         run: cd _examples && make generate
