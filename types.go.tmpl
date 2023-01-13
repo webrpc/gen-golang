@@ -1,11 +1,13 @@
 {{define "types"}}
 {{- $typeMap := .TypeMap -}}
+{{- $types := .Types -}}
+{{- $services := .Services -}}
 
-{{- if .Types -}}
+{{- if $types -}}
 //
 // Types
 //
-{{ range $_, $type := .Types -}}
+{{ range $_, $type := $types -}}
 
 {{- if eq $type.Kind "enum" }}
 {{template "enum" dict "Name" $type.Name "Type" $type.Type "Fields" $type.Fields }}
@@ -18,19 +20,19 @@
 {{- end -}}
 {{- end -}}
 
-{{- if .Services -}}
-{{range .Services}}
-type {{.Name}} interface {
-	{{- range $_, $method := .Methods}}
-	{{.Name}}(ctx context.Context{{range $_, $input := .Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len .Outputs}}){{end}}
+{{- if $services -}}
+{{ range $_, $service := $services}}
+type {{$service.Name}} interface {
+	{{- range $_, $method := $service.Methods}}
+	{{.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
 	{{- end}}
 }
 {{end}}
 var WebRPCServices = map[string][]string{
-{{- range .Services}}
-	"{{.Name}}": {
-		{{- range .Methods}}
-		"{{.Name}}",
+{{- range $_, $service := $services}}
+	"{{$service.Name}}": {
+		{{- range $_, $method := $service.Methods}}
+		"{{$method.Name}}",
 		{{- end}}
 	},
 {{- end}}
