@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -41,21 +42,23 @@ func TestStatus(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	{
 		arg1 := map[string]string{"a": "1"}
-		code, user, err := client.GetUser(context.Background(), arg1, 12)
-		assert.Equal(t, uint32(200), code)
+		user, err := client.GetUser(context.Background(), arg1, 12)
 		assert.Equal(t, &User{ID: 12, Username: "hihi"}, user)
 		assert.NoError(t, err)
 	}
 
 	{
 		// Error case, expecting to receive an error
-		code, user, err := client.GetUser(context.Background(), nil, 911)
-
-		assert.True(t, IsErrorCode(err, ErrNotFound))
+		user, err := client.GetUser(context.Background(), nil, 911)
+		assert.True(t, errors.Is(err, ErrUserNotFound))
 		assert.Nil(t, user)
-		assert.Equal(t, uint32(0), code)
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "not found")
+
+		rpcErr, ok := err.(RPCError)
+		assert.True(t, ok)
+		assert.Equal(t, ErrUserNotFound.Code, rpcErr.Code)
+		assert.Contains(t, rpcErr.Unwrap().Error(), "911")
 	}
 
 	{
