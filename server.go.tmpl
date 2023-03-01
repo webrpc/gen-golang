@@ -30,7 +30,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "{{.Name}}")
 
 	if r.Method != "POST" {
-		err := Errorf(ErrBadRoute, "unsupported method %q (only POST is allowed)", r.Method)
+		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
 		RespondWithError(w, err)
 		return
 	}
@@ -42,7 +42,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	{{- end}}
 	default:
-		err := Errorf(ErrBadRoute, "no handler for path %q", r.URL.Path)
+		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("no handler for path %q", r.URL.Path))
 		RespondWithError(w, err)
 		return
 	}
@@ -59,7 +59,7 @@ func (s *{{$serviceName}}) serve{{.Name | firstLetterToUpper}}(ctx context.Conte
 	case "application/json":
 		s.serve{{ .Name | firstLetterToUpper }}JSON(ctx, w, r)
 	default:
-		err := Errorf(ErrBadRoute, "unexpected Content-Type: %q", r.Header.Get("Content-Type"))
+		err := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
 		RespondWithError(w, err)
 	}
 }
@@ -77,7 +77,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		err = WrapError(ErrInternal, err, "failed to read request data")
+		err = ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err))
 		RespondWithError(w, err)
 		return
 	}
@@ -85,7 +85,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 
 	err = json.Unmarshal(reqBody, &reqContent)
 	if err != nil {
-		err = WrapError(ErrInvalidArgument, err, "failed to unmarshal request data")
+		err = ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err))
 		RespondWithError(w, err)
 		return
 	}
@@ -99,7 +99,8 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorInternal("internal service panic"))
+				err = ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr))
+				RespondWithError(w, err)
 				panic(rr)
 			}
 		}()
@@ -121,7 +122,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	{{- if .Outputs | len}}
 	respBody, err := json.Marshal(respContent)
 	if err != nil {
-		err = WrapError(ErrInternal, err, "failed to marshal json response")
+		err = ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
 		RespondWithError(w, err)
 		return
 	}
@@ -140,17 +141,20 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 {{end -}}
 
 func RespondWithError(w http.ResponseWriter, err error) {
-	rpcErr, ok := err.(Error)
+	rpcErr, ok := err.(RPCError)
 	if !ok {
-		rpcErr = WrapError(ErrInternal, err, "webrpc error")
+		rpcErr = ErrorWithCause(ErrWebrpcInternal, err)
 	}
 
-	statusCode := HTTPStatusFromErrorCode(rpcErr.Code())
+	statusCode := rpcErr.HTTPStatus
+	if statusCode == 0 {
+		statusCode = 400 // default
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
-	respBody, _ := json.Marshal(rpcErr.Payload())
+	respBody, _ := json.Marshal(rpcErr)
 	w.Write(respBody)
 }
 

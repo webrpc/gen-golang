@@ -104,53 +104,55 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) error {
 	reqBody, err := json.Marshal(in)
 	if err != nil {
-		return clientError("failed to marshal json request", err)
+		return rpcClientError(err, "failed to marshal json request")
 	}
 	if err = ctx.Err(); err != nil {
-		return clientError("aborted because context was done", err)
+		return rpcClientError(err, "aborted because context was done")
 	}
 
 	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
 	if err != nil {
-		return clientError("could not build request", err)
+		return rpcClientError(err, "could not build request")
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return clientError("request failed", err)
+		return rpcClientError(err, "request failed")
 	}
 
 	defer func() {
 		cerr := resp.Body.Close()
 		if err == nil && cerr != nil {
-			err = clientError("failed to close response body", cerr)
+			err = rpcClientError(err, "failed to close response body",)
 		}
 	}()
 
 	if err = ctx.Err(); err != nil {
-		return clientError("aborted because context was done", err)
+		return rpcClientError(err, "aborted because context was done")
 	}
 
 	if resp.StatusCode != 200 {
-		return errorFromResponse(resp)
+		return rpcErrorFromResponse(resp)
 	}
 
 	if out != nil {
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return clientError("failed to read response body", err)
+			return rpcClientError(err, "failed to read response body")
 		}
 
 		err = json.Unmarshal(respBody, &out)
 		if err != nil {
-			return clientError("failed to unmarshal json response body", err)
+			return rpcClientError(err, "failed to unmarshal json response body")
 		}
 		if err = ctx.Err(); err != nil {
-			return clientError("aborted because context was done", err)
+			return rpcClientError(err, "aborted because context was done")
 		}
 	}
 
 	return nil
 }
+
+/* REMOVED
 
 // errorFromResponse builds a webrpc Error from a non-200 HTTP response.
 func errorFromResponse(resp *http.Response) Error {
@@ -179,6 +181,27 @@ func errorFromResponse(resp *http.Response) Error {
 
 func clientError(desc string, err error) Error {
 	return WrapError(ErrInternal, err, desc)
+}
+*/
+
+func rpcErrorFromResponse(resp *http.Response) RPCError {
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return rpcClientError(err, "failed to read server error response body")
+	}
+
+	var rpcErr RPCError
+	if err := json.Unmarshal(respBody, &rpcErr); err != nil {
+		return rpcClientError(err, "failed unmarshal error response")
+	}
+	if rpcErr.Cause != "" {
+		rpcErr.cause = errors.New(rpcErr.Cause)
+	}
+	return rpcErr
+}
+
+func rpcClientError(cause error, message string) RPCError {
+	return ErrorWithCause(Errorf(message), cause)
 }
 
 func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {

@@ -1,0 +1,62 @@
+{{define "errors"}}
+//
+// Errors
+//
+
+type RPCError struct {
+	Name       string `json:"error"`
+	Code       int    `json:"code"`
+	Message    string `json:"message"`
+	Cause      string `json:"cause,omitempty"`
+	HTTPStatus int    `json:"-"`
+	cause      error
+}
+
+var _ error = RPCError{}
+
+func (e RPCError) Error() string {
+	return fmt.Sprintf("%s %d - %s", e.Name, e.Code, e.Message)
+}
+
+func (e RPCError) Is(target error) bool {
+	if rpcErr, ok := target.(RPCError); ok {
+		return rpcErr.Code == e.Code
+	}
+	return errors.Is(e.cause, target)
+}
+
+func (e RPCError) Unwrap() error {
+	return e.cause
+}
+
+// Webrpc errors
+var (
+	ErrWebrpcInternal         = RPCError{Code: 0, Name: "WebrpcInternalError", Message: "internal error"}
+	ErrWebrpcPanic            = RPCError{Code: -1, Name: "WebrpcPanic", Message: "panic", HTTPStatus: 500}
+	ErrWebrpcBadRoute         = RPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
+	ErrWebrpcBadRequest       = RPCError{Code: -3, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
+	ErrWebrpcBadResponse      = RPCError{Code: -4, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+)
+
+// Schema errors
+var (
+	ErrMissingArgument        = RPCError{Code: 500100, Name: "InvalidUsername", Message: "invalid username"}
+	ErrInvalidUsername        = RPCError{Code: 500101, Name: "InvalidUsername", Message: "invalid username"}
+	ErrMemoryFull             = RPCError{Code: 400100, Name: "MemoryFull", Message: "system memory is full"}
+	ErrUnauthorized           = RPCError{Code: 403000, Name: "Unauthorized", Message: "Unauthorized", HTTPStatus: 401}
+	ErrUserNotFound           = RPCError{Code: 403001, Name: "UserNotFound", Message: "user not found"}
+)
+
+func Errorf(format string, args ...interface{}) RPCError {
+	cause := fmt.Errorf(format, args...)
+	return RPCError{Code: 0, Name: "RPCError", Message: cause.Error(), cause: cause}
+}
+
+func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
+	err := rpcErr
+	err.cause = cause
+	err.Cause = cause.Error()
+	return err
+}
+
+{{- end }}
