@@ -8,7 +8,7 @@ package main
 import (
 	"bytes"
 	"context"
-  "errors"
+	"errors"
 	"encoding/json"
 	"fmt"
  	"io"
@@ -482,7 +482,7 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(RPCError)
 	if !ok {
-		rpcErr = ErrorWithCause(ErrWebrpcInternal, err)
+		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "ErrWebrpcGeneric", Message: err.Error()}, err)
 	}
 
 	statusCode := rpcErr.HTTPStatus
@@ -801,20 +801,19 @@ func (e RPCError) Unwrap() error {
 
 // Webrpc errors
 var (
-	ErrWebrpcInternal         = RPCError{Code: 0, Name: "WebrpcInternalError", Message: "internal error"}
-	ErrWebrpcPanic            = RPCError{Code: -1, Name: "WebrpcPanic", Message: "panic", HTTPStatus: 500}
-	ErrWebrpcBadRoute         = RPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
-	ErrWebrpcBadRequest       = RPCError{Code: -3, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
-	ErrWebrpcBadResponse      = RPCError{Code: -4, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+	ErrWebrpcPanic            = RPCError{Code: -1, Name: "ErrWebrpcPanic", Message: "panic", HTTPStatus: 500}
+	ErrWebrpcBadRoute         = RPCError{Code: -2, Name: "ErrWebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
+	ErrWebrpcBadRequest       = RPCError{Code: -3, Name: "ErrWebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
+	ErrWebrpcBadResponse      = RPCError{Code: -4, Name: "ErrWebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
 )
 
 // Schema errors
 var (
-	ErrMissingArgument        = RPCError{Code: 500100, Name: "InvalidUsername", Message: "invalid username"}
-	ErrInvalidUsername        = RPCError{Code: 500101, Name: "InvalidUsername", Message: "invalid username"}
-	ErrMemoryFull             = RPCError{Code: 400100, Name: "MemoryFull", Message: "system memory is full"}
-	ErrUnauthorized           = RPCError{Code: 403000, Name: "Unauthorized", Message: "Unauthorized", HTTPStatus: 401}
-	ErrUserNotFound           = RPCError{Code: 403001, Name: "UserNotFound", Message: "user not found"}
+	ErrMissingArgument = RPCError{Code: 500100, Name: "MissingArgument", Message: "missing argument", HTTPStatus: 0}
+	ErrInvalidUsername = RPCError{Code: 500101, Name: "InvalidUsername", Message: "invalid username", HTTPStatus: 0}
+	ErrMemoryFull = RPCError{Code: 400100, Name: "MemoryFull", Message: "system memory is full", HTTPStatus: 0}
+	ErrUnauthorized = RPCError{Code: 400200, Name: "Unauthorized", Message: "Unauthorized", HTTPStatus: 401}
+	ErrUserNotFound = RPCError{Code: 400300, Name: "UserNotFound", Message: "user not found", HTTPStatus: 0}
 )
 
 func Errorf(format string, args ...interface{}) RPCError {

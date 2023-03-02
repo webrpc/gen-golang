@@ -31,21 +31,21 @@ func (e RPCError) Unwrap() error {
 
 // Webrpc errors
 var (
-	ErrWebrpcInternal         = RPCError{Code: 0, Name: "WebrpcInternalError", Message: "internal error"}
-	ErrWebrpcPanic            = RPCError{Code: -1, Name: "WebrpcPanic", Message: "panic", HTTPStatus: 500}
-	ErrWebrpcBadRoute         = RPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
-	ErrWebrpcBadRequest       = RPCError{Code: -3, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
-	ErrWebrpcBadResponse      = RPCError{Code: -4, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+	ErrWebrpcPanic            = RPCError{Code: -1, Name: "ErrWebrpcPanic", Message: "panic", HTTPStatus: 500}
+	ErrWebrpcBadRoute         = RPCError{Code: -2, Name: "ErrWebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
+	ErrWebrpcBadRequest       = RPCError{Code: -3, Name: "ErrWebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
+	ErrWebrpcBadResponse      = RPCError{Code: -4, Name: "ErrWebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
 )
+
+{{- if len .Errors }}
 
 // Schema errors
 var (
-	ErrMissingArgument        = RPCError{Code: 500100, Name: "InvalidUsername", Message: "invalid username"}
-	ErrInvalidUsername        = RPCError{Code: 500101, Name: "InvalidUsername", Message: "invalid username"}
-	ErrMemoryFull             = RPCError{Code: 400100, Name: "MemoryFull", Message: "system memory is full"}
-	ErrUnauthorized           = RPCError{Code: 403000, Name: "Unauthorized", Message: "Unauthorized", HTTPStatus: 401}
-	ErrUserNotFound           = RPCError{Code: 403001, Name: "UserNotFound", Message: "user not found"}
+{{- range $_, $error := .Errors}}
+	{{ printf "Err%s = RPCError{Code: %v, Name: %q, Message: %q, HTTPStatus: %v}" $error.Name $error.Code $error.Name $error.Message $error.HTTPStatus}}
+{{- end}}
 )
+{{- end}}
 
 func Errorf(format string, args ...interface{}) RPCError {
 	cause := fmt.Errorf(format, args...)
