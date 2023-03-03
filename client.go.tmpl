@@ -152,38 +152,6 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	return nil
 }
 
-/* REMOVED
-
-// errorFromResponse builds a webrpc Error from a non-200 HTTP response.
-func errorFromResponse(resp *http.Response) Error {
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return clientError("failed to read server error response body", err)
-	}
-
-	var respErr ErrorPayload
-	if err := json.Unmarshal(respBody, &respErr); err != nil {
-		return clientError("failed unmarshal error response", err)
-	}
-
-	errCode := ErrorCode(respErr.Code)
-
-	if HTTPStatusFromErrorCode(errCode) == 0 {
-		return ErrorInternal("invalid code returned from server error response: %s", respErr.Code)
-	}
-
-	return &rpcErr{
-		code:  errCode,
-		msg:   respErr.Msg,
-		cause: errors.New(respErr.Cause),
-	}
-}
-
-func clientError(desc string, err error) Error {
-	return WrapError(ErrInternal, err, desc)
-}
-*/
-
 func rpcErrorFromResponse(resp *http.Response) RPCError {
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {

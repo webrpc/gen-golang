@@ -29,6 +29,18 @@ func (e RPCError) Unwrap() error {
 	return e.cause
 }
 
+func Errorf(format string, args ...interface{}) RPCError {
+	cause := fmt.Errorf(format, args...)
+	return RPCError{Code: 0, Name: "RPCError", Message: cause.Error(), cause: cause}
+}
+
+func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
+	err := rpcErr
+	err.cause = cause
+	err.Cause = cause.Error()
+	return err
+}
+
 // Webrpc errors
 var (
 	ErrWebrpcPanic            = RPCError{Code: -1, Name: "ErrWebrpcPanic", Message: "panic", HTTPStatus: 500}
@@ -46,17 +58,5 @@ var (
 {{- end}}
 )
 {{- end}}
-
-func Errorf(format string, args ...interface{}) RPCError {
-	cause := fmt.Errorf(format, args...)
-	return RPCError{Code: 0, Name: "RPCError", Message: cause.Error(), cause: cause}
-}
-
-func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
-	err := rpcErr
-	err.cause = cause
-	err.Cause = cause.Error()
-	return err
-}
 
 {{- end }}

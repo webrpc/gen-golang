@@ -665,38 +665,6 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	return nil
 }
 
-/* REMOVED
-
-// errorFromResponse builds a webrpc Error from a non-200 HTTP response.
-func errorFromResponse(resp *http.Response) Error {
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return clientError("failed to read server error response body", err)
-	}
-
-	var respErr ErrorPayload
-	if err := json.Unmarshal(respBody, &respErr); err != nil {
-		return clientError("failed unmarshal error response", err)
-	}
-
-	errCode := ErrorCode(respErr.Code)
-
-	if HTTPStatusFromErrorCode(errCode) == 0 {
-		return ErrorInternal("invalid code returned from server error response: %s", respErr.Code)
-	}
-
-	return &rpcErr{
-		code:  errCode,
-		msg:   respErr.Msg,
-		cause: errors.New(respErr.Cause),
-	}
-}
-
-func clientError(desc string, err error) Error {
-	return WrapError(ErrInternal, err, desc)
-}
-*/
-
 func rpcErrorFromResponse(resp *http.Response) RPCError {
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -799,6 +767,18 @@ func (e RPCError) Unwrap() error {
 	return e.cause
 }
 
+func Errorf(format string, args ...interface{}) RPCError {
+	cause := fmt.Errorf(format, args...)
+	return RPCError{Code: 0, Name: "RPCError", Message: cause.Error(), cause: cause}
+}
+
+func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
+	err := rpcErr
+	err.cause = cause
+	err.Cause = cause.Error()
+	return err
+}
+
 // Webrpc errors
 var (
 	ErrWebrpcPanic            = RPCError{Code: -1, Name: "ErrWebrpcPanic", Message: "panic", HTTPStatus: 500}
@@ -815,15 +795,3 @@ var (
 	ErrUnauthorized = RPCError{Code: 400200, Name: "Unauthorized", Message: "Unauthorized", HTTPStatus: 401}
 	ErrUserNotFound = RPCError{Code: 400300, Name: "UserNotFound", Message: "user not found", HTTPStatus: 400}
 )
-
-func Errorf(format string, args ...interface{}) RPCError {
-	cause := fmt.Errorf(format, args...)
-	return RPCError{Code: 0, Name: "RPCError", Message: cause.Error(), cause: cause}
-}
-
-func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
-	err := rpcErr
-	err.cause = cause
-	err.Cause = cause.Error()
-	return err
-}
