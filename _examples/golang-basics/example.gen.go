@@ -791,5 +791,3 @@ var (
 	ErrUserNotFound = RPCError{Code: 400300, Name: "UserNotFound", Message: "user not found", HTTPStatus: 400}
 )
 
-
-
