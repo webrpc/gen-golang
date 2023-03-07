@@ -119,7 +119,7 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "ExampleAPI")
 
 	if r.Method != "POST" {
-		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
+		err := ErrorWithCause(ErrWebrpcBadMethod, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
 		RespondWithError(w, err)
 		return
 	}
@@ -295,7 +295,7 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(RPCError)
 	if !ok {
-		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "ErrWebrpcGeneric", Message: err.Error(), HTTPStatus: 400}, err)
+		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "WebrpcServerError", Message: "server error", Cause: err.Error(), HTTPStatus: 400}, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -416,7 +416,7 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	defer func() {
 		cerr := resp.Body.Close()
 		if err == nil && cerr != nil {
-			err = rpcClientError(err, "failed to close response body")
+			err = rpcClientError(cerr, "failed to close response body")
 		}
 	}()
 
@@ -463,7 +463,7 @@ func rpcErrorFromResponse(resp *http.Response) RPCError {
 }
 
 func rpcClientError(cause error, message string) RPCError {
-	return ErrorWithCause(Errorf(message), cause)
+	return ErrorWithCause(RPCError{Code: 0, Name: "WebrpcClientError", Message: "client error"}, fmt.Errorf("%v: %w", message, cause))
 }
 
 func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {

@@ -157,7 +157,7 @@ func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "ExampleService")
 
 	if r.Method != "POST" {
-		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
+		err := ErrorWithCause(ErrWebrpcBadMethod, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
 		RespondWithError(w, err)
 		return
 	}
@@ -482,7 +482,7 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(RPCError)
 	if !ok {
-		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "ErrWebrpcGeneric", Message: err.Error(), HTTPStatus: 400}, err)
+		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "WebrpcServerError", Message: "server error", Cause: err.Error(), HTTPStatus: 400}, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -630,7 +630,7 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	defer func() {
 		cerr := resp.Body.Close()
 		if err == nil && cerr != nil {
-			err = rpcClientError(err, "failed to close response body",)
+			err = rpcClientError(cerr, "failed to close response body")
 		}
 	}()
 
@@ -677,7 +677,7 @@ func rpcErrorFromResponse(resp *http.Response) RPCError {
 }
 
 func rpcClientError(cause error, message string) RPCError {
-	return ErrorWithCause(Errorf(message), cause)
+	return ErrorWithCause(RPCError{Code: 0, Name: "WebrpcClientError", Message: "client error"}, fmt.Errorf("%v: %w", message, cause))
 }
 
 func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {
@@ -740,8 +740,8 @@ type RPCError struct {
 	Name       string `json:"error"`
 	Code       int    `json:"code"`
 	Message    string `json:"message"`
-	Cause      string `json:"cause,omitempty"`
-	HTTPStatus int    `json:"-"`
+	Cause      string `json:"cause"`
+	HTTPStatus int    `json:"httpStatus"`
 	cause      error
 }
 
@@ -752,19 +752,16 @@ func (e RPCError) Error() string {
 }
 
 func (e RPCError) Is(target error) bool {
-	if rpcErr, ok := target.(RPCError); ok {
-		return rpcErr.Code == e.Code
+	rpcErr, ok := target.(RPCError)
+	if !ok {
+		return false
 	}
-	return errors.Is(e.cause, target)
+
+	return rpcErr.Code == e.Code
 }
 
 func (e RPCError) Unwrap() error {
 	return e.cause
-}
-
-func Errorf(format string, args ...interface{}) RPCError {
-	cause := fmt.Errorf(format, args...)
-	return RPCError{Code: 0, Name: "RPCError", Message: cause.Error(), cause: cause}
 }
 
 func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
@@ -776,10 +773,11 @@ func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
 
 // Webrpc errors
 var (
-	ErrWebrpcPanic            = RPCError{Code: -1, Name: "ErrWebrpcPanic", Message: "panic", HTTPStatus: 500}
-	ErrWebrpcBadRoute         = RPCError{Code: -2, Name: "ErrWebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
-	ErrWebrpcBadRequest       = RPCError{Code: -3, Name: "ErrWebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
-	ErrWebrpcBadResponse      = RPCError{Code: -4, Name: "ErrWebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+	ErrWebrpcPanic       = RPCError{Code: -1, Name: "WebrpcServerPanic", Message: "server panic", HTTPStatus: 500}
+	ErrWebrpcBadRoute    = RPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
+	ErrWebrpcBadMethod   = RPCError{Code: -3, Name: "WebrpcBadMethod", Message: "bad method", HTTPStatus: 405}
+	ErrWebrpcBadRequest  = RPCError{Code: -4, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
+	ErrWebrpcBadResponse = RPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
 )
 
 // Schema errors

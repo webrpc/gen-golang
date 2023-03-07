@@ -61,7 +61,6 @@ struct ComplexType
   - mapOfUsers: map<string,User>
   - user: User
 
-# syntax is: error <code> <name> <message> [HTTP <status code>]
 error 500100 MissingArgument "missing argument"
 error 500101 InvalidUsername "invalid username"
 error 400100 MemoryFull      "system memory is full"
