@@ -30,7 +30,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "{{.Name}}")
 
 	if r.Method != "POST" {
-		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
+		err := ErrorWithCause(ErrWebrpcBadMethod, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
 		RespondWithError(w, err)
 		return
 	}
@@ -143,7 +143,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(RPCError)
 	if !ok {
-		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "ErrWebrpcEndpoint", Message: err.Error(), HTTPStatus: 400}, err)
+		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "WebrpcServerError", Message: "server error", Cause: err.Error(), HTTPStatus: 400}, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

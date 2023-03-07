@@ -7,7 +7,7 @@ type RPCError struct {
 	Name       string `json:"error"`
 	Code       int    `json:"code"`
 	Message    string `json:"message"`
-	Cause      string `json:"cause,omitempty"`
+	Cause      string `json:"cause"`
 	HTTPStatus int    `json:"httpStatus"`
 	cause      error
 }
@@ -40,10 +40,11 @@ func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
 
 // Webrpc errors
 var (
-	ErrWebrpcPanic            = RPCError{Code: -1, Name: "ErrWebrpcPanic", Message: "panic", HTTPStatus: 500}
-	ErrWebrpcBadRoute         = RPCError{Code: -2, Name: "ErrWebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
-	ErrWebrpcBadRequest       = RPCError{Code: -3, Name: "ErrWebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
-	ErrWebrpcBadResponse      = RPCError{Code: -4, Name: "ErrWebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+	ErrWebrpcPanic       = RPCError{Code: -1, Name: "WebrpcServerPanic", Message: "server panic", HTTPStatus: 500}
+	ErrWebrpcBadRoute    = RPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
+	ErrWebrpcBadMethod   = RPCError{Code: -3, Name: "WebrpcBadMethod", Message: "bad method", HTTPStatus: 405}
+	ErrWebrpcBadRequest  = RPCError{Code: -4, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
+	ErrWebrpcBadResponse = RPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
 )
 
 {{- if len .Errors }}
