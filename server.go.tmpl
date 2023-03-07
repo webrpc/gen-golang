@@ -143,7 +143,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(RPCError)
 	if !ok {
-		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "ErrWebrpcGeneric", Message: err.Error(), HTTPStatus: 400}, err)
+		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "ErrWebrpcEndpoint", Message: err.Error(), HTTPStatus: 400}, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
