@@ -122,7 +122,7 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	defer func() {
 		cerr := resp.Body.Close()
 		if err == nil && cerr != nil {
-			err = rpcClientError(err, "failed to close response body",)
+			err = rpcClientError(cerr, "failed to close response body")
 		}
 	}()
 
