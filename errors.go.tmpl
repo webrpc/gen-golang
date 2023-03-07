@@ -8,7 +8,7 @@ type RPCError struct {
 	Code       int    `json:"code"`
 	Message    string `json:"message"`
 	Cause      string `json:"cause,omitempty"`
-	HTTPStatus int    `json:"-"`
+	HTTPStatus int    `json:"httpStatus"`
 	cause      error
 }
 
@@ -19,10 +19,12 @@ func (e RPCError) Error() string {
 }
 
 func (e RPCError) Is(target error) bool {
-	if rpcErr, ok := target.(RPCError); ok {
-		return rpcErr.Code == e.Code
+	rpcErr, ok := target.(RPCError)
+	if !ok {
+		return false
 	}
-	return errors.Is(e.cause, target)
+
+	return rpcErr.Code == e.Code
 }
 
 func (e RPCError) Unwrap() error {
@@ -31,7 +33,7 @@ func (e RPCError) Unwrap() error {
 
 func Errorf(format string, args ...interface{}) RPCError {
 	cause := fmt.Errorf(format, args...)
-	return RPCError{Code: 0, Name: "RPCError", Message: cause.Error(), cause: cause}
+	return RPCError{Code: 0, Name: "RPCError", Message: cause.Error(), cause: cause, HTTPStatus: 400}
 }
 
 func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
