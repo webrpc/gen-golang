@@ -1,4 +1,6 @@
 {{define "errors"}}
+{{- $errors := .Errors -}}
+{{- $opts := .Opts }}
 //
 // Errors
 //
@@ -15,16 +17,19 @@ type RPCError struct {
 var _ error = RPCError{}
 
 func (e RPCError) Error() string {
-	return fmt.Sprintf("%s %d - %s", e.Name, e.Code, e.Message)
+	return fmt.Sprintf("Error %d %s: %s", e.Code, e.Name, e.Message)
 }
 
 func (e RPCError) Is(target error) bool {
-	rpcErr, ok := target.(RPCError)
-	if !ok {
-		return false
+	if rpcErr, ok := target.(RPCError); ok {
+		return rpcErr.Code == e.Code
 	}
-
-	return rpcErr.Code == e.Code
+{{- if $opts.legacyErrors }}
+	if legacyErr, ok := target.(legacyError); ok {
+		return legacyErr.Code == e.Code
+	}
+{{- end }}
+	return errors.Is(e.cause, target)
 }
 
 func (e RPCError) Unwrap() error {
@@ -47,11 +52,11 @@ var (
 	ErrWebrpcBadResponse = RPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
 )
 
-{{- if len .Errors }}
+{{- if len $errors }}
 
 // Schema errors
 var (
-{{- range $_, $error := .Errors}}
+{{- range $_, $error := $errors}}
 	{{ printf "Err%s = RPCError{Code: %v, Name: %q, Message: %q, HTTPStatus: %v}" $error.Name $error.Code $error.Name $error.Message $error.HTTPStatus}}
 {{- end}}
 )

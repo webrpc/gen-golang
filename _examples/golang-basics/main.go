@@ -4,6 +4,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -63,6 +64,14 @@ func (s *ExampleServiceRPC) GetUser(ctx context.Context, header map[string]strin
 	}
 	if userID == 666 {
 		panic("oh no")
+	}
+
+	// Legacy errors.
+	switch userID {
+	case 0:
+		return nil, Errorf(ErrInvalidArgument, "userId is required")
+	case 1000:
+		return nil, WrapError(ErrUnavailable, io.ErrUnexpectedEOF, "service unavailable")
 	}
 
 	return &User{

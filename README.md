@@ -22,11 +22,12 @@ As you can see, the `-target` supports default `golang`, any git URI, or a local
 ### Set custom template variables
 Change any of the following values by passing `-option="Value"` CLI flag to `webrpc-gen`.
 
-| webrpc-gen -option   | Description                | Default value              |
-|----------------------|----------------------------|----------------------------|
-| `-pkg=<name>`        | package name               | `"proto"`                  |
-| `-client`            | generate client code       | unset (`false`)            |
-| `-server`            | generate server code       | unset (`false`)            |
+| webrpc-gen -option   | Description                             | Default value              | Added in |
+|----------------------|-----------------------------------------|----------------------------|----------|
+| `-pkg=<name>`        | package name                            | `"proto"`                  |          |
+| `-client`            | generate client code                    | unset (`false`)            |          |
+| `-server`            | generate server code                    | unset (`false`)            |          |
+| `-legacyErrors=true` | enable legacy errors (v0.10.0 or older) | unset (`false`)            | v0.11.0  |
 
 Example:
 ```

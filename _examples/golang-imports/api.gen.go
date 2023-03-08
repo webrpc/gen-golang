@@ -519,268 +519,138 @@ var (
 )
 
 //
-// Legacy errors
+// Errors
 //
 
-type ErrorPayload struct {
-	Status int    `json:"status"`
-	Code   string `json:"code"`
-	Cause  string `json:"cause,omitempty"`
-	Msg    string `json:"msg"`
-	Error  string `json:"error"`
+type RPCError struct {
+	Name       string `json:"error"`
+	Code       int    `json:"code"`
+	Message    string `json:"message"`
+	Cause      string `json:"cause"`
+	HTTPStatus int    `json:"httpStatus"`
+	cause      error
 }
 
-type Error interface {
-	// Code is of the valid error codes
-	Code() ErrorCode
+var _ error = RPCError{}
 
-	// Msg returns a human-readable, unstructured messages describing the error
-	Msg() string
-
-	// Cause is reason for the error
-	Cause() error
-
-	// Error returns a string of the form "webrpc error <Code>: <Msg>"
-	Error() string
-
-	// Error response payload
-	Payload() ErrorPayload
+func (e RPCError) Error() string {
+	return fmt.Sprintf("Error %d %s: %s", e.Code, e.Name, e.Message)
 }
 
-func Errorf(code ErrorCode, msgf string, args ...interface{}) Error {
-	msg := fmt.Sprintf(msgf, args...)
-	if IsValidErrorCode(code) {
-		return &rpcErr{code: code, msg: msg}
+func (e RPCError) Is(target error) bool {
+	if rpcErr, ok := target.(RPCError); ok {
+		return rpcErr.Code == e.Code
 	}
-	return &rpcErr{code: ErrInternal, msg: "invalid error type " + string(code)}
-}
-
-func WrapError(code ErrorCode, cause error, format string, args ...interface{}) Error {
-	msg := fmt.Sprintf(format, args...)
-	if IsValidErrorCode(code) {
-		return &rpcErr{code: code, msg: msg, cause: cause}
+	if legacyErr, ok := target.(legacyError); ok {
+		return legacyErr.Code == e.Code
 	}
-	return &rpcErr{code: ErrInternal, msg: "invalid error type " + string(code), cause: cause}
+	return errors.Is(e.cause, target)
 }
 
-func Failf(format string, args ...interface{}) Error {
-	return Errorf(ErrFail, format, args...)
-}
-
-func WrapFailf(cause error, format string, args ...interface{}) Error {
-	return WrapError(ErrFail, cause, format, args...)
-}
-
-func ErrorNotFound(format string, args ...interface{}) Error {
-	return Errorf(ErrNotFound, format, args...)
-}
-
-func ErrorInvalidArgument(argument string, validationMsg string) Error {
-	return Errorf(ErrInvalidArgument, argument+" "+validationMsg)
-}
-
-func ErrorRequiredArgument(argument string) Error {
-	return ErrorInvalidArgument(argument, "is required")
-}
-
-func ErrorInternal(format string, args ...interface{}) Error {
-	return Errorf(ErrInternal, format, args...)
-}
-
-type ErrorCode string
-
-const (
-	// Unknown error. For example when handling errors raised by APIs that do not
-	// return enough error information.
-	ErrUnknown ErrorCode = "unknown"
-
-	// Fail error. General failure error type.
-	ErrFail ErrorCode = "fail"
-
-	// Canceled indicates the operation was cancelled (typically by the caller).
-	ErrCanceled ErrorCode = "canceled"
-
-	// InvalidArgument indicates client specified an invalid argument. It
-	// indicates arguments that are problematic regardless of the state of the
-	// system (i.e. a malformed file name, required argument, number out of range,
-	// etc.).
-	ErrInvalidArgument ErrorCode = "invalid argument"
-
-	// DeadlineExceeded means operation expired before completion. For operations
-	// that change the state of the system, this error may be returned even if the
-	// operation has completed successfully (timeout).
-	ErrDeadlineExceeded ErrorCode = "deadline exceeded"
-
-	// NotFound means some requested entity was not found.
-	ErrNotFound ErrorCode = "not found"
-
-	// BadRoute means that the requested URL path wasn't routable to a webrpc
-	// service and method. This is returned by the generated server, and usually
-	// shouldn't be returned by applications. Instead, applications should use
-	// NotFound or Unimplemented.
-	ErrBadRoute ErrorCode = "bad route"
-
-	// AlreadyExists means an attempt to create an entity failed because one
-	// already exists.
-	ErrAlreadyExists ErrorCode = "already exists"
-
-	// PermissionDenied indicates the caller does not have permission to execute
-	// the specified operation. It must not be used if the caller cannot be
-	// identified (Unauthenticated).
-	ErrPermissionDenied ErrorCode = "permission denied"
-
-	// Unauthenticated indicates the request does not have valid authentication
-	// credentials for the operation.
-	ErrUnauthenticated ErrorCode = "unauthenticated"
-
-	// ResourceExhausted indicates some resource has been exhausted, perhaps a
-	// per-user quota, or perhaps the entire file system is out of space.
-	ErrResourceExhausted ErrorCode = "resource exhausted"
-
-	// FailedPrecondition indicates operation was rejected because the system is
-	// not in a state required for the operation's execution. For example, doing
-	// an rmdir operation on a directory that is non-empty, or on a non-directory
-	// object, or when having conflicting read-modify-write on the same resource.
-	ErrFailedPrecondition ErrorCode = "failed precondition"
-
-	// Aborted indicates the operation was aborted, typically due to a concurrency
-	// issue like sequencer check failures, transaction aborts, etc.
-	ErrAborted ErrorCode = "aborted"
-
-	// OutOfRange means operation was attempted past the valid range. For example,
-	// seeking or reading past end of a paginated collection.
-	//
-	// Unlike InvalidArgument, this error indicates a problem that may be fixed if
-	// the system state changes (i.e. adding more items to the collection).
-	//
-	// There is a fair bit of overlap between FailedPrecondition and OutOfRange.
-	// We recommend using OutOfRange (the more specific error) when it applies so
-	// that callers who are iterating through a space can easily look for an
-	// OutOfRange error to detect when they are done.
-	ErrOutOfRange ErrorCode = "out of range"
-
-	// Unimplemented indicates operation is not implemented or not
-	// supported/enabled in this service.
-	ErrUnimplemented ErrorCode = "unimplemented"
-
-	// Internal errors. When some invariants expected by the underlying system
-	// have been broken. In other words, something bad happened in the library or
-	// backend service. Do not confuse with HTTP Internal Server Error; an
-	// Internal error could also happen on the client code, i.e. when parsing a
-	// server response.
-	ErrInternal ErrorCode = "internal"
-
-	// Unavailable indicates the service is currently unavailable. This is a most
-	// likely a transient condition and may be corrected by retrying with a
-	// backoff.
-	ErrUnavailable ErrorCode = "unavailable"
-
-	// DataLoss indicates unrecoverable data loss or corruption.
-	ErrDataLoss ErrorCode = "data loss"
-
-	// ErrNone is the zero-value, is considered an empty error and should not be
-	// used.
-	ErrNone ErrorCode = ""
-)
-
-func HTTPStatusFromErrorCode(code ErrorCode) int {
-	switch code {
-	case ErrCanceled:
-		return 408 // RequestTimeout
-	case ErrUnknown:
-		return 400 // Bad Request
-	case ErrFail:
-		return 422 // Unprocessable Entity
-	case ErrInvalidArgument:
-		return 400 // BadRequest
-	case ErrDeadlineExceeded:
-		return 408 // RequestTimeout
-	case ErrNotFound:
-		return 404 // Not Found
-	case ErrBadRoute:
-		return 404 // Not Found
-	case ErrAlreadyExists:
-		return 409 // Conflict
-	case ErrPermissionDenied:
-		return 403 // Forbidden
-	case ErrUnauthenticated:
-		return 401 // Unauthorized
-	case ErrResourceExhausted:
-		return 403 // Forbidden
-	case ErrFailedPrecondition:
-		return 412 // Precondition Failed
-	case ErrAborted:
-		return 409 // Conflict
-	case ErrOutOfRange:
-		return 400 // Bad Request
-	case ErrUnimplemented:
-		return 501 // Not Implemented
-	case ErrInternal:
-		return 500 // Internal Server Error
-	case ErrUnavailable:
-		return 503 // Service Unavailable
-	case ErrDataLoss:
-		return 500 // Internal Server Error
-	case ErrNone:
-		return 200 // OK
-	default:
-		return 0 // Invalid!
-	}
-}
-
-func IsErrorCode(err error, code ErrorCode) bool {
-	if rpcErr, ok := err.(Error); ok {
-		if rpcErr.Code() == code {
-			return true
-		}
-	}
-	return false
-}
-
-func IsValidErrorCode(code ErrorCode) bool {
-	return HTTPStatusFromErrorCode(code) != 0
-}
-
-type rpcErr struct {
-	code  ErrorCode
-	msg   string
-	cause error
-}
-
-func (e *rpcErr) Code() ErrorCode {
-	return e.code
-}
-
-func (e *rpcErr) Msg() string {
-	return e.msg
-}
-
-func (e *rpcErr) Cause() error {
+func (e RPCError) Unwrap() error {
 	return e.cause
 }
 
-func (e *rpcErr) Error() string {
-	if e.cause != nil && e.cause.Error() != "" {
-		if e.msg != "" {
-			return fmt.Sprintf("webrpc %s error: %s -- %s", e.code, e.cause.Error(), e.msg)
-		} else {
-			return fmt.Sprintf("webrpc %s error: %s", e.code, e.cause.Error())
-		}
-	} else {
-		return fmt.Sprintf("webrpc %s error: %s", e.code, e.msg)
-	}
+func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
+	err := rpcErr
+	err.cause = cause
+	err.Cause = cause.Error()
+	return err
 }
 
-func (e *rpcErr) Payload() ErrorPayload {
-	statusCode := HTTPStatusFromErrorCode(e.Code())
-	errPayload := ErrorPayload{
-		Status: statusCode,
-		Code:   string(e.Code()),
-		Msg:    e.Msg(),
-		Error:  e.Error(),
-	}
-	if e.Cause() != nil {
-		errPayload.Cause = e.Cause().Error()
-	}
-	return errPayload
+// Webrpc errors
+var (
+	ErrWebrpcPanic       = RPCError{Code: -1, Name: "WebrpcServerPanic", Message: "server panic", HTTPStatus: 500}
+	ErrWebrpcBadRoute    = RPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
+	ErrWebrpcBadMethod   = RPCError{Code: -3, Name: "WebrpcBadMethod", Message: "bad method", HTTPStatus: 405}
+	ErrWebrpcBadRequest  = RPCError{Code: -4, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
+	ErrWebrpcBadResponse = RPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+)
+
+//
+// Legacy errors
+//
+
+// Deprecated: Use ErrorWithCause() instead.
+func Errorf(err legacyError, format string, args ...interface{}) RPCError {
+	return ErrorWithCause(err.RPCError, fmt.Errorf(format, args...))
 }
+
+// Deprecated: Use ErrorWithCause() instead.
+func WrapError(err legacyError, cause error, format string, args ...interface{}) RPCError {
+	return ErrorWithCause(err.RPCError, fmt.Errorf("%v: %w", fmt.Errorf(format, args...), cause))
+}
+
+// Deprecated: Use ErrorWithCause() instead.
+func Failf(format string, args ...interface{}) RPCError {
+	return Errorf(ErrFail, format, args...)
+}
+
+// Deprecated: Use ErrorWithCause() instead.
+func WrapFailf(cause error, format string, args ...interface{}) RPCError {
+	return WrapError(ErrFail, cause, format, args...)
+}
+
+// Deprecated: Use ErrorWithCause() instead.
+func ErrorNotFound(format string, args ...interface{}) RPCError {
+	return Errorf(ErrNotFound, format, args...)
+}
+
+// Deprecated: Use ErrorWithCause() instead.
+func ErrorInvalidArgument(argument string, validationMsg string) RPCError {
+	return Errorf(ErrInvalidArgument, argument+" "+validationMsg)
+}
+
+// Deprecated: Use ErrorWithCause() instead.
+func ErrorRequiredArgument(argument string) RPCError {
+	return ErrorInvalidArgument(argument, "is required")
+}
+
+// Deprecated: Use ErrorWithCause() instead.
+func ErrorInternal(format string, args ...interface{}) RPCError {
+	return Errorf(ErrInternal, format, args...)
+}
+
+type legacyError struct{ RPCError }
+
+// Legacy errors (webrpc v0.10.0 and earlier). Will be removed.
+var (
+	// Deprecated. Define errors in RIDL schema.
+	ErrCanceled = legacyError{RPCError{Code: -10000, Name: "ErrCanceled", Message: "canceled", HTTPStatus: 408 /* RequestTimeout */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrUnknown = legacyError{RPCError{Code: -10001, Name: "ErrUnknown", Message: "unknown", HTTPStatus: 400 /* Bad Request */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrFail = legacyError{RPCError{Code: -10002, Name: "ErrFail", Message: "fail", HTTPStatus: 422 /* Unprocessable Entity */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrInvalidArgument = legacyError{RPCError{Code: -10003, Name: "ErrInvalidArgument", Message: "invalid argument", HTTPStatus: 400 /* BadRequest */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrDeadlineExceeded = legacyError{RPCError{Code: -10004, Name: "ErrDeadlineExceeded", Message: "deadline exceeded", HTTPStatus: 408 /* RequestTimeout */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrNotFound = legacyError{RPCError{Code: -10005, Name: "ErrNotFound", Message: "not found", HTTPStatus: 404 /* Not Found */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrBadRoute = legacyError{RPCError{Code: -10006, Name: "ErrBadRoute", Message: "bad route", HTTPStatus: 404 /* Not Found */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrAlreadyExists = legacyError{RPCError{Code: -10007, Name: "ErrAlreadyExists", Message: "already exists", HTTPStatus: 409 /* Conflict */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrPermissionDenied = legacyError{RPCError{Code: -10008, Name: "ErrPermissionDenied", Message: "permission denied", HTTPStatus: 403 /* Forbidden */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrUnauthenticated = legacyError{RPCError{Code: -10009, Name: "ErrUnauthenticated", Message: "unauthenticated", HTTPStatus: 401 /* Unauthorized */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrResourceExhausted = legacyError{RPCError{Code: -10010, Name: "ErrResourceExhausted", Message: "resource exhausted", HTTPStatus: 403 /* Forbidden */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrFailedPrecondition = legacyError{RPCError{Code: -10011, Name: "ErrFailedPrecondition", Message: "failed precondition", HTTPStatus: 412 /* Precondition Failed */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrAborted = legacyError{RPCError{Code: -10012, Name: "ErrAborted", Message: "aborted", HTTPStatus: 409 /* Conflict */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrOutOfRange = legacyError{RPCError{Code: -10013, Name: "ErrOutOfRange", Message: "out of range", HTTPStatus: 400 /* Bad Request */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrUnimplemented = legacyError{RPCError{Code: -10014, Name: "ErrUnimplemented", Message: "unimplemented", HTTPStatus: 501 /* Not Implemented */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrInternal = legacyError{RPCError{Code: -10015, Name: "ErrInternal", Message: "internal", HTTPStatus: 500 /* Internal Server Error */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrUnavailable = legacyError{RPCError{Code: -10016, Name: "ErrUnavailable", Message: "unavailable", HTTPStatus: 503 /* Service Unavailable */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrDataLoss = legacyError{RPCError{Code: -10017, Name: "ErrDataLoss", Message: "data loss", HTTPStatus: 500 /* Internal Server Error */}}
+	// Deprecated. Define errors in RIDL schema.
+	ErrNone = legacyError{RPCError{Code: -10018, Name: "ErrNone", Message: "", HTTPStatus: 200 /* OK */}}
+)

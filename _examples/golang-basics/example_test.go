@@ -53,11 +53,11 @@ func TestGetUser(t *testing.T) {
 		assert.True(t, errors.Is(err, ErrUserNotFound))
 		assert.Nil(t, user)
 		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrUserNotFound)
 		assert.Contains(t, err.Error(), "not found")
 
 		rpcErr, ok := err.(RPCError)
 		assert.True(t, ok)
-		assert.Equal(t, ErrUserNotFound.Code, rpcErr.Code)
 		assert.Contains(t, rpcErr.Unwrap().Error(), "911")
 	}
 
@@ -66,5 +66,17 @@ func TestGetUser(t *testing.T) {
 		assert.Equal(t, "joe", name)
 		assert.Equal(t, &User{ID: 123, Username: "joe"}, user)
 		assert.NoError(t, err)
+	}
+}
+
+func TestLegacyErrors(t *testing.T) {
+	{
+		_, err := client.GetUser(context.Background(), nil, 0)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrInvalidArgument)
+
+		_, err = client.GetUser(context.Background(), nil, 1000)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrUnavailable)
 	}
 }

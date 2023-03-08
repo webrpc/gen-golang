@@ -5,7 +5,9 @@
 {{- set $opts "pkg" (default .Opts.pkg "proto") -}}
 {{- set $opts "client" (ternary (in .Opts.client "" "true") true false) -}}
 {{- set $opts "server" (ternary (in .Opts.server "" "true") true false) -}}
-{{- set $opts "legacyErrors" (ternary (eq .Opts.legacyErrors "true") true false) -}}
+
+{{- /* TODO: Change legacyErrors to "true" by default */ -}}
+{{- set $opts "legacyErrors" (ternary (eq .Opts.legacyErrors "false") false true) -}}
 
 
 {{- /* Print help on -help. */ -}}
@@ -102,10 +104,10 @@ func WebRPCSchemaHash() string {
 
 {{ template "helpers" . }}
 
+{{- template "errors" dict "Errors" .Errors "Opts" $opts }}
+
 {{- if $opts.legacyErrors }}
 {{ template "legacyErrors" . }}
-{{- else}}
-{{ template "errors" . }}
 {{- end }}
 
 {{ end }}
