@@ -522,9 +522,9 @@ var (
 type RPCError struct {
 	Name       string `json:"error"`
 	Code       int    `json:"code"`
-	Message    string `json:"message"`
-	Cause      string `json:"cause"`
-	HTTPStatus int    `json:"httpStatus"`
+	Message    string `json:"msg"`
+	Cause      string `json:"cause,omitempty"`
+	HTTPStatus int    `json:"status"`
 	cause      error
 }
 
