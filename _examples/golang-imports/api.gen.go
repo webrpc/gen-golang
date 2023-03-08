@@ -166,8 +166,7 @@ func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWri
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				err = ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr))
-				RespondWithError(w, err)
+				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()
@@ -210,8 +209,7 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				err = ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr))
-				RespondWithError(w, err)
+				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()
@@ -264,8 +262,7 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				err = ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr))
-				RespondWithError(w, err)
+				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()

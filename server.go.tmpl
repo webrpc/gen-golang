@@ -99,8 +99,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				err = ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr))
-				RespondWithError(w, err)
+				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()
