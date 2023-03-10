@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"testing"
 	"time"
@@ -47,10 +46,8 @@ func TestGetUser(t *testing.T) {
 		assert.NoError(t, err)
 	}
 
-	{
-		// Error case, expecting to receive an error
+	{ // userID == 911, expect not found err
 		user, err := client.GetUser(context.Background(), nil, 911)
-		assert.True(t, errors.Is(err, ErrUserNotFound))
 		assert.Nil(t, user)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, ErrUserNotFound)
@@ -58,7 +55,27 @@ func TestGetUser(t *testing.T) {
 
 		rpcErr, ok := err.(WebRPCError)
 		assert.True(t, ok)
+		assert.Equal(t, rpcErr.HTTPStatus, 400)
 		assert.Contains(t, rpcErr.Unwrap().Error(), "911")
+	}
+
+	{ // userID == 31337, expect unauthorized
+		user, err := client.GetUser(context.Background(), nil, 31337)
+		assert.Nil(t, user)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrUnauthorized)
+	}
+
+	{ // userID == 666, expect panic
+		user, err := client.GetUser(context.Background(), nil, 666)
+		assert.Nil(t, user)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrWebrpcServerPanic)
+
+		rpcErr, ok := err.(WebRPCError)
+		assert.True(t, ok)
+		assert.Equal(t, rpcErr.HTTPStatus, 500)
+		assert.Contains(t, rpcErr.Unwrap().Error(), "oh no")
 	}
 
 	{

@@ -395,41 +395,41 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) error {
 	reqBody, err := json.Marshal(in)
 	if err != nil {
-		return rpcClientError(err, "failed to marshal JSON body")
+		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("failed to marshal JSON body: %w", err))
 	}
 	if err = ctx.Err(); err != nil {
-		return rpcClientError(err, "aborted because context was done")
+		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("aborted because context was done: %w", err))
 	}
 
 	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
 	if err != nil {
-		return rpcClientError(err, "could not build request")
+		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("could not build request: %w", err))
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return rpcClientError(err, "request failed")
+		return ErrorWithCause(ErrWebrpcRequestFailed, err)
 	}
 
 	defer func() {
 		cerr := resp.Body.Close()
 		if err == nil && cerr != nil {
-			err = rpcClientError(cerr, "failed to close response body")
+			err = ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("failed to close response body: %w", cerr))
 		}
 	}()
 
 	if err = ctx.Err(); err != nil {
-		return rpcClientError(err, "aborted because context was done")
+		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("aborted because context was done: %w", err))
 	}
 
 	if resp.StatusCode != 200 {
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return rpcClientError(err, "failed to read server error response body")
+			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to read server error response body: %w", err))
 		}
 
 		var rpcErr WebRPCError
 		if err := json.Unmarshal(respBody, &rpcErr); err != nil {
-			return rpcClientError(err, "failed to unmarshal server error")
+			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to unmarshal server error: %w", err))
 		}
 		if rpcErr.Cause != "" {
 			rpcErr.cause = errors.New(rpcErr.Cause)
@@ -440,23 +440,16 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	if out != nil {
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return rpcClientError(err, "failed to read response body")
+			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to read response body: %w", err))
 		}
 
 		err = json.Unmarshal(respBody, &out)
 		if err != nil {
-			return rpcClientError(err, "failed to unmarshal JSON response body")
-		}
-		if err = ctx.Err(); err != nil {
-			return rpcClientError(err, "aborted because context was done")
+			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to unmarshal JSON response body: %w", err))
 		}
 	}
 
 	return nil
-}
-
-func rpcClientError(cause error, message string) WebRPCError {
-	return ErrorWithCause(WebRPCError{Code: 0, Name: "WebrpcClientError", Message: "client error"}, fmt.Errorf("%v: %w", message, cause))
 }
 
 func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {
@@ -553,13 +546,13 @@ func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
 
 // Webrpc errors
 var (
-	ErrWebrpcEndpoint    = WebRPCError{Code: 0, Name: "WebrpcEndpoint", Message: "server endpoint error", HTTPStatus: 400}
-	ErrWebrpcNoRequest   = WebRPCError{Code: -1, Name: "WebrpcNoRequest", Message: "failed request", HTTPStatus: 0}
-	ErrWebrpcBadRoute    = WebRPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
-	ErrWebrpcBadMethod   = WebRPCError{Code: -3, Name: "WebrpcBadMethod", Message: "bad method", HTTPStatus: 405}
-	ErrWebrpcBadRequest  = WebRPCError{Code: -4, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
-	ErrWebrpcBadResponse = WebRPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
-	ErrWebrpcServerPanic = WebRPCError{Code: -6, Name: "WebrpcServerPanic", Message: "server panic", HTTPStatus: 500}
+	ErrWebrpcEndpoint      = WebRPCError{Code: 0, Name: "WebrpcEndpoint", Message: "endpoint error", HTTPStatus: 400}
+	ErrWebrpcRequestFailed = WebRPCError{Code: -1, Name: "WebrpcRequestFailed", Message: "request failed", HTTPStatus: 0}
+	ErrWebrpcBadRoute      = WebRPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
+	ErrWebrpcBadMethod     = WebRPCError{Code: -3, Name: "WebrpcBadMethod", Message: "bad method", HTTPStatus: 405}
+	ErrWebrpcBadRequest    = WebRPCError{Code: -4, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
+	ErrWebrpcBadResponse   = WebRPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+	ErrWebrpcServerPanic   = WebRPCError{Code: -6, Name: "WebrpcServerPanic", Message: "server panic", HTTPStatus: 500}
 )
 
 //
