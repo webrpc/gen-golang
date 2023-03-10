@@ -101,7 +101,7 @@ func WebRPCSchemaHash() string {
 
 {{ template "helpers" . }}
 
-{{- template "errors" dict "Errors" .Errors "Opts" $opts }}
+{{- template "errors" dict "WebrpcErrors" .WebrpcErrors "SchemaErrors" .Errors "Opts" $opts }}
 
 {{- if $opts.legacyErrors }}
 {{ template "legacyErrors" . }}

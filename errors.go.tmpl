@@ -1,11 +1,12 @@
 {{define "errors"}}
-{{- $errors := .Errors -}}
+{{- $webrpcErrors := .WebrpcErrors -}}
+{{- $schemaErrors := .SchemaErrors -}}
 {{- $opts := .Opts }}
 //
 // Errors
 //
 
-type RPCError struct {
+type WebRPCError struct {
 	Name       string `json:"error"`
 	Code       int    `json:"code"`
 	Message    string `json:"msg"`
@@ -14,14 +15,14 @@ type RPCError struct {
 	cause      error
 }
 
-var _ error = RPCError{}
+var _ error = WebRPCError{}
 
-func (e RPCError) Error() string {
+func (e WebRPCError) Error() string {
 	return fmt.Sprintf("Error %d %s: %s", e.Code, e.Name, e.Message)
 }
 
-func (e RPCError) Is(target error) bool {
-	if rpcErr, ok := target.(RPCError); ok {
+func (e WebRPCError) Is(target error) bool {
+	if rpcErr, ok := target.(WebRPCError); ok {
 		return rpcErr.Code == e.Code
 	}
 {{- if $opts.legacyErrors }}
@@ -32,11 +33,11 @@ func (e RPCError) Is(target error) bool {
 	return errors.Is(e.cause, target)
 }
 
-func (e RPCError) Unwrap() error {
+func (e WebRPCError) Unwrap() error {
 	return e.cause
 }
 
-func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
+func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
 	err := rpcErr
 	err.cause = cause
 	err.Cause = cause.Error()
@@ -45,19 +46,17 @@ func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
 
 // Webrpc errors
 var (
-	ErrWebrpcPanic       = RPCError{Code: -1, Name: "WebrpcServerPanic", Message: "server panic", HTTPStatus: 500}
-	ErrWebrpcBadRoute    = RPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
-	ErrWebrpcBadMethod   = RPCError{Code: -3, Name: "WebrpcBadMethod", Message: "bad method", HTTPStatus: 405}
-	ErrWebrpcBadRequest  = RPCError{Code: -4, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
-	ErrWebrpcBadResponse = RPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+{{- range $_, $error := $webrpcErrors}}
+	{{ printf "Err%s = WebRPCError{Code: %v, Name: %q, Message: %q, HTTPStatus: %v}" $error.Name $error.Code $error.Name $error.Message $error.HTTPStatus}}
+{{- end}}
 )
 
-{{- if len $errors }}
+{{- if len $schemaErrors }}
 
 // Schema errors
 var (
-{{- range $_, $error := $errors}}
-	{{ printf "Err%s = RPCError{Code: %v, Name: %q, Message: %q, HTTPStatus: %v}" $error.Name $error.Code $error.Name $error.Message $error.HTTPStatus}}
+{{- range $_, $error := $schemaErrors}}
+	{{ printf "Err%s = WebRPCError{Code: %v, Name: %q, Message: %q, HTTPStatus: %v}" $error.Name $error.Code $error.Name $error.Message $error.HTTPStatus}}
 {{- end}}
 )
 {{- end}}

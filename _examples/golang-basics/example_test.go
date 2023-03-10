@@ -56,7 +56,7 @@ func TestGetUser(t *testing.T) {
 		assert.ErrorIs(t, err, ErrUserNotFound)
 		assert.Contains(t, err.Error(), "not found")
 
-		rpcErr, ok := err.(RPCError)
+		rpcErr, ok := err.(WebRPCError)
 		assert.True(t, ok)
 		assert.Contains(t, rpcErr.Unwrap().Error(), "911")
 	}

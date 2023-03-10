@@ -99,7 +99,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
+				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()
@@ -140,9 +140,9 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 {{end -}}
 
 func RespondWithError(w http.ResponseWriter, err error) {
-	rpcErr, ok := err.(RPCError)
+	rpcErr, ok := err.(WebRPCError)
 	if !ok {
-		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "WebrpcServerError", Message: "server error", Cause: err.Error(), HTTPStatus: 400}, err)
+		rpcErr = ErrorWithCause(ErrWebrpcEndpoint, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")

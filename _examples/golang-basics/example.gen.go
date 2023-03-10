@@ -210,7 +210,7 @@ func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.Respons
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
+				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()
@@ -253,7 +253,7 @@ func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.Respo
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
+				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()
@@ -305,7 +305,7 @@ func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.Resp
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
+				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()
@@ -376,7 +376,7 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
+				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()
@@ -447,7 +447,7 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 		defer func() {
 			// In case of a panic, serve a 500 error and then panic.
 			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcPanic, fmt.Errorf("%v", rr)))
+				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
 				panic(rr)
 			}
 		}()
@@ -475,9 +475,9 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 }
 
 func RespondWithError(w http.ResponseWriter, err error) {
-	rpcErr, ok := err.(RPCError)
+	rpcErr, ok := err.(WebRPCError)
 	if !ok {
-		rpcErr = ErrorWithCause(RPCError{Code: 0, Name: "WebrpcServerError", Message: "server error", Cause: err.Error(), HTTPStatus: 400}, err)
+		rpcErr = ErrorWithCause(ErrWebrpcEndpoint, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -607,72 +607,61 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) error {
 	reqBody, err := json.Marshal(in)
 	if err != nil {
-		return rpcClientError(err, "failed to marshal json request")
+		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("failed to marshal JSON body: %w", err))
 	}
 	if err = ctx.Err(); err != nil {
-		return rpcClientError(err, "aborted because context was done")
+		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("aborted because context was done: %w", err))
 	}
 
 	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
 	if err != nil {
-		return rpcClientError(err, "could not build request")
+		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("could not build request: %w", err))
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return rpcClientError(err, "request failed")
+		return ErrorWithCause(ErrWebrpcRequestFailed, err)
 	}
 
 	defer func() {
 		cerr := resp.Body.Close()
 		if err == nil && cerr != nil {
-			err = rpcClientError(cerr, "failed to close response body")
+			err = ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("failed to close response body: %w", cerr))
 		}
 	}()
 
 	if err = ctx.Err(); err != nil {
-		return rpcClientError(err, "aborted because context was done")
+		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("aborted because context was done: %w", err))
 	}
 
 	if resp.StatusCode != 200 {
-		return rpcErrorFromResponse(resp)
+		respBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to read server error response body: %w", err))
+		}
+
+		var rpcErr WebRPCError
+		if err := json.Unmarshal(respBody, &rpcErr); err != nil {
+			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to unmarshal server error: %w", err))
+		}
+		if rpcErr.Cause != "" {
+			rpcErr.cause = errors.New(rpcErr.Cause)
+		}
+		return rpcErr
 	}
 
 	if out != nil {
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return rpcClientError(err, "failed to read response body")
+			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to read response body: %w", err))
 		}
 
 		err = json.Unmarshal(respBody, &out)
 		if err != nil {
-			return rpcClientError(err, "failed to unmarshal json response body")
-		}
-		if err = ctx.Err(); err != nil {
-			return rpcClientError(err, "aborted because context was done")
+			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to unmarshal JSON response body: %w", err))
 		}
 	}
 
 	return nil
-}
-
-func rpcErrorFromResponse(resp *http.Response) RPCError {
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return rpcClientError(err, "failed to read server error response body")
-	}
-
-	var rpcErr RPCError
-	if err := json.Unmarshal(respBody, &rpcErr); err != nil {
-		return rpcClientError(err, "failed unmarshal error response")
-	}
-	if rpcErr.Cause != "" {
-		rpcErr.cause = errors.New(rpcErr.Cause)
-	}
-	return rpcErr
-}
-
-func rpcClientError(cause error, message string) RPCError {
-	return ErrorWithCause(RPCError{Code: 0, Name: "WebrpcClientError", Message: "client error"}, fmt.Errorf("%v: %w", message, cause))
 }
 
 func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {
@@ -731,7 +720,7 @@ var (
 // Errors
 //
 
-type RPCError struct {
+type WebRPCError struct {
 	Name       string `json:"error"`
 	Code       int    `json:"code"`
 	Message    string `json:"msg"`
@@ -740,14 +729,14 @@ type RPCError struct {
 	cause      error
 }
 
-var _ error = RPCError{}
+var _ error = WebRPCError{}
 
-func (e RPCError) Error() string {
+func (e WebRPCError) Error() string {
 	return fmt.Sprintf("Error %d %s: %s", e.Code, e.Name, e.Message)
 }
 
-func (e RPCError) Is(target error) bool {
-	if rpcErr, ok := target.(RPCError); ok {
+func (e WebRPCError) Is(target error) bool {
+	if rpcErr, ok := target.(WebRPCError); ok {
 		return rpcErr.Code == e.Code
 	}
 	if legacyErr, ok := target.(legacyError); ok {
@@ -756,11 +745,11 @@ func (e RPCError) Is(target error) bool {
 	return errors.Is(e.cause, target)
 }
 
-func (e RPCError) Unwrap() error {
+func (e WebRPCError) Unwrap() error {
 	return e.cause
 }
 
-func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
+func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
 	err := rpcErr
 	err.cause = cause
 	err.Cause = cause.Error()
@@ -769,20 +758,22 @@ func ErrorWithCause(rpcErr RPCError, cause error) RPCError {
 
 // Webrpc errors
 var (
-	ErrWebrpcPanic       = RPCError{Code: -1, Name: "WebrpcServerPanic", Message: "server panic", HTTPStatus: 500}
-	ErrWebrpcBadRoute    = RPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
-	ErrWebrpcBadMethod   = RPCError{Code: -3, Name: "WebrpcBadMethod", Message: "bad method", HTTPStatus: 405}
-	ErrWebrpcBadRequest  = RPCError{Code: -4, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
-	ErrWebrpcBadResponse = RPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+	ErrWebrpcEndpoint = WebRPCError{Code: 0, Name: "WebrpcEndpoint", Message: "endpoint error", HTTPStatus: 400}
+	ErrWebrpcRequestFailed = WebRPCError{Code: -1, Name: "WebrpcRequestFailed", Message: "request failed", HTTPStatus: 0}
+	ErrWebrpcBadRoute = WebRPCError{Code: -2, Name: "WebrpcBadRoute", Message: "bad route", HTTPStatus: 404}
+	ErrWebrpcBadMethod = WebRPCError{Code: -3, Name: "WebrpcBadMethod", Message: "bad method", HTTPStatus: 405}
+	ErrWebrpcBadRequest = WebRPCError{Code: -4, Name: "WebrpcBadRequest", Message: "bad request", HTTPStatus: 400}
+	ErrWebrpcBadResponse = WebRPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
+	ErrWebrpcServerPanic = WebRPCError{Code: -6, Name: "WebrpcServerPanic", Message: "server panic", HTTPStatus: 500}
 )
 
 // Schema errors
 var (
-	ErrMissingArgument = RPCError{Code: 500100, Name: "MissingArgument", Message: "missing argument", HTTPStatus: 400}
-	ErrInvalidUsername = RPCError{Code: 500101, Name: "InvalidUsername", Message: "invalid username", HTTPStatus: 400}
-	ErrMemoryFull = RPCError{Code: 400100, Name: "MemoryFull", Message: "system memory is full", HTTPStatus: 400}
-	ErrUnauthorized = RPCError{Code: 400200, Name: "Unauthorized", Message: "unauthorized", HTTPStatus: 401}
-	ErrUserNotFound = RPCError{Code: 400300, Name: "UserNotFound", Message: "user not found", HTTPStatus: 400}
+	ErrMissingArgument = WebRPCError{Code: 500100, Name: "MissingArgument", Message: "missing argument", HTTPStatus: 400}
+	ErrInvalidUsername = WebRPCError{Code: 500101, Name: "InvalidUsername", Message: "invalid username", HTTPStatus: 400}
+	ErrMemoryFull = WebRPCError{Code: 400100, Name: "MemoryFull", Message: "system memory is full", HTTPStatus: 400}
+	ErrUnauthorized = WebRPCError{Code: 400200, Name: "Unauthorized", Message: "unauthorized", HTTPStatus: 401}
+	ErrUserNotFound = WebRPCError{Code: 400300, Name: "UserNotFound", Message: "user not found", HTTPStatus: 400}
 )
 
 //
@@ -790,86 +781,86 @@ var (
 //
 
 // Deprecated: Use ErrorWithCause() instead.
-func Errorf(err legacyError, format string, args ...interface{}) RPCError {
-	return ErrorWithCause(err.RPCError, fmt.Errorf(format, args...))
+func Errorf(err legacyError, format string, args ...interface{}) WebRPCError {
+	return ErrorWithCause(err.WebRPCError, fmt.Errorf(format, args...))
 }
 
 // Deprecated: Use ErrorWithCause() instead.
-func WrapError(err legacyError, cause error, format string, args ...interface{}) RPCError {
-	return ErrorWithCause(err.RPCError, fmt.Errorf("%v: %w", fmt.Errorf(format, args...), cause))
+func WrapError(err legacyError, cause error, format string, args ...interface{}) WebRPCError {
+	return ErrorWithCause(err.WebRPCError, fmt.Errorf("%v: %w", fmt.Errorf(format, args...), cause))
 }
 
 // Deprecated: Use ErrorWithCause() instead.
-func Failf(format string, args ...interface{}) RPCError {
+func Failf(format string, args ...interface{}) WebRPCError {
 	return Errorf(ErrFail, format, args...)
 }
 
 // Deprecated: Use ErrorWithCause() instead.
-func WrapFailf(cause error, format string, args ...interface{}) RPCError {
+func WrapFailf(cause error, format string, args ...interface{}) WebRPCError {
 	return WrapError(ErrFail, cause, format, args...)
 }
 
 // Deprecated: Use ErrorWithCause() instead.
-func ErrorNotFound(format string, args ...interface{}) RPCError {
+func ErrorNotFound(format string, args ...interface{}) WebRPCError {
 	return Errorf(ErrNotFound, format, args...)
 }
 
 // Deprecated: Use ErrorWithCause() instead.
-func ErrorInvalidArgument(argument string, validationMsg string) RPCError {
+func ErrorInvalidArgument(argument string, validationMsg string) WebRPCError {
 	return Errorf(ErrInvalidArgument, argument+" "+validationMsg)
 }
 
 // Deprecated: Use ErrorWithCause() instead.
-func ErrorRequiredArgument(argument string) RPCError {
+func ErrorRequiredArgument(argument string) WebRPCError {
 	return ErrorInvalidArgument(argument, "is required")
 }
 
 // Deprecated: Use ErrorWithCause() instead.
-func ErrorInternal(format string, args ...interface{}) RPCError {
+func ErrorInternal(format string, args ...interface{}) WebRPCError {
 	return Errorf(ErrInternal, format, args...)
 }
 
-type legacyError struct { RPCError }
+type legacyError struct { WebRPCError }
 
 // Legacy errors (webrpc v0.10.0 and earlier). Will be removed.
 var (
 	// Deprecated. Define errors in RIDL schema.
-	ErrCanceled = legacyError{RPCError{Code: -10000, Name: "ErrCanceled", Message: "canceled", HTTPStatus: 408 /* RequestTimeout */ }}
+	ErrCanceled = legacyError{WebRPCError{Code: -10000, Name: "ErrCanceled", Message: "canceled", HTTPStatus: 408 /* RequestTimeout */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrUnknown = legacyError{RPCError{Code: -10001, Name: "ErrUnknown", Message: "unknown", HTTPStatus: 400 /* Bad Request */ }}
+	ErrUnknown = legacyError{WebRPCError{Code: -10001, Name: "ErrUnknown", Message: "unknown", HTTPStatus: 400 /* Bad Request */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrFail = legacyError{RPCError{Code: -10002, Name: "ErrFail", Message: "fail", HTTPStatus: 422 /* Unprocessable Entity */ }}
+	ErrFail = legacyError{WebRPCError{Code: -10002, Name: "ErrFail", Message: "fail", HTTPStatus: 422 /* Unprocessable Entity */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrInvalidArgument = legacyError{RPCError{Code: -10003, Name: "ErrInvalidArgument", Message: "invalid argument", HTTPStatus: 400 /* BadRequest */ }}
+	ErrInvalidArgument = legacyError{WebRPCError{Code: -10003, Name: "ErrInvalidArgument", Message: "invalid argument", HTTPStatus: 400 /* BadRequest */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrDeadlineExceeded = legacyError{RPCError{Code: -10004, Name: "ErrDeadlineExceeded", Message: "deadline exceeded", HTTPStatus: 408 /* RequestTimeout */ }}
+	ErrDeadlineExceeded = legacyError{WebRPCError{Code: -10004, Name: "ErrDeadlineExceeded", Message: "deadline exceeded", HTTPStatus: 408 /* RequestTimeout */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrNotFound = legacyError{RPCError{Code: -10005, Name: "ErrNotFound", Message: "not found", HTTPStatus: 404 /* Not Found */ }}
+	ErrNotFound = legacyError{WebRPCError{Code: -10005, Name: "ErrNotFound", Message: "not found", HTTPStatus: 404 /* Not Found */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrBadRoute = legacyError{RPCError{Code: -10006, Name: "ErrBadRoute", Message: "bad route", HTTPStatus: 404 /* Not Found */ }}
+	ErrBadRoute = legacyError{WebRPCError{Code: -10006, Name: "ErrBadRoute", Message: "bad route", HTTPStatus: 404 /* Not Found */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrAlreadyExists = legacyError{RPCError{Code: -10007, Name: "ErrAlreadyExists", Message: "already exists", HTTPStatus: 409 /* Conflict */ }}
+	ErrAlreadyExists = legacyError{WebRPCError{Code: -10007, Name: "ErrAlreadyExists", Message: "already exists", HTTPStatus: 409 /* Conflict */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrPermissionDenied = legacyError{RPCError{Code: -10008, Name: "ErrPermissionDenied", Message: "permission denied", HTTPStatus: 403 /* Forbidden */ }}
+	ErrPermissionDenied = legacyError{WebRPCError{Code: -10008, Name: "ErrPermissionDenied", Message: "permission denied", HTTPStatus: 403 /* Forbidden */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrUnauthenticated = legacyError{RPCError{Code: -10009, Name: "ErrUnauthenticated", Message: "unauthenticated", HTTPStatus: 401 /* Unauthorized */ }}
+	ErrUnauthenticated = legacyError{WebRPCError{Code: -10009, Name: "ErrUnauthenticated", Message: "unauthenticated", HTTPStatus: 401 /* Unauthorized */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrResourceExhausted = legacyError{RPCError{Code: -10010, Name: "ErrResourceExhausted", Message: "resource exhausted", HTTPStatus: 403 /* Forbidden */ }}
+	ErrResourceExhausted = legacyError{WebRPCError{Code: -10010, Name: "ErrResourceExhausted", Message: "resource exhausted", HTTPStatus: 403 /* Forbidden */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrFailedPrecondition = legacyError{RPCError{Code: -10011, Name: "ErrFailedPrecondition", Message: "failed precondition", HTTPStatus: 412 /* Precondition Failed */ }}
+	ErrFailedPrecondition = legacyError{WebRPCError{Code: -10011, Name: "ErrFailedPrecondition", Message: "failed precondition", HTTPStatus: 412 /* Precondition Failed */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrAborted = legacyError{RPCError{Code: -10012, Name: "ErrAborted", Message: "aborted", HTTPStatus: 409 /* Conflict */ }}
+	ErrAborted = legacyError{WebRPCError{Code: -10012, Name: "ErrAborted", Message: "aborted", HTTPStatus: 409 /* Conflict */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrOutOfRange = legacyError{RPCError{Code: -10013, Name: "ErrOutOfRange", Message: "out of range", HTTPStatus: 400 /* Bad Request */ }}
+	ErrOutOfRange = legacyError{WebRPCError{Code: -10013, Name: "ErrOutOfRange", Message: "out of range", HTTPStatus: 400 /* Bad Request */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrUnimplemented = legacyError{RPCError{Code: -10014, Name: "ErrUnimplemented", Message: "unimplemented", HTTPStatus: 501 /* Not Implemented */ }}
+	ErrUnimplemented = legacyError{WebRPCError{Code: -10014, Name: "ErrUnimplemented", Message: "unimplemented", HTTPStatus: 501 /* Not Implemented */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrInternal = legacyError{RPCError{Code: -10015, Name: "ErrInternal", Message: "internal", HTTPStatus: 500 /* Internal Server Error */ }}
+	ErrInternal = legacyError{WebRPCError{Code: -10015, Name: "ErrInternal", Message: "internal", HTTPStatus: 500 /* Internal Server Error */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrUnavailable = legacyError{RPCError{Code: -10016, Name: "ErrUnavailable", Message: "unavailable", HTTPStatus: 503 /* Service Unavailable */ }}
+	ErrUnavailable = legacyError{WebRPCError{Code: -10016, Name: "ErrUnavailable", Message: "unavailable", HTTPStatus: 503 /* Service Unavailable */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrDataLoss = legacyError{RPCError{Code: -10017, Name: "ErrDataLoss", Message: "data loss", HTTPStatus: 500 /* Internal Server Error */ }}
+	ErrDataLoss = legacyError{WebRPCError{Code: -10017, Name: "ErrDataLoss", Message: "data loss", HTTPStatus: 500 /* Internal Server Error */ }}
 	// Deprecated. Define errors in RIDL schema.
-	ErrNone = legacyError{RPCError{Code: -10018, Name: "ErrNone", Message: "", HTTPStatus: 200 /* OK */ }}
+	ErrNone = legacyError{WebRPCError{Code: -10018, Name: "ErrNone", Message: "", HTTPStatus: 200 /* OK */ }}
 )
 
