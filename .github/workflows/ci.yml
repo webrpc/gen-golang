@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v3
       - name: Install webrpc-gen
         run: |
-          curl -o ./webrpc-gen -fLJO https://github.com/webrpc/webrpc/releases/download/v0.11.0-rc1/webrpc-gen.linux-amd64
+          curl -o ./webrpc-gen -fLJO https://github.com/webrpc/webrpc/releases/download/v0.11.0-rc2/webrpc-gen.linux-amd64
           chmod +x ./webrpc-gen
           echo $PWD >> $GITHUB_PATH
 
