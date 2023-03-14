@@ -1,22 +1,27 @@
 {{- define "type" -}}
 
 {{- $type := .Type -}}
-{{- $optional := .Optional -}}
+{{- $customType := (coalesce .CustomType "") -}}
 {{- $typeMap := .TypeMap -}}
+{{- $optional := .Optional -}}
 
-{{- if isMapType $type -}}
+{{- if (ne $customType "") -}}
+
+    {{$customType}}
+
+{{- else if isMapType $type -}}
 
     map[{{mapKeyType $type}}]{{template "type" dict "Type" (mapValueType $type) "TypeMap" $typeMap}}
 
 {{- else if isListType $type -}}
 
-    []{{template "type" dict "Type" (listElemType $type) "TypeMap" $typeMap}}
+    []{{template "type" dict "Type" (listElemType $type) "CustomType" $customType "TypeMap" $typeMap}}
 
 {{- else if isCoreType $type -}}
 
     {{if $optional}}*{{end}}{{ get $typeMap $type }}
 
-{{- else -}}
+{{- else -}}{{- /* structs */ -}}
 
     *{{$type}}
 
