@@ -41,21 +41,41 @@ func TestStatus(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	{
 		arg1 := map[string]string{"a": "1"}
-		code, user, err := client.GetUser(context.Background(), arg1, 12)
-		assert.Equal(t, uint32(200), code)
+		user, err := client.GetUser(context.Background(), arg1, 12)
 		assert.Equal(t, &User{ID: 12, Username: "hihi"}, user)
 		assert.NoError(t, err)
 	}
 
-	{
-		// Error case, expecting to receive an error
-		code, user, err := client.GetUser(context.Background(), nil, 911)
-
-		assert.True(t, IsErrorCode(err, ErrNotFound))
+	{ // userID == 911, expect not found err
+		user, err := client.GetUser(context.Background(), nil, 911)
 		assert.Nil(t, user)
-		assert.Equal(t, uint32(0), code)
 		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrUserNotFound)
 		assert.Contains(t, err.Error(), "not found")
+
+		rpcErr, ok := err.(WebRPCError)
+		assert.True(t, ok)
+		assert.Equal(t, rpcErr.HTTPStatus, 400)
+		assert.Contains(t, rpcErr.Unwrap().Error(), "911")
+	}
+
+	{ // userID == 31337, expect unauthorized
+		user, err := client.GetUser(context.Background(), nil, 31337)
+		assert.Nil(t, user)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrUnauthorized)
+	}
+
+	{ // userID == 666, expect panic
+		user, err := client.GetUser(context.Background(), nil, 666)
+		assert.Nil(t, user)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrWebrpcServerPanic)
+
+		rpcErr, ok := err.(WebRPCError)
+		assert.True(t, ok)
+		assert.Equal(t, rpcErr.HTTPStatus, 500)
+		assert.Contains(t, rpcErr.Unwrap().Error(), "oh no")
 	}
 
 	{
@@ -63,5 +83,17 @@ func TestGetUser(t *testing.T) {
 		assert.Equal(t, "joe", name)
 		assert.Equal(t, &User{ID: 123, Username: "joe"}, user)
 		assert.NoError(t, err)
+	}
+}
+
+func TestLegacyErrors(t *testing.T) {
+	{
+		_, err := client.GetUser(context.Background(), nil, 0)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrInvalidArgument)
+
+		_, err = client.GetUser(context.Background(), nil, 1000)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrUnavailable)
 	}
 }

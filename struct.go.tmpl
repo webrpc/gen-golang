@@ -29,7 +29,7 @@ type {{$name}} struct {
 			{{- end -}}
 		{{- end -}}
 	{{- end }}
-	{{$fieldName}} {{if ne $customType ""}}{{$customType}}{{else}}{{template "type" dict "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap}}{{end}} `{{$jsonTag}}{{if len $structTags}} {{end}}{{join (sort $structTags) " "}}`
+	{{$fieldName}} {{template "type" dict "Type" $field.Type "CustomType" $customType "Optional" $field.Optional "TypeMap" $typeMap}} `{{$jsonTag}}{{if len $structTags}} {{end}}{{join (sort $structTags) " "}}`
 {{- end}}
 }
 {{- end }}

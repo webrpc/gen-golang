@@ -5,6 +5,7 @@
 {{- set $opts "pkg" (default .Opts.pkg "proto") -}}
 {{- set $opts "client" (ternary (in .Opts.client "" "true") true false) -}}
 {{- set $opts "server" (ternary (in .Opts.server "" "true") true false) -}}
+{{- set $opts "legacyErrors" (ternary (in .Opts.legacyErrors "true") true false) -}}
 
 {{- /* Print help on -help. */ -}}
 {{- if exists .Opts "help" -}}
@@ -62,10 +63,13 @@ package {{get $opts "pkg"}}
 import (
 	"bytes"
 	"context"
+	"errors"
 	"encoding/json"
 	"fmt"
+ 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 )
@@ -96,4 +100,11 @@ func WebRPCSchemaHash() string {
 {{ end -}}
 
 {{ template "helpers" . }}
+
+{{- template "errors" dict "WebrpcErrors" .WebrpcErrors "SchemaErrors" .Errors "Opts" $opts }}
+
+{{- if $opts.legacyErrors }}
+{{ template "legacyErrors" . }}
+{{- end }}
+
 {{ end }}
