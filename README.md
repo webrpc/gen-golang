@@ -32,7 +32,7 @@ Change any of the following values by passing `-option="Value"` CLI flag to `web
 
 Example:
 ```
-webrpc-gen -schema=./proto.json -target=golang -out openapi.gen.yaml -pkg=main -client -server
+webrpc-gen -schema=./proto.json -target=golang -out server.gen.go -pkg=main -server
 ```
 
 ## Set custom Go field meta tags in your RIDL file
