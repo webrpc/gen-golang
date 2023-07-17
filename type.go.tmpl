@@ -1,6 +1,7 @@
 {{- define "type" -}}
 
 {{- $type := .Type -}}
+{{- $typePrefix := .TypePrefix -}}
 {{- $customType := (coalesce .CustomType "") -}}
 {{- $typeMap := .TypeMap -}}
 {{- $optional := .Optional -}}
@@ -11,11 +12,11 @@
 
 {{- else if isMapType $type -}}
 
-    map[{{mapKeyType $type}}]{{template "type" dict "Type" (mapValueType $type) "TypeMap" $typeMap}}
+    map[{{mapKeyType $type}}]{{template "type" dict "Type" (mapValueType $type) "TypeMap" $typeMap "TypePrefix" $typePrefix}}
 
 {{- else if isListType $type -}}
 
-    []{{template "type" dict "Type" (listElemType $type) "CustomType" $customType "TypeMap" $typeMap}}
+    []{{template "type" dict "Type" (listElemType $type) "CustomType" $customType "TypeMap" $typeMap "TypePrefix" $typePrefix}}
 
 {{- else if isCoreType $type -}}
 
@@ -23,7 +24,7 @@
 
 {{- else -}}{{- /* structs */ -}}
 
-    *{{$type}}
+    *{{$typePrefix}}{{$type}}
 
 {{- end -}}
 {{- end -}}

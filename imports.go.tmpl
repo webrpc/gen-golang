@@ -1,0 +1,48 @@
+{{- define "imports" -}}
+{{- $types := .Types -}}
+{{- $opts := .Opts -}}
+
+{{- /* Map of import paths. */ -}}
+{{- $imports := dict -}}
+{{- if $opts.client}}
+	{{- set $imports "bytes" "" -}}
+	{{- set $imports "io" "" -}}
+	{{- set $imports "net/url" "" -}}
+{{- else -}}
+	{{- set $imports "strings" "" -}}
+{{- end -}}
+{{- set $imports "context" "" -}}
+{{- set $imports "errors" "" -}}
+{{- set $imports "encoding/json" "" -}}
+{{- set $imports "fmt" "" -}}
+{{- set $imports "io/ioutil" "" -}}
+{{- set $imports "net/http" "" -}}
+
+{{- /*TODO*/ -}}
+{{- if false -}}
+{{- set $imports "time" "" -}}
+{{- end -}}
+
+{{- range $import, $rename := $imports }}
+	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
+{{- end -}}
+
+{{- $imports = dict -}}
+{{ range $_, $type := $types -}}
+	{{- range $_, $field := $type.Fields -}}
+		{{- range $meta := $field.Meta -}}
+			{{- if exists $meta "go.type.import" -}}
+				{{- set $imports (get $meta "go.type.import") "" -}}
+			{{- end -}}
+		{{- end -}}
+	{{- end -}}
+{{- end }}
+{{ if ne $opts.types "" }}
+	"{{ $opts.types -}}"
+{{ else }}
+	{{ range $import, $rename := $imports }}
+	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
+	{{- end -}}
+{{- end }}
+
+{{- end -}}

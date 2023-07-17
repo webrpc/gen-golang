@@ -1,5 +1,6 @@
 {{define "types"}}
 {{- $typeMap := .TypeMap -}}
+{{- $typePrefix := .TypePrefix -}}
 {{- $types := .Types -}}
 {{- $services := .Services -}}
 
@@ -24,7 +25,7 @@
 {{ range $_, $service := $services}}
 type {{$service.Name}} interface {
 	{{- range $_, $method := $service.Methods}}
-	{{.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
+	{{.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
 	{{- end}}
 }
 {{end}}
