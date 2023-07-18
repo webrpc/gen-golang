@@ -3,44 +3,57 @@
 {{- $opts := .Opts -}}
 
 {{- /* Map of import paths. */ -}}
-{{- $imports := dict -}}
+{{- $stdlibImports := dict -}}
+{{- set $stdlibImports "context" "" -}}
+{{- set $stdlibImports "errors" "" -}}
+{{- set $stdlibImports "encoding/json" "" -}}
+{{- set $stdlibImports "fmt" "" -}}
+{{- set $stdlibImports "io/ioutil" "" -}}
+{{- set $stdlibImports "net/http" "" -}}
+
 {{- if $opts.client}}
-	{{- set $imports "bytes" "" -}}
-	{{- set $imports "io" "" -}}
-	{{- set $imports "net/url" "" -}}
-{{- else -}}
-	{{- set $imports "strings" "" -}}
+	{{- set $stdlibImports "bytes" "" -}}
+	{{- set $stdlibImports "io" "" -}}
+	{{- set $stdlibImports "net/url" "" -}}
 {{- end -}}
-{{- set $imports "context" "" -}}
-{{- set $imports "errors" "" -}}
-{{- set $imports "encoding/json" "" -}}
-{{- set $imports "fmt" "" -}}
-{{- set $imports "io/ioutil" "" -}}
-{{- set $imports "net/http" "" -}}
-
-{{- /*TODO*/ -}}
-{{- if false -}}
-{{- set $imports "time" "" -}}
+{{- if $opts.server}}
+	{{- set $stdlibImports "strings" "" -}}
 {{- end -}}
 
-{{- range $import, $rename := $imports }}
-	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
-{{- end -}}
-
-{{- $imports = dict -}}
-{{ range $_, $type := $types -}}
-	{{- range $_, $field := $type.Fields -}}
-		{{- range $meta := $field.Meta -}}
-			{{- if exists $meta "go.type.import" -}}
-				{{- set $imports (get $meta "go.type.import") "" -}}
+{{- /* Import "time" if there's at least one timestamp. */ -}}
+{{ if eq $opts.importTypesFrom "" }}
+	{{- range $_, $type := $types -}}
+		{{- range $_, $field := $type.Fields -}}
+			{{- if $field.Type -}}
+				{{- if eq $field.Type.Expr "timestamp" -}}
+					{{- set $stdlibImports "time" "" -}}
+				{{- end -}}
 			{{- end -}}
 		{{- end -}}
 	{{- end -}}
-{{- end }}
+{{- end -}}
+
+{{- /* Print stdlib imports. */ -}}
+{{- range $import, $rename := $stdlibImports }}
+	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
+{{- end -}}
+
 {{ if ne $opts.importTypesFrom "" }}
-	"{{ $opts.importTypesFrom -}}"
-{{ else }}
-	{{ range $import, $rename := $imports }}
+
+	"{{ $opts.importTypesFrom }}"
+{{- else }}
+	{{- /* Print custom type imports. */ -}}
+	{{ $imports := dict }}
+	{{ range $_, $type := $types -}}
+		{{- range $_, $field := $type.Fields -}}
+			{{- range $meta := $field.Meta -}}
+				{{- if exists $meta "go.type.import" -}}
+					{{- set $imports (get $meta "go.type.import") "" -}}
+				{{- end -}}
+			{{- end -}}
+		{{- end -}}
+	{{- end }}
+	{{- range $import, $rename := $imports }}
 	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
 	{{- end -}}
 {{- end }}
