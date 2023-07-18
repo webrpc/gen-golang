@@ -10,10 +10,13 @@ enum Kind: uint32
 
 struct User
   - id: uint64
-    + json = id
     + go.field.name = ID
-    #+ go.field.type = int64
     + go.tag.db = id
+
+  - uuid: string
+    + go.tag.db = id
+    + go.field.type = uuid.UUID
+    + go.type.import = github.com/google/uuid
 
   - username: string
     + json = USERNAME
