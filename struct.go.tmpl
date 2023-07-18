@@ -3,6 +3,7 @@
 {{- $name := .Name -}}
 {{- $fields := .Fields -}}
 {{- $typeMap := .TypeMap -}}
+{{- $typePrefix := .TypePrefix -}}
 
 type {{$name}} struct {
 {{- range $_, $field := $fields -}}
@@ -29,7 +30,7 @@ type {{$name}} struct {
 			{{- end -}}
 		{{- end -}}
 	{{- end }}
-	{{$fieldName}} {{template "type" dict "Type" $field.Type "CustomType" $customType "Optional" $field.Optional "TypeMap" $typeMap}} `{{$jsonTag}}{{if len $structTags}} {{end}}{{join (sort $structTags) " "}}`
+	{{$fieldName}} {{template "type" dict "Type" $field.Type "CustomType" $customType "Optional" $field.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix}} `{{$jsonTag}}{{if len $structTags}} {{end}}{{join (sort $structTags) " "}}`
 {{- end}}
 }
 {{- end }}

@@ -22,12 +22,13 @@ As you can see, the `-target` supports default `golang`, any git URI, or a local
 ### Set custom template variables
 Change any of the following values by passing `-option="Value"` CLI flag to `webrpc-gen`.
 
-| webrpc-gen -option   | Description                             | Default value              | Added in |
-|----------------------|-----------------------------------------|----------------------------|----------|
-| `-pkg=<name>`        | package name                            | `"proto"`                  |          |
-| `-client`            | generate client code                    | unset (`false`)            |          |
-| `-server`            | generate server code                    | unset (`false`)            |          |
-| `-legacyErrors=true` | enable legacy errors (v0.10.0 or older) | unset (`false`)            | v0.11.0  |
+| webrpc-gen -option       | Description                               | Default value              | Added in |
+|--------------------------|-------------------------------------------|----------------------------|----------|
+| `-pkg=<name>`            | package name                              | `"proto"`                  |          |
+| `-client`                | generate client code                      | unset (`false`)            |          |
+| `-server`                | generate server code                      | unset (`false`)            |          |
+| `-importTypesFrom=<pkg>` | do not generate types; import from a pkg  | unset (`""`)               | v0.12.0  |
+| `-legacyErrors=true`     | enable legacy errors (v0.10.0 or older)   | unset (`false`)            | v0.11.0  |
 
 Example:
 ```
@@ -36,25 +37,44 @@ webrpc-gen -schema=./proto.json -target=golang -out openapi.gen.yaml -pkg=main -
 
 ## Set custom Go field meta tags in your RIDL file
 
-| CLI option flag           | Description                                                      |
-|---------------------------|------------------------------------------------------------------|
-| `+ go.field.name = ID`    | Set custom field name                                            |
-| `+ go.field.type = int64` | Set custom field type (must be able to JSON unmarshal the value) |
-| `+ go.tag.json = id`      | Set `json:"id"` struct tag                                       |
-| `+ go.tag.db = id`        | Set `db:"id"` struct tag                                         |
+| CLI option flag                              | Description                                                      |
+|----------------------------------------------|------------------------------------------------------------------|
+| `+ go.field.name = ID`                       | Set custom field name                                            |
+| `+ go.field.type = uuid.UUID`                | Set custom field type (must be able to JSON unmarshal the value) |
+| `+ go.type.import = github.com/google/uuid`  | Set custom field type's import path                              |
+| `+ go.tag.json = id`                         | Set `json:"id"` struct tag                                       |
+| `+ go.tag.db = id`                           | Set `db:"id"` struct tag                                         |
 
 Example:
 ```ridl
-message User
-  - id: uint64
-    + go.field.name = ID
+struct User
+  - ID: int64
     + go.tag.db = id
     + go.tag.json = id
+  - UUID: string
+    + go.field.type = uuid.UUID
+    + go.type.import = github.com/google/uuid
+    + go.tag.json = uuid
+    + go.tag.db = uuid
+  - Age: int
+    + go.tag.db: age
+  - Name: string
+    + go.tag.db = name
+  - PasswordHash: string
+    + go.tag.db = passwd_hash
 ```
+
 will result in
+
 ```go
+import "github.com/google/uuid"
+
 type User struct {
-	ID uint64 `json:"id" db:"id"`
+	ID           int64     `json:"id" db:"id"`
+	UUID         uuid.UUID `json:"uuid" db:"uuid"`
+	Name         string    `db:"name"`
+	Age          int       `db:"age"`
+	PasswordHash string    `json:"-" db:"passwd_hash"`
 }
 ```
 

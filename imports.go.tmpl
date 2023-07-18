@@ -1,0 +1,61 @@
+{{- define "imports" -}}
+{{- $types := .Types -}}
+{{- $opts := .Opts -}}
+
+{{- /* Map of import paths. */ -}}
+{{- $stdlibImports := dict -}}
+{{- set $stdlibImports "context" "" -}}
+{{- set $stdlibImports "errors" "" -}}
+{{- set $stdlibImports "encoding/json" "" -}}
+{{- set $stdlibImports "fmt" "" -}}
+{{- set $stdlibImports "io/ioutil" "" -}}
+{{- set $stdlibImports "net/http" "" -}}
+
+{{- if $opts.client}}
+	{{- set $stdlibImports "bytes" "" -}}
+	{{- set $stdlibImports "io" "" -}}
+	{{- set $stdlibImports "net/url" "" -}}
+{{- end -}}
+{{- if $opts.server}}
+	{{- set $stdlibImports "strings" "" -}}
+{{- end -}}
+
+{{- /* Import "time" if there's at least one timestamp. */ -}}
+{{ if eq $opts.importTypesFrom "" }}
+	{{- range $_, $type := $types -}}
+		{{- range $_, $field := $type.Fields -}}
+			{{- if $field.Type -}}
+				{{- if eq $field.Type.Expr "timestamp" -}}
+					{{- set $stdlibImports "time" "" -}}
+				{{- end -}}
+			{{- end -}}
+		{{- end -}}
+	{{- end -}}
+{{- end -}}
+
+{{- /* Print stdlib imports. */ -}}
+{{- range $import, $rename := $stdlibImports }}
+	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
+{{- end -}}
+
+{{ if ne $opts.importTypesFrom "" }}
+
+	"{{ $opts.importTypesFrom }}"
+{{- else }}
+	{{- /* Print custom type imports. */ -}}
+	{{ $imports := dict }}
+	{{ range $_, $type := $types -}}
+		{{- range $_, $field := $type.Fields -}}
+			{{- range $meta := $field.Meta -}}
+				{{- if exists $meta "go.type.import" -}}
+					{{- set $imports (get $meta "go.type.import") "" -}}
+				{{- end -}}
+			{{- end -}}
+		{{- end -}}
+	{{- end }}
+	{{- range $import, $rename := $imports }}
+	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
+	{{- end -}}
+{{- end }}
+
+{{- end -}}
