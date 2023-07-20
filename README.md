@@ -27,6 +27,7 @@ Change any of the following values by passing `-option="Value"` CLI flag to `web
 | `-pkg=<name>`            | package name                              | `"proto"`                  |          |
 | `-client`                | generate client code                      | unset (`false`)            |          |
 | `-server`                | generate server code                      | unset (`false`)            |          |
+| `-json=jsoniter`         | use alternative json encoding package     | unset (`"stdlib"`)         | v0.12.0  |
 | `-importTypesFrom=<pkg>` | do not generate types; import from a pkg  | unset (`""`)               | v0.12.0  |
 | `-legacyErrors=true`     | enable legacy errors (v0.10.0 or older)   | unset (`false`)            | v0.11.0  |
 
