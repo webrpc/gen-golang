@@ -72,7 +72,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	{{- if .Inputs|len}}
 	reqContent := struct {
 	{{- range $i, $input := .Inputs}}
-		Arg{{$i}} {{template "type" dict "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix}} `json:"{{firstLetterToLower $input.Name}}"`
+		Arg{{$i}} {{template "type" dict "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix}} `json:"{{$input.Name}}"`
 	{{- end}}
 	}{}
 
@@ -109,7 +109,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	{{- if .Outputs | len}}
 	respContent := struct {
 	{{- range $i, $output := .Outputs}}
-		Ret{{$i}} {{template "type" dict "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix}} `json:"{{firstLetterToLower $output.Name}}"`
+		Ret{{$i}} {{template "type" dict "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix}} `json:"{{$output.Name}}"`
 	{{- end}}
 	}{ {{- range $i, $_ := .Outputs}}{{if gt $i 0}}, {{end}}ret{{$i}}{{end}}}
 	{{- end}}
