@@ -44,7 +44,7 @@ import (
 {{- end -}}
 
 {{- /* Print custom type imports. */ -}}
-{{ $imports := dict }}
+{{- $imports := dict -}}
 
 {{- if eq $opts.json "stdlib" -}}
 	{{- /* Already imported in the stdlib section. */ -}}
@@ -55,11 +55,10 @@ import (
 	{{- exit 1 -}}
 {{- end -}}
 
-{{ if ne $opts.importTypesFrom "" }}
-
-	"{{ $opts.importTypesFrom }}"
-{{- else }}
-	{{ range $_, $type := $types -}}
+{{- if ne $opts.importTypesFrom "" }}
+	{{- set $imports $opts.importTypesFrom "" -}}
+{{- else -}}
+	{{- range $_, $type := $types -}}
 		{{- range $_, $field := $type.Fields -}}
 			{{- range $meta := $field.Meta -}}
 				{{- if exists $meta "go.type.import" -}}
@@ -67,16 +66,16 @@ import (
 				{{- end -}}
 			{{- end -}}
 		{{- end -}}
-	{{- end }}
-	{{- range $import, $rename := $imports }}
-	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
 	{{- end -}}
-{{ end }}
+{{- end }}
+{{ range $import, $rename := $imports }}
+	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
+{{- end }}
 )
 
 {{- if eq $opts.json "jsoniter" }}
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
-{{ end -}}
+{{- end -}}
 
 {{- end -}}
