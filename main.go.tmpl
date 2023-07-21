@@ -84,15 +84,17 @@ func WebRPCSchemaHash() string {
 	return "{{.SchemaHash}}"
 }
 
-{{ if eq $opts.importTypesFrom "" -}}
+{{- printf "\n" -}}
+
+{{- if eq $opts.importTypesFrom "" }}
 {{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "TypePrefix" $typePrefix}}
-{{- end }}
+{{ end -}}
 
 {{- if $opts.server}}
 {{ template "server" dict "Services" .Services "TypeMap" $typeMap "TypePrefix" $typePrefix }}
 {{ end -}}
 
-{{- if $opts.client }}
+{{ if $opts.client }}
 {{ template "client" dict "Services" .Services "TypeMap" $typeMap "TypePrefix" $typePrefix }}
 {{ end -}}
 
