@@ -1,25 +1,26 @@
 {{- define "enum" -}}
 
-{{- $name := .Name -}}
-{{- $type := .Type -}}
-{{- $fields := .Fields -}}
+{{- $enum := .Type -}}
+{{- $name := $enum.Name -}}
+{{- $type := $enum.Type -}}
+{{- $enums := $enum.Enums -}}
 
 type {{$name}} {{$type}}
 
 const (
-{{- range $fields}}
+{{- range $enums}}
 	{{$name}}_{{.Name}} {{$name}} = {{.Value}}
 {{- end}}
 )
 
 var {{$name}}_name = map[{{$type}}]string{
-{{- range $fields}}
+{{- range $enums}}
 	{{.Value}}: "{{.Name}}",
 {{- end}}
 }
 
 var {{$name}}_value = map[string]{{$type}}{
-{{- range $fields}}
+{{- range $enums}}
 	"{{.Name}}": {{.Value}},
 {{- end}}
 }

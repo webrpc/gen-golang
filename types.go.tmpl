@@ -1,4 +1,5 @@
 {{define "types"}}
+
 {{- $typeMap := .TypeMap -}}
 {{- $typePrefix := .TypePrefix -}}
 {{- $types := .Types -}}
@@ -11,7 +12,7 @@
 {{ range $_, $type := $types -}}
 
 {{- if eq $type.Kind "enum" }}
-{{template "enum" dict "Name" $type.Name "Type" $type.Type "TypePrefix" $typePrefix "Fields" $type.Fields}}
+{{template "enum" dict "Type" $type "TypePrefix" $typePrefix }}
 {{ end -}}
 
 {{- if eq $type.Kind "struct" }}
