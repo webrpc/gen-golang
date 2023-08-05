@@ -3,8 +3,11 @@
 {{- $name := .Name -}}
 {{- $type := .Type -}}
 {{- $fields := .Fields -}}
+{{- $opts := .Opts -}}
 
+{{- if $opts.types -}}
 type {{$name}} {{$type}}
+{{- end }}
 
 const (
 {{- range $fields}}

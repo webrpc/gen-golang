@@ -22,14 +22,14 @@ As you can see, the `-target` supports default `golang`, any git URI, or a local
 ### Set custom template variables
 Change any of the following values by passing `-option="Value"` CLI flag to `webrpc-gen`.
 
-| webrpc-gen -option       | Description                               | Default value              | Added in |
-|--------------------------|-------------------------------------------|----------------------------|----------|
-| `-pkg=<name>`            | package name                              | `"proto"`                  |          |
-| `-client`                | generate client code                      | unset (`false`)            |          |
-| `-server`                | generate server code                      | unset (`false`)            |          |
-| `-json=jsoniter`         | use alternative json encoding package     | unset (`"stdlib"`)         | v0.12.0  |
-| `-importTypesFrom=<pkg>` | do not generate types; import from a pkg  | unset (`""`)               | v0.12.0  |
-| `-legacyErrors=true`     | enable legacy errors (v0.10.0 or older)   | unset (`false`)            | v0.11.0  |
+| webrpc-gen -option   | Description                             | Default value | Added in |
+|----------------------|-----------------------------------------|--------------|----------|
+| `-pkg=<name>`        | package name                            | `"proto"`    | v0.5.0   |
+| `-client`            | generate client code                    | `false`      | v0.5.0   |
+| `-server`            | generate server code                    | `false`      | v0.5.0   |
+| `-types=false`       | don't generate types                    | `true`       | v0.13.0  |
+| `-json=jsoniter`     | use alternative json encoding package   | `"stdlib"`   | v0.12.0  |
+| `-legacyErrors=true` | enable legacy errors (v0.10.0 or older) | `false`      | v0.11.0  |
 
 Example:
 ```
