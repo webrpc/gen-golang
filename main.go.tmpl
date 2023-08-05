@@ -5,9 +5,10 @@
 {{- set $opts "pkg" (default .Opts.pkg "proto") -}}
 {{- set $opts "client" (ternary (in .Opts.client "" "true") true false) -}}
 {{- set $opts "server" (ternary (in .Opts.server "" "true") true false) -}}
+{{- set $opts "types" (ternary (eq .Opts.types "false") false true) -}}
 {{- set $opts "json" (default .Opts.json "stdlib") -}}
 {{- set $opts "importTypesFrom" (default .Opts.importTypesFrom "" ) -}}
-{{- set $opts "legacyErrors" (ternary (in .Opts.legacyErrors "true") true false) -}}
+{{- set $opts "legacyErrors" (ternary (in .Opts.legacyErrors "" "true") true false) -}}
 
 {{- $typePrefix := (last (split "/" $opts.importTypesFrom)) -}}
 {{- if ne $typePrefix "" -}}
@@ -87,7 +88,7 @@ func WebRPCSchemaHash() string {
 {{- printf "\n" -}}
 
 {{- if eq $opts.importTypesFrom "" }}
-{{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "TypePrefix" $typePrefix}}
+{{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "TypePrefix" $typePrefix "Opts" $opts }}
 {{ end -}}
 
 {{- if $opts.server}}
@@ -100,7 +101,7 @@ func WebRPCSchemaHash() string {
 
 {{ template "helpers" . }}
 
-{{- template "errors" dict "WebrpcErrors" .WebrpcErrors "SchemaErrors" .Errors "Opts" $opts "TypePrefix" $typePrefix}}
+{{- template "errors" dict "WebrpcErrors" .WebrpcErrors "SchemaErrors" .Errors "Opts" $opts "TypePrefix" $typePrefix }}
 
 {{- if $opts.legacyErrors }}
 {{ template "legacyErrors" . }}

@@ -3,6 +3,7 @@
 {{- $typePrefix := .TypePrefix -}}
 {{- $types := .Types -}}
 {{- $services := .Services -}}
+{{- $opts := .Opts -}}
 
 {{- if $types -}}
 //
@@ -11,17 +12,17 @@
 {{ range $_, $type := $types -}}
 
 {{- if eq $type.Kind "enum" }}
-{{template "enum" dict "Name" $type.Name "Type" $type.Type "TypePrefix" $typePrefix "Fields" $type.Fields}}
+{{template "enum" dict "Name" $type.Name "Type" $type.Type "TypePrefix" $typePrefix "Fields" $type.Fields "Opts" $opts}}
 {{ end -}}
 
-{{- if eq $type.Kind "struct" }}
+{{- if and (eq $type.Kind "struct") $opts.types }}
 {{template "struct" dict "Name" $type.Name "TypeMap" $typeMap "TypePrefix" $typePrefix "Fields" $type.Fields}}
 {{ end -}}
 
 {{- end -}}
 {{- end -}}
 
-{{- if $services -}}
+{{- if and $services $opts.types -}}
 {{ range $_, $service := $services}}
 type {{$service.Name}} interface {
 	{{- range $_, $method := $service.Methods}}
