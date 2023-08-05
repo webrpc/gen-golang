@@ -5,7 +5,7 @@
 {{- set $opts "pkg" (default .Opts.pkg "proto") -}}
 {{- set $opts "client" (ternary (in .Opts.client "" "true") true false) -}}
 {{- set $opts "server" (ternary (in .Opts.server "" "true") true false) -}}
-{{- set $opts "types" (ternary (eq .Opts.types "false") false true) -}}
+{{- set $opts "types" (ternary (eq (default .Opts.types "true") "false") false true) -}}
 {{- set $opts "json" (default .Opts.json "stdlib") -}}
 {{- set $opts "importTypesFrom" (default .Opts.importTypesFrom "" ) -}}
 {{- set $opts "legacyErrors" (ternary (in .Opts.legacyErrors "" "true") true false) -}}
