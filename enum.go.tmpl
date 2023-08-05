@@ -31,20 +31,12 @@ func (x {{$name}}) String() string {
 	return {{$name}}_name[{{$type}}(x)]
 }
 
-func (x {{$name}}) MarshalJSON() ([]byte, error) {
-	buf := bytes.NewBufferString(`"`)
-	buf.WriteString({{$name}}_name[{{$type}}(x)])
-	buf.WriteString(`"`)
-	return buf.Bytes(), nil
+func (x Status) MarshalText() ([]byte, error) {
+	return []byte({{$name}}_name[{{$type}}(x)]), nil
 }
 
-func (x *{{$name}}) UnmarshalJSON(b []byte) error {
-	var j string
-	err := json.Unmarshal(b, &j)
-	if err != nil {
-		return err
-	}
-	*x = {{$name}}({{$name}}_value[j])
+func (x *{{$name}}) UnmarshalText(b []byte) error {
+	*x = {{$name}}({{$name}}_value[string(b)])
 	return nil
 }
 
