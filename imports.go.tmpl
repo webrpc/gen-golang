@@ -14,11 +14,8 @@
 	{{- set $stdlibImports "encoding/json" "" -}}
 {{- end -}}
 
-{{- if or $opts.client (not $opts.types) }}
-	{{- set $stdlibImports "bytes" "" -}}
-{{- end -}}
-
 {{- if $opts.client }}
+	{{- set $stdlibImports "bytes" "" -}}
 	{{- set $stdlibImports "io" "" -}}
 	{{- set $stdlibImports "net/url" "" -}}
 {{- end -}}
