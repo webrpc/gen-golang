@@ -31,7 +31,7 @@ func (x {{$name}}) String() string {
 	return {{$name}}_name[{{$type}}(x)]
 }
 
-func (x Status) MarshalText() ([]byte, error) {
+func (x {{$name}}) MarshalText() ([]byte, error) {
 	return []byte({{$name}}_name[{{$type}}(x)]), nil
 }
 
