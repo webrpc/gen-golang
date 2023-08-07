@@ -63,7 +63,7 @@ func (x Location) String() string {
 	return Location_name[uint32(x)]
 }
 
-func (x Status) MarshalText() ([]byte, error) {
+func (x Location) MarshalText() ([]byte, error) {
 	return []byte(Location_name[uint32(x)]), nil
 }
 

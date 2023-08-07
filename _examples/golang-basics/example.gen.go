@@ -62,7 +62,7 @@ func (x Kind) String() string {
 	return Kind_name[uint32(x)]
 }
 
-func (x Status) MarshalText() ([]byte, error) {
+func (x Kind) MarshalText() ([]byte, error) {
 	return []byte(Kind_name[uint32(x)]), nil
 }
 
