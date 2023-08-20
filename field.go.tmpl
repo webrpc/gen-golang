@@ -34,9 +34,7 @@
     {{- end -}}
 {{- end }}
 
-{{- if $printName -}}
-{{$fieldName}}{{" "}}
-{{- end -}}
+{{- if $printName}}{{"\t"}}{{$fieldName}} {{end -}}
 {{- if (ne $customType "") -}}
 
     {{$customType}}
@@ -60,7 +58,7 @@
 {{- end -}}
 
 {{- if $includeJsonTags -}}
-`{{$jsonTag}}{{if and $includeStructTags (len $structTags)}} {{join (sort $structTags) " "}}{{end}}`
+{{" "}}`{{$jsonTag}}{{if and $includeStructTags (len $structTags)}} {{join (sort $structTags) " "}}{{end}}`
 {{- end -}}
 
 {{- end -}}
