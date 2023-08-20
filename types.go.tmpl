@@ -26,7 +26,7 @@
 {{ range $_, $service := $services}}
 type {{$service.Name}} interface {
 	{{- range $_, $method := $service.Methods}}
-	{{.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "type" dict "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "type" dict "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
+	{{.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
 	{{- end}}
 }
 {{end}}
