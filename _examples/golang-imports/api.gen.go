@@ -42,7 +42,6 @@ func WebRPCSchemaHash() string {
 type User struct {
 	Username string `json:"username"`
 	Age uint32 `json:"age"`
-
 }
 
 type Location uint32
