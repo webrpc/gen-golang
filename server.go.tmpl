@@ -1,6 +1,8 @@
 {{- define "server"}}
 {{- $typeMap := .TypeMap -}}
 {{- $typePrefix := .TypePrefix -}}
+{{- $opts := .Opts -}}
+
 {{- if .Services -}}
 //
 // Server
@@ -120,7 +122,11 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	}
 
 	{{- if .Outputs | len}}
+	{{ if $opts.fixEmptyArrays -}}
+	respBody, err := json.Marshal(initializeNilSlices(respContent))
+	{{ else -}}
 	respBody, err := json.Marshal(respContent)
+	{{ end -}}
 	if err != nil {
 		err = ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
 		RespondWithError(w, err)

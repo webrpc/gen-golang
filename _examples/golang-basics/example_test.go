@@ -42,7 +42,7 @@ func TestGetUser(t *testing.T) {
 	{
 		arg1 := map[string]string{"a": "1"}
 		user, err := client.GetUser(context.Background(), arg1, 12)
-		assert.Equal(t, &User{ID: 12, Username: "hihi"}, user)
+		assert.Equal(t, &User{ID: 12, Username: "hihi", Nicknames: []Nickname{}}, user)
 		assert.NoError(t, err)
 	}
 
@@ -81,7 +81,7 @@ func TestGetUser(t *testing.T) {
 	{
 		name, user, err := client.FindUser(context.Background(), &SearchFilter{Q: "joe"})
 		assert.Equal(t, "joe", name)
-		assert.Equal(t, &User{ID: 123, Username: "joe"}, user)
+		assert.Equal(t, &User{ID: 123, Username: "joe", Nicknames: []Nickname{}}, user)
 		assert.NoError(t, err)
 	}
 }
