@@ -51,22 +51,6 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 {{range .Methods }}
-func (s *{{$serviceName}}) serve{{.Name | firstLetterToUpper}}(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	header := r.Header.Get("Content-Type")
-	i := strings.Index(header, ";")
-	if i == -1 {
-		i = len(header)
-	}
-
-	switch strings.TrimSpace(strings.ToLower(header[:i])) {
-	case "application/json":
-		s.serve{{ .Name | firstLetterToUpper }}JSON(ctx, w, r)
-	default:
-		err := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
-		RespondWithError(w, err)
-	}
-}
-
 func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var err error
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{.Name}}")
