@@ -33,6 +33,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "{{.Name}}")
 
 	if r.Method != "POST" {
+		w.Header().Add("Allow", "POST") // RFC 9110.
 		err := ErrorWithCause(ErrWebrpcBadMethod, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
 		RespondWithError(w, err)
 		return
