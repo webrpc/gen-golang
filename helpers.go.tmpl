@@ -14,11 +14,13 @@ func (k *contextKey) String() string {
 }
 
 var (
-	// For Client
+{{- if $opts.client}}
 	HTTPClientRequestHeadersCtxKey = &contextKey{"HTTPClientRequestHeaders"}
+{{- end}}
 
-	// For Server
+{{- if $opts.server}}
 	HTTPResponseWriterCtxKey = &contextKey{"HTTPResponseWriter"}
+{{- end}}
 
 	HTTPRequestCtxKey = &contextKey{"HTTPRequest"}
 
@@ -27,7 +29,7 @@ var (
 	MethodNameCtxKey = &contextKey{"MethodName"}
 )
 
-{{- if $opts.fixEmptyArrays }}
+{{- if and $opts.fixEmptyArrays $opts.server}}
 
 // Copied from https://github.com/golang-cz/nilslice
 func initializeNilSlices(obj interface{}) interface{} {
