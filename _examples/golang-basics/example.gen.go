@@ -138,12 +138,21 @@ type WebRPCServer interface {
 
 type exampleServiceServer struct {
 	ExampleService
+	handlers map[string]func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 }
 
 func NewExampleServiceServer(svc ExampleService) WebRPCServer {
-	return &exampleServiceServer{
+	s := &exampleServiceServer{
 		ExampleService: svc,
 	}
+	s.handlers = map[string]func(ctx context.Context, w http.ResponseWriter, r *http.Request){
+		"/rpc/ExampleService/Ping": s.servePingJSON,
+		"/rpc/ExampleService/Status": s.serveStatusJSON,
+		"/rpc/ExampleService/Version": s.serveVersionJSON,
+		"/rpc/ExampleService/GetUser": s.serveGetUserJSON,
+		"/rpc/ExampleService/FindUser": s.serveFindUserJSON,
+	}
+	return s
 }
 
 func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -152,45 +161,29 @@ func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "ExampleService")
 
+	handler, ok := s.handlers[r.URL.Path]
+	if !ok {
+		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("no handler for path %q", r.URL.Path))
+		RespondWithError(w, err)
+		return
+	}
+
 	if r.Method != "POST" {
+		w.Header().Add("Allow", "POST") // RFC 9110.
 		err := ErrorWithCause(ErrWebrpcBadMethod, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
 		RespondWithError(w, err)
 		return
 	}
 
-	switch r.URL.Path {
-	case "/rpc/ExampleService/Ping":
-		s.servePing(ctx, w, r)
-		return
-	case "/rpc/ExampleService/Status":
-		s.serveStatus(ctx, w, r)
-		return
-	case "/rpc/ExampleService/Version":
-		s.serveVersion(ctx, w, r)
-		return
-	case "/rpc/ExampleService/GetUser":
-		s.serveGetUser(ctx, w, r)
-		return
-	case "/rpc/ExampleService/FindUser":
-		s.serveFindUser(ctx, w, r)
-		return
-	default:
-		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("no handler for path %q", r.URL.Path))
-		RespondWithError(w, err)
-		return
+	contentType := r.Header.Get("Content-Type")
+	if i := strings.Index(contentType, ";"); i >= 0 {
+		contentType = contentType[:i]
 	}
-}
+	contentType = strings.TrimSpace(strings.ToLower(contentType))
 
-func (s *exampleServiceServer) servePing(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	header := r.Header.Get("Content-Type")
-	i := strings.Index(header, ";")
-	if i == -1 {
-		i = len(header)
-	}
-
-	switch strings.TrimSpace(strings.ToLower(header[:i])) {
+	switch contentType  {
 	case "application/json":
-		s.servePingJSON(ctx, w, r)
+		handler(ctx, w, r)
 	default:
 		err := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
 		RespondWithError(w, err)
@@ -223,21 +216,6 @@ func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.Respons
 	w.Write([]byte("{}"))
 }
 
-func (s *exampleServiceServer) serveStatus(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	header := r.Header.Get("Content-Type")
-	i := strings.Index(header, ";")
-	if i == -1 {
-		i = len(header)
-	}
-
-	switch strings.TrimSpace(strings.ToLower(header[:i])) {
-	case "application/json":
-		s.serveStatusJSON(ctx, w, r)
-	default:
-		err := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
-		RespondWithError(w, err)
-	}
-}
 
 func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var err error
@@ -275,21 +253,6 @@ func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.Respo
 	w.Write(respBody)
 }
 
-func (s *exampleServiceServer) serveVersion(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	header := r.Header.Get("Content-Type")
-	i := strings.Index(header, ";")
-	if i == -1 {
-		i = len(header)
-	}
-
-	switch strings.TrimSpace(strings.ToLower(header[:i])) {
-	case "application/json":
-		s.serveVersionJSON(ctx, w, r)
-	default:
-		err := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
-		RespondWithError(w, err)
-	}
-}
 
 func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var err error
@@ -325,22 +288,6 @@ func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.Resp
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
-}
-
-func (s *exampleServiceServer) serveGetUser(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	header := r.Header.Get("Content-Type")
-	i := strings.Index(header, ";")
-	if i == -1 {
-		i = len(header)
-	}
-
-	switch strings.TrimSpace(strings.ToLower(header[:i])) {
-	case "application/json":
-		s.serveGetUserJSON(ctx, w, r)
-	default:
-		err := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
-		RespondWithError(w, err)
-	}
 }
 
 func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -396,22 +343,6 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
-}
-
-func (s *exampleServiceServer) serveFindUser(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	header := r.Header.Get("Content-Type")
-	i := strings.Index(header, ";")
-	if i == -1 {
-		i = len(header)
-	}
-
-	switch strings.TrimSpace(strings.ToLower(header[:i])) {
-	case "application/json":
-		s.serveFindUserJSON(ctx, w, r)
-	default:
-		err := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
-		RespondWithError(w, err)
-	}
 }
 
 func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
