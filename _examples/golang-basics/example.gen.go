@@ -138,21 +138,12 @@ type WebRPCServer interface {
 
 type exampleServiceServer struct {
 	ExampleService
-	handlers map[string]func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 }
 
 func NewExampleServiceServer(svc ExampleService) WebRPCServer {
-	s := &exampleServiceServer{
+	return &exampleServiceServer{
 		ExampleService: svc,
 	}
-	s.handlers = map[string]func(ctx context.Context, w http.ResponseWriter, r *http.Request){
-		"/rpc/ExampleService/Ping": s.servePingJSON,
-		"/rpc/ExampleService/Status": s.serveStatusJSON,
-		"/rpc/ExampleService/Version": s.serveVersionJSON,
-		"/rpc/ExampleService/GetUser": s.serveGetUserJSON,
-		"/rpc/ExampleService/FindUser": s.serveFindUserJSON,
-	}
-	return s
 }
 
 func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -161,8 +152,19 @@ func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "ExampleService")
 
-	handler, ok := s.handlers[r.URL.Path]
-	if !ok {
+	var handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
+	switch r.URL.Path {
+	case "/rpc/ExampleService/Ping":
+		handler = s.servePingJSON
+	case "/rpc/ExampleService/Status":
+		handler = s.serveStatusJSON
+	case "/rpc/ExampleService/Version":
+		handler = s.serveVersionJSON
+	case "/rpc/ExampleService/GetUser":
+		handler = s.serveGetUserJSON
+	case "/rpc/ExampleService/FindUser":
+		handler = s.serveFindUserJSON
+	default:
 		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("no handler for path %q", r.URL.Path))
 		RespondWithError(w, err)
 		return
@@ -181,7 +183,7 @@ func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	}
 	contentType = strings.TrimSpace(strings.ToLower(contentType))
 
-	switch contentType  {
+	switch contentType {
 	case "application/json":
 		handler(ctx, w, r)
 	default:
@@ -215,7 +217,6 @@ func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.Respons
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
-
 
 func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var err error
@@ -252,7 +253,6 @@ func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.Respo
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
-
 
 func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	var err error

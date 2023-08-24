@@ -32,6 +32,17 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "{{.Name}}")
 
+	var handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
+	switch r.URL.Path {
+	{{- range .Methods}}
+	case "/rpc/{{$name}}/{{.Name}}": handler = s.serve{{.Name | firstLetterToUpper}}JSON
+	{{- end}}
+	default:
+		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("no handler for path %q", r.URL.Path))
+		RespondWithError(w, err)
+		return
+	}
+
 	if r.Method != "POST" {
 		w.Header().Add("Allow", "POST") // RFC 9110.
 		err := ErrorWithCause(ErrWebrpcBadMethod, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
@@ -39,16 +50,18 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	switch r.URL.Path {
-	{{- range .Methods}}
-	case "/rpc/{{$name}}/{{.Name}}":
-		s.serve{{.Name | firstLetterToUpper}}(ctx, w, r)
-		return
-	{{- end}}
+	contentType := r.Header.Get("Content-Type")
+	if i := strings.Index(contentType, ";"); i >= 0 {
+		contentType = contentType[:i]
+	}
+	contentType = strings.TrimSpace(strings.ToLower(contentType))
+
+	switch contentType  {
+	case "application/json":
+		handler(ctx, w, r)
 	default:
-		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("no handler for path %q", r.URL.Path))
+		err := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
 		RespondWithError(w, err)
-		return
 	}
 }
 {{range .Methods }}
