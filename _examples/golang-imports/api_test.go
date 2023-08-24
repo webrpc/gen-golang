@@ -2,29 +2,31 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-var (
-	client ExampleAPI
-)
+var client ExampleAPI
 
-// func TestMain()
-
-func init() {
+func TestMain(m *testing.M) {
 	go func() {
-		startServer()
+		if err := startServer(); err != nil {
+			log.Fatal(err)
+		}
 	}()
+	time.Sleep(time.Millisecond * 500)
 
 	client = NewExampleAPIClient("http://0.0.0.0:4242", &http.Client{
 		Timeout: time.Duration(2 * time.Second),
 	})
-	time.Sleep(time.Millisecond * 500)
 
+	code := m.Run()
+	os.Exit(code)
 }
 
 func TestPing(t *testing.T) {
