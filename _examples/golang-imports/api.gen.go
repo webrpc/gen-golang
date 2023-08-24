@@ -485,10 +485,7 @@ func (k *contextKey) String() string {
 }
 
 var (
-	// For Client
 	HTTPClientRequestHeadersCtxKey = &contextKey{"HTTPClientRequestHeaders"}
-
-	// For Server
 	HTTPResponseWriterCtxKey = &contextKey{"HTTPResponseWriter"}
 
 	HTTPRequestCtxKey = &contextKey{"HTTPRequest"}
