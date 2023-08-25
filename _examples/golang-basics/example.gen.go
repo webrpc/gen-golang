@@ -204,8 +204,7 @@ func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.Respons
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
 
 	// Call service method implementation.
-	err := s.ExampleService.Ping(ctx)
-	if err != nil {
+	if err := s.ExampleService.Ping(ctx); err != nil {
 		RespondWithError(w, err)
 		return
 	}
@@ -220,8 +219,7 @@ func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.Respo
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
 	// Call service method implementation.
-	ret0, err := s.ExampleService.Status(ctx)
-	if err != nil {
+	if ret0, err := s.ExampleService.Status(ctx); err != nil {
 		RespondWithError(w, err)
 		return
 	}
@@ -245,8 +243,7 @@ func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.Resp
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Version")
 
 	// Call service method implementation.
-	ret0, err := s.ExampleService.Version(ctx)
-	if err != nil {
+	if ret0, err := s.ExampleService.Version(ctx); err != nil {
 		RespondWithError(w, err)
 		return
 	}
@@ -286,8 +283,7 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
 
 	// Call service method implementation.
-	ret0, err := s.ExampleService.GetUser(ctx, reqPayload.Arg0, reqPayload.Arg1)
-	if err != nil {
+	if ret0, err := s.ExampleService.GetUser(ctx, reqPayload.Arg0, reqPayload.Arg1); err != nil {
 		RespondWithError(w, err)
 		return
 	}
@@ -326,8 +322,7 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "FindUser")
 
 	// Call service method implementation.
-	ret0, ret1, err := s.ExampleService.FindUser(ctx, reqPayload.Arg0)
-	if err != nil {
+	if ret0, ret1, err := s.ExampleService.FindUser(ctx, reqPayload.Arg0); err != nil {
 		RespondWithError(w, err)
 		return
 	}

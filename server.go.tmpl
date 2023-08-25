@@ -96,8 +96,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{.Name}}")
 
 	// Call service method implementation.
-	{{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err := s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqPayload.Arg{{$i}}{{end}})
-	if err != nil {
+	if {{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err := s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqPayload.Arg{{$i}}{{end}}); err != nil {
 		RespondWithError(w, err)
 		return
 	}
