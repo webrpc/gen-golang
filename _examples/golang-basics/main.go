@@ -90,3 +90,7 @@ func (rpc *ExampleServiceRPC) FindUser(ctx context.Context, s *SearchFilter) (st
 		Username: name,
 	}, nil
 }
+
+func (rpc *ExampleServiceRPC) LogEvent(ctx context.Context, event string) error {
+	return nil
+}

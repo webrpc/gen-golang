@@ -158,7 +158,8 @@ func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWri
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
 
 	// Call service method implementation.
-	if err := s.ExampleAPI.Ping(ctx); err != nil {
+	err := s.ExampleAPI.Ping(ctx)
+	if err != nil {
 		RespondWithError(w, err)
 		return
 	}
@@ -174,7 +175,8 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
 	// Call service method implementation.
-	if ret0, err := s.ExampleAPI.Status(ctx); err != nil {
+	ret0, err := s.ExampleAPI.Status(ctx)
+	if err != nil {
 		RespondWithError(w, err)
 		return
 	}
@@ -199,7 +201,8 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUsers")
 
 	// Call service method implementation.
-	if ret0, ret1, err := s.ExampleAPI.GetUsers(ctx); err != nil {
+	ret0, ret1, err := s.ExampleAPI.GetUsers(ctx)
+	if err != nil {
 		RespondWithError(w, err)
 		return
 	}
