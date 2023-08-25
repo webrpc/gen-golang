@@ -7,7 +7,6 @@
 {{- set $stdlibImports "context" "" -}}
 {{- set $stdlibImports "errors" "" -}}
 {{- set $stdlibImports "fmt" "" -}}
-{{- set $stdlibImports "io/ioutil" "" -}}
 {{- set $stdlibImports "net/http" "" -}}
 
 {{- if eq $opts.json "stdlib" -}}
@@ -22,6 +21,7 @@
 
 {{- if $opts.server }}
 	{{- set $stdlibImports "strings" "" -}}
+	{{- set $stdlibImports "io" "" -}}
 {{- end -}}
 
 {{- /* Import "time" if there's at least one timestamp. */ -}}
