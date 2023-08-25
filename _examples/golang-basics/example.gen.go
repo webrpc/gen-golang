@@ -146,6 +146,14 @@ func NewExampleServiceServer(svc ExampleService) WebRPCServer {
 }
 
 func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
+	}()
+
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
@@ -192,13 +200,6 @@ func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		// In case of a panic, serve a HTTP 500 error and then panic.
-		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-			panic(rr)
-		}
-	}()
 
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
 
@@ -215,13 +216,6 @@ func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.Respons
 }
 
 func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		// In case of a panic, serve a HTTP 500 error and then panic.
-		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-			panic(rr)
-		}
-	}()
 
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
@@ -247,13 +241,6 @@ func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.Respo
 }
 
 func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		// In case of a panic, serve a HTTP 500 error and then panic.
-		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-			panic(rr)
-		}
-	}()
 
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Version")
 
@@ -279,13 +266,6 @@ func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.Resp
 }
 
 func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		// In case of a panic, serve a HTTP 500 error and then panic.
-		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-			panic(rr)
-		}
-	}()
 
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -327,13 +307,6 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 }
 
 func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		// In case of a panic, serve a HTTP 500 error and then panic.
-		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-			panic(rr)
-		}
-	}()
 
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {

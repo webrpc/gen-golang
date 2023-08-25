@@ -106,6 +106,14 @@ func NewExampleAPIServer(svc ExampleAPI) WebRPCServer {
 }
 
 func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
+	}()
+
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
@@ -145,14 +153,6 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		// In case of a panic, serve a HTTP 500 error and then panic.
-		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-			panic(rr)
-		}
-	}()
-
 	
 
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
@@ -170,14 +170,6 @@ func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWri
 }
 
 func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		// In case of a panic, serve a HTTP 500 error and then panic.
-		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-			panic(rr)
-		}
-	}()
-
 	
 
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
@@ -204,14 +196,6 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 }
 
 func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	defer func() {
-		// In case of a panic, serve a HTTP 500 error and then panic.
-		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-			panic(rr)
-		}
-	}()
-
 	
 
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUsers")
