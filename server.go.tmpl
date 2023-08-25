@@ -74,7 +74,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 {{range .Methods }}
 func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	{{ if .Inputs|len}}
+	{{ if gt (len .Inputs) 0 -}}
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
@@ -96,12 +96,13 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{.Name}}")
 
 	// Call service method implementation.
-	if {{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err := s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqPayload.Arg{{$i}}{{end}}); err != nil {
+	{{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err {{if or (eq (len .Inputs) 0) (gt (len .Outputs) 0)}}:{{end}}= s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqPayload.Arg{{$i}}{{end}})
+	if err != nil {
 		RespondWithError(w, err)
 		return
 	}
 
-	{{- if .Outputs | len}}
+	{{- if gt (len .Outputs) 0}}
 
 	respPayload := struct {
 	{{- range $i, $output := .Outputs}}

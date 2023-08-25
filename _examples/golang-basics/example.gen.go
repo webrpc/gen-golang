@@ -270,7 +270,6 @@ func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.Resp
 }
 
 func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
@@ -311,7 +310,6 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 }
 
 func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
@@ -352,7 +350,6 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 }
 
 func (s *exampleServiceServer) serveLogEventJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
@@ -371,7 +368,7 @@ func (s *exampleServiceServer) serveLogEventJSON(ctx context.Context, w http.Res
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "LogEvent")
 
 	// Call service method implementation.
-	err := s.ExampleService.LogEvent(ctx, reqPayload.Arg0)
+	err = s.ExampleService.LogEvent(ctx, reqPayload.Arg0)
 	if err != nil {
 		RespondWithError(w, err)
 		return
