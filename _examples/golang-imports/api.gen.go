@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -378,7 +377,7 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	}
 
 	if resp.StatusCode != 200 {
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to read server error response body: %w", err))
 		}
@@ -394,7 +393,7 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	}
 
 	if out != nil {
-		respBody, err := ioutil.ReadAll(resp.Body)
+		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to read response body: %w", err))
 		}
