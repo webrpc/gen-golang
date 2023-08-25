@@ -145,21 +145,20 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var err error
-	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
-
-	// Call service method
-	func() {
-		defer func() {
-			// In case of a panic, serve a 500 error and then panic.
-			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-				panic(rr)
-			}
-		}()
-		err = s.ExampleAPI.Ping(ctx)
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
 	}()
 
+	
+
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
+
+	// Call service method implementation.
+	err := s.ExampleAPI.Ping(ctx)
 	if err != nil {
 		RespondWithError(w, err)
 		return
@@ -171,33 +170,31 @@ func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWri
 }
 
 func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var err error
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
+	}()
+
+	
+
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
-	// Call service method
-	var ret0 bool
-	func() {
-		defer func() {
-			// In case of a panic, serve a 500 error and then panic.
-			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-				panic(rr)
-			}
-		}()
-		ret0, err = s.ExampleAPI.Status(ctx)
-	}()
-	respContent := struct {
-		Ret0 bool `json:"status"`
-	}{ret0}
-
+	// Call service method implementation.
+	ret0, err := s.ExampleAPI.Status(ctx)
 	if err != nil {
 		RespondWithError(w, err)
 		return
 	}
-	respBody, err := json.Marshal(respContent)
+
+	respPayload := struct {
+		Ret0 bool `json:"status"`
+	}{ret0}
+	respBody, err := json.Marshal(respPayload)
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 
@@ -207,35 +204,32 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 }
 
 func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var err error
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
+	}()
+
+	
+
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUsers")
 
-	// Call service method
-	var ret0 []*User
-	var ret1 *Location
-	func() {
-		defer func() {
-			// In case of a panic, serve a 500 error and then panic.
-			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-				panic(rr)
-			}
-		}()
-		ret0, ret1, err = s.ExampleAPI.GetUsers(ctx)
-	}()
-	respContent := struct {
-		Ret0 []*User `json:"users"`
-		Ret1 *Location `json:"location"`
-	}{ret0, ret1}
-
+	// Call service method implementation.
+	ret0, ret1, err := s.ExampleAPI.GetUsers(ctx)
 	if err != nil {
 		RespondWithError(w, err)
 		return
 	}
-	respBody, err := json.Marshal(respContent)
+
+	respPayload := struct {
+		Ret0 []*User `json:"users"`
+		Ret1 *Location `json:"location"`
+	}{ret0, ret1}
+	respBody, err := json.Marshal(respPayload)
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 

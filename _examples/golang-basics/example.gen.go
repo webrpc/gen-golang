@@ -192,21 +192,18 @@ func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var err error
-	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
-
-	// Call service method
-	func() {
-		defer func() {
-			// In case of a panic, serve a 500 error and then panic.
-			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-				panic(rr)
-			}
-		}()
-		err = s.ExampleService.Ping(ctx)
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
 	}()
 
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
+
+	// Call service method implementation.
+	err := s.ExampleService.Ping(ctx)
 	if err != nil {
 		RespondWithError(w, err)
 		return
@@ -218,33 +215,29 @@ func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.Respons
 }
 
 func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var err error
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
+	}()
+
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
-	// Call service method
-	var ret0 bool
-	func() {
-		defer func() {
-			// In case of a panic, serve a 500 error and then panic.
-			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-				panic(rr)
-			}
-		}()
-		ret0, err = s.ExampleService.Status(ctx)
-	}()
-	respContent := struct {
-		Ret0 bool `json:"status"`
-	}{ret0}
-
+	// Call service method implementation.
+	ret0, err := s.ExampleService.Status(ctx)
 	if err != nil {
 		RespondWithError(w, err)
 		return
 	}
-	respBody, err := json.Marshal(initializeNilSlices(respContent))
+
+	respPayload := struct {
+		Ret0 bool `json:"status"`
+	}{ret0}
+	respBody, err := json.Marshal(initializeNilSlices(respPayload))
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 
@@ -254,33 +247,29 @@ func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.Respo
 }
 
 func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var err error
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
+	}()
+
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Version")
 
-	// Call service method
-	var ret0 *Version
-	func() {
-		defer func() {
-			// In case of a panic, serve a 500 error and then panic.
-			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-				panic(rr)
-			}
-		}()
-		ret0, err = s.ExampleService.Version(ctx)
-	}()
-	respContent := struct {
-		Ret0 *Version `json:"version"`
-	}{ret0}
-
+	// Call service method implementation.
+	ret0, err := s.ExampleService.Version(ctx)
 	if err != nil {
 		RespondWithError(w, err)
 		return
 	}
-	respBody, err := json.Marshal(initializeNilSlices(respContent))
+
+	respPayload := struct {
+		Ret0 *Version `json:"version"`
+	}{ret0}
+	respBody, err := json.Marshal(initializeNilSlices(respPayload))
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 
@@ -290,52 +279,45 @@ func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.Resp
 }
 
 func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var err error
-	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
-	reqContent := struct {
-		Arg0 map[string]string `json:"header"`
-		Arg1 uint64            `json:"userID"`
-	}{}
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
+	}()
 
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
 		return
 	}
 	defer r.Body.Close()
 
-	err = json.Unmarshal(reqBody, &reqContent)
+	reqPayload := struct {
+		Arg0 map[string]string `json:"header"`
+		Arg1 uint64            `json:"userID"`
+	}{}
+	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
+		return
+	}
+
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
+
+	// Call service method implementation.
+	ret0, err := s.ExampleService.GetUser(ctx, reqPayload.Arg0, reqPayload.Arg1)
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err))
 		RespondWithError(w, err)
 		return
 	}
 
-	// Call service method
-	var ret0 *User
-	func() {
-		defer func() {
-			// In case of a panic, serve a 500 error and then panic.
-			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-				panic(rr)
-			}
-		}()
-		ret0, err = s.ExampleService.GetUser(ctx, reqContent.Arg0, reqContent.Arg1)
-	}()
-	respContent := struct {
+	respPayload := struct {
 		Ret0 *User `json:"user"`
 	}{ret0}
-
+	respBody, err := json.Marshal(initializeNilSlices(respPayload))
 	if err != nil {
-		RespondWithError(w, err)
-		return
-	}
-	respBody, err := json.Marshal(initializeNilSlices(respContent))
-	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 
@@ -345,53 +327,45 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 }
 
 func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var err error
-	ctx = context.WithValue(ctx, MethodNameCtxKey, "FindUser")
-	reqContent := struct {
-		Arg0 *SearchFilter `json:"s"`
-	}{}
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
+	}()
 
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
 		return
 	}
 	defer r.Body.Close()
 
-	err = json.Unmarshal(reqBody, &reqContent)
+	reqPayload := struct {
+		Arg0 *SearchFilter `json:"s"`
+	}{}
+	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
+		return
+	}
+
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "FindUser")
+
+	// Call service method implementation.
+	ret0, ret1, err := s.ExampleService.FindUser(ctx, reqPayload.Arg0)
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err))
 		RespondWithError(w, err)
 		return
 	}
 
-	// Call service method
-	var ret0 string
-	var ret1 *User
-	func() {
-		defer func() {
-			// In case of a panic, serve a 500 error and then panic.
-			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-				panic(rr)
-			}
-		}()
-		ret0, ret1, err = s.ExampleService.FindUser(ctx, reqContent.Arg0)
-	}()
-	respContent := struct {
+	respPayload := struct {
 		Ret0 string `json:"name"`
 		Ret1 *User  `json:"user"`
 	}{ret0, ret1}
-
+	respBody, err := json.Marshal(initializeNilSlices(respPayload))
 	if err != nil {
-		RespondWithError(w, err)
-		return
-	}
-	respBody, err := json.Marshal(initializeNilSlices(respContent))
-	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 

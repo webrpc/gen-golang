@@ -66,68 +66,59 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 {{range .Methods }}
 func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	var err error
-	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{.Name}}")
+	defer func() {
+		// In case of a panic, serve a HTTP 500 error and then panic.
+		if rr := recover(); rr != nil {
+			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			panic(rr)
+		}
+	}()
 
-	{{- if .Inputs|len}}
-	reqContent := struct {
-	{{- range $i, $input := .Inputs}}
-		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
-	{{- end}}
-	}{}
-
+	{{ if .Inputs|len}}
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
 		return
 	}
 	defer r.Body.Close()
 
-	err = json.Unmarshal(reqBody, &reqContent)
-	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err))
-		RespondWithError(w, err)
+	reqPayload := struct {
+	{{- range $i, $input := .Inputs}}
+		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
+	{{- end}}
+	}{}
+	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
 		return
 	}
 	{{- end}}
 
-	// Call service method
-	{{- range $i, $output := .Outputs}}
-	var ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}
-	{{- end}}
-	func() {
-		defer func() {
-			// In case of a panic, serve a 500 error and then panic.
-			if rr := recover(); rr != nil {
-				RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
-				panic(rr)
-			}
-		}()
-		{{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err = s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqContent.Arg{{$i}}{{end}})
-	}()
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{.Name}}")
+
+	// Call service method implementation.
+	{{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err := s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqPayload.Arg{{$i}}{{end}})
+	if err != nil {
+		RespondWithError(w, err)
+		return
+	}
+
 	{{- if .Outputs | len}}
-	respContent := struct {
+
+	respPayload := struct {
 	{{- range $i, $output := .Outputs}}
 		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
 	{{- end}}
 	}{ {{- range $i, $_ := .Outputs}}{{if gt $i 0}}, {{end}}ret{{$i}}{{end}}}
 	{{- end}}
 
-	if err != nil {
-		RespondWithError(w, err)
-		return
-	}
-
 	{{- if .Outputs | len}}
 	{{ if $opts.fixEmptyArrays -}}
-	respBody, err := json.Marshal(initializeNilSlices(respContent))
+	respBody, err := json.Marshal(initializeNilSlices(respPayload))
 	{{ else -}}
-	respBody, err := json.Marshal(respContent)
+	respBody, err := json.Marshal(respPayload)
 	{{ end -}}
 	if err != nil {
-		err = ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
-		RespondWithError(w, err)
+		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 	{{- end}}
