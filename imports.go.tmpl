@@ -73,7 +73,9 @@ import (
 {{- end }}
 {{- if $opts.types }}
 {{ range $import, $rename := $imports }}
+	{{- if not (exists $stdlibImports $import)}}
 	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
+	{{end}}
 {{- end }}
 {{- end }}
 )
