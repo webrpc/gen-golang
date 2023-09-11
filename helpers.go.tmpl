@@ -20,14 +20,35 @@ var (
 
 {{- if $opts.server}}
 	HTTPResponseWriterCtxKey = &contextKey{"HTTPResponseWriter"}
-{{- end}}
-
+{{ end}}
 	HTTPRequestCtxKey = &contextKey{"HTTPRequest"}
 
 	ServiceNameCtxKey = &contextKey{"ServiceName"}
 
 	MethodNameCtxKey = &contextKey{"MethodName"}
 )
+
+func ServiceNameFromContext(ctx context.Context) string {
+	service, _ := ctx.Value(ServiceNameCtxKey).(string)
+	return service
+}
+
+func MethodNameFromContext(ctx context.Context) string {
+	method, _ := ctx.Value(MethodNameCtxKey).(string)
+	return method
+}
+
+func RequestFromContext(ctx context.Context) *http.Request {
+	r, _ := ctx.Value(HTTPRequestCtxKey).(*http.Request)
+	return r
+}
+
+{{- if $opts.server}}
+func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
+	w, _ := ctx.Value(HTTPResponseWriterCtxKey).(http.ResponseWriter)
+	return w
+}
+{{- end}}
 
 {{- if and $opts.fixEmptyArrays $opts.server}}
 
