@@ -98,7 +98,7 @@ type exampleAPIServer struct {
 	ExampleAPI
 }
 
-func NewExampleAPIServer(svc ExampleAPI) WebRPCServer {
+func NewExampleAPIServer(svc ExampleAPI) *exampleAPIServer {
 	return &exampleAPIServer{
 		ExampleAPI: svc,
 	}
@@ -154,6 +154,8 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
 
+	
+
 	// Call service method implementation.
 	err := s.ExampleAPI.Ping(ctx)
 	if err != nil {
@@ -169,6 +171,8 @@ func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWri
 func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
+	
+
 	// Call service method implementation.
 	ret0, err := s.ExampleAPI.Status(ctx)
 	if err != nil {
@@ -181,7 +185,8 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 	}{ret0}
 	respBody, err := json.Marshal(respPayload)
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 
@@ -192,6 +197,8 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 
 func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUsers")
+
+	
 
 	// Call service method implementation.
 	ret0, ret1, err := s.ExampleAPI.GetUsers(ctx)
@@ -206,7 +213,8 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 	}{ret0, ret1}
 	respBody, err := json.Marshal(respPayload)
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 
@@ -216,15 +224,15 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 }
 
 func RespondWithError(w http.ResponseWriter, err error) {
-	rpcErr, ok := err.(WebRPCError)
-	if !ok {
+	var rpcErr WebRPCError
+	if !errors.As(err, &rpcErr) {
 		rpcErr = ErrorWithCause(ErrWebrpcEndpoint, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(rpcErr.HTTPStatus)
 
-	respBody, _ := json.Marshal(rpcErr)
+	respBody, _ := json.Marshal(err)
 	w.Write(respBody)
 }
 

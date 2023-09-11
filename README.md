@@ -19,8 +19,8 @@ webrpc-gen -schema=example.ridl -target=./local-go-templates-on-disk -out=./exam
 
 As you can see, the `-target` supports default `golang`, any git URI, or a local folder :)
 
-### Set custom template variables
-Change any of the following values by passing `-option="Value"` CLI flag to `webrpc-gen`.
+## Template options
+Change any of the following options by passing `-option="Value"` CLI flag to `webrpc-gen`.
 
 | webrpc-gen -option | Default    | Description                                                                 | Added in |
 |--------------------|------------|-----------------------------------------------------------------------------|----------|
@@ -37,6 +37,13 @@ Example:
 ```
 webrpc-gen -schema=./proto.json -target=golang -out server.gen.go -pkg=main -server
 ```
+
+## Experimental options
+**Note: These options are experimental and might be subject to change.**
+
+| webrpc-gen -option | Default    | Description                                                   | Added in               |
+|--------------------|------------|---------------------------------------------------------------|------------------------|
+| `-hooks`           | `false`    | enable server-side hooks `BeforeMethod()` and `AfterMethod()` | v0.13.2 (experimental) |
 
 ## Set custom Go field meta tags in your RIDL file
 

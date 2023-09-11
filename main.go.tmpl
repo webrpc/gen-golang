@@ -9,7 +9,7 @@
 {{- set $opts "json" (default .Opts.json "stdlib") -}}
 {{- set $opts "importTypesFrom" (default .Opts.importTypesFrom "" ) -}}
 {{- set $opts "fixEmptyArrays" (ternary (in .Opts.fixEmptyArrays "" "true") true false) -}}
-{{- set $opts "errorStackTrace" (ternary (in .Opts.errorStackTrace "" "true") true false) -}}
+{{- set $opts "hooks" (ternary (in .Opts.hooks "" "true") true false) -}}
 {{- set $opts "legacyErrors" (ternary (in .Opts.legacyErrors "" "true") true false) -}}
 
 {{- $typePrefix := (last (split "/" $opts.importTypesFrom)) -}}

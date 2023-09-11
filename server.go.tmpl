@@ -8,23 +8,66 @@
 // Server
 //
 
-type WebRPCServer interface {
-	http.Handler
+{{if $opts.hooks -}}
+type Config struct {
+	BeforeMethod       func(ctx context.Context) error
+	AfterMethodSuccess func(ctx context.Context)
+	AfterMethodError   func(ctx context.Context, err WebRPCError) error
 }
+
+var defaultConfig = Config{
+	BeforeMethod:       func(ctx context.Context) error { return nil },
+	AfterMethodSuccess: func(ctx context.Context) {},
+	AfterMethodError:   func(ctx context.Context, err WebRPCError) error { return err },
+}
+
+{{end}}
 
 {{- range .Services}}
 {{- $name := .Name -}}
 {{ $serviceName := (printf "%sServer" (.Name | firstLetterToLower)) }}
 
+{{- if $opts.hooks -}}
+type {{$serviceName}} struct {
+	*Config
+	{{$typePrefix}}{{.Name}}
+	http.Handler
+}
+
+func New{{ .Name | firstLetterToUpper }}Server(svc {{$typePrefix}}{{.Name}}, cfg *Config) *{{$serviceName}} {
+	config := defaultConfig
+	if cfg != nil {
+		if cfg.BeforeMethod != nil {
+			config.BeforeMethod = cfg.BeforeMethod
+		}
+		if cfg.AfterMethodSuccess != nil {
+			config.AfterMethodSuccess = cfg.AfterMethodSuccess
+		}
+		if cfg.AfterMethodError != nil {
+			config.AfterMethodError = cfg.AfterMethodError
+		}
+	}
+
+	return &{{$serviceName}}{
+		{{.Name}}: svc,
+		Config: &config,
+	}
+}
+{{- else -}}
+type WebRPCServer interface {
+	http.Handler
+}
+
 type {{$serviceName}} struct {
 	{{$typePrefix}}{{.Name}}
 }
 
-func New{{ .Name | firstLetterToUpper }}Server(svc {{$typePrefix}}{{.Name}}) WebRPCServer {
+func New{{ .Name | firstLetterToUpper }}Server(svc {{$typePrefix}}{{.Name}}) *{{$serviceName}} {
 	return &{{$serviceName}}{
 		{{.Name}}: svc,
 	}
 }
+{{- end}}
 
 func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
@@ -76,10 +119,18 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{.Name}}")
 
+	{{if $opts.hooks -}}
+	if err := s.BeforeMethod(ctx); err != nil {
+		RespondWithError(w, err)
+		return
+	}
+	{{- end}}
+
 	{{ if gt (len .Inputs) 0 -}}
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err))
+		RespondWithError(w, {{if $opts.hooks }}s.AfterMethodError(ctx, rpcErr){{else}}rpcErr{{end}})
 		return
 	}
 	defer r.Body.Close()
@@ -90,7 +141,8 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	{{- end}}
 	}{}
 	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err))
+		RespondWithError(w, {{if $opts.hooks }}s.AfterMethodError(ctx, rpcErr){{else}}rpcErr{{end}})
 		return
 	}
 
@@ -99,7 +151,15 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	// Call service method implementation.
 	{{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err {{if or (eq (len .Inputs) 0) (gt (len .Outputs) 0)}}:{{end}}= s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqPayload.Arg{{$i}}{{end}})
 	if err != nil {
+		{{if $opts.hooks -}}
+		rpcErr, ok := err.(WebRPCError)
+		if !ok {
+			rpcErr = ErrorWithCause(ErrWebrpcEndpoint, err)
+		}
+		RespondWithError(w, s.AfterMethodError(ctx, rpcErr))
+		{{else -}}
 		RespondWithError(w, err)
+		{{- end}}
 		return
 	}
 
@@ -119,7 +179,8 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	respBody, err := json.Marshal(respPayload)
 	{{ end -}}
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
+		RespondWithError(w, {{if $opts.hooks }}s.AfterMethodError(ctx, rpcErr){{else}}rpcErr{{end}})
 		return
 	}
 	{{- end}}
@@ -131,21 +192,25 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	w.Write(respBody)
 	{{- else }}
 	w.Write([]byte("{}"))
+	{{- end }}
+
+	{{- if $opts.hooks }}
+	s.AfterMethodSuccess(ctx)
 	{{- end}}
 }
 {{end}}
 {{end -}}
 
 func RespondWithError(w http.ResponseWriter, err error) {
-	rpcErr, ok := err.(WebRPCError)
-	if !ok {
+	var rpcErr WebRPCError
+	if !errors.As(err, &rpcErr) {
 		rpcErr = ErrorWithCause(ErrWebrpcEndpoint, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(rpcErr.HTTPStatus)
 
-	respBody, _ := json.Marshal(rpcErr)
+	respBody, _ := json.Marshal(err)
 	w.Write(respBody)
 }
 

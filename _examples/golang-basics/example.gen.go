@@ -141,7 +141,7 @@ type exampleServiceServer struct {
 	ExampleService
 }
 
-func NewExampleServiceServer(svc ExampleService) WebRPCServer {
+func NewExampleServiceServer(svc ExampleService) *exampleServiceServer {
 	return &exampleServiceServer{
 		ExampleService: svc,
 	}
@@ -233,7 +233,8 @@ func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.Respo
 	}{ret0}
 	respBody, err := json.Marshal(initializeNilSlices(respPayload))
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 
@@ -257,7 +258,8 @@ func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.Resp
 	}{ret0}
 	respBody, err := json.Marshal(initializeNilSlices(respPayload))
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 
@@ -271,7 +273,8 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 	defer r.Body.Close()
@@ -281,7 +284,8 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 		Arg1 uint64            `json:"userID"`
 	}{}
 	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 
@@ -297,7 +301,8 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 	}{ret0}
 	respBody, err := json.Marshal(initializeNilSlices(respPayload))
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 
@@ -311,7 +316,8 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 	defer r.Body.Close()
@@ -320,7 +326,8 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 		Arg0 *SearchFilter `json:"s"`
 	}{}
 	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 
@@ -337,7 +344,8 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 	}{ret0, ret1}
 	respBody, err := json.Marshal(initializeNilSlices(respPayload))
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 
@@ -351,7 +359,8 @@ func (s *exampleServiceServer) serveLogEventJSON(ctx context.Context, w http.Res
 
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 	defer r.Body.Close()
@@ -360,7 +369,8 @@ func (s *exampleServiceServer) serveLogEventJSON(ctx context.Context, w http.Res
 		Arg0 string `json:"event"`
 	}{}
 	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
+		rpcErr := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err))
+		RespondWithError(w, rpcErr)
 		return
 	}
 
@@ -377,15 +387,15 @@ func (s *exampleServiceServer) serveLogEventJSON(ctx context.Context, w http.Res
 }
 
 func RespondWithError(w http.ResponseWriter, err error) {
-	rpcErr, ok := err.(WebRPCError)
-	if !ok {
+	var rpcErr WebRPCError
+	if !errors.As(err, &rpcErr) {
 		rpcErr = ErrorWithCause(ErrWebrpcEndpoint, err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(rpcErr.HTTPStatus)
 
-	respBody, _ := json.Marshal(rpcErr)
+	respBody, _ := json.Marshal(err)
 	w.Write(respBody)
 }
 
