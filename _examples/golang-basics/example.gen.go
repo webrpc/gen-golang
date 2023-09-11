@@ -628,6 +628,25 @@ var (
 	MethodNameCtxKey = &contextKey{"MethodName"}
 )
 
+func ServiceNameFromContext(ctx context.Context) string {
+	service, _ := ctx.Value(ServiceNameCtxKey).(string)
+	return service
+}
+
+func MethodNameFromContext(ctx context.Context) string {
+	method, _ := ctx.Value(MethodNameCtxKey).(string)
+	return method
+}
+
+func RequestFromContext(ctx context.Context) *http.Request {
+	r, _ := ctx.Value(HTTPRequestCtxKey).(*http.Request)
+	return r
+}
+func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
+	w, _ := ctx.Value(HTTPResponseWriterCtxKey).(http.ResponseWriter)
+	return w
+}
+
 // Copied from https://github.com/golang-cz/nilslice
 func initializeNilSlices(obj interface{}) interface{} {
 	v := reflect.ValueOf(obj)
