@@ -715,7 +715,7 @@ func (e WebRPCError) Unwrap() error {
 	return e.cause
 }
 
-func (e WebRPCError) WithCause(cause error) error {
+func (e WebRPCError) WithCause(cause error) WebRPCError {
 	err := e
 	err.cause = cause
 	err.Cause = cause.Error()
@@ -752,42 +752,42 @@ var (
 // Legacy errors
 //
 
-// Deprecated: Use ErrorWithCause() instead.
+// Deprecated: Use fmt.Errorf() or WebRPCError.
 func Errorf(err legacyError, format string, args ...interface{}) WebRPCError {
-	return ErrorWithCause(err.WebRPCError, fmt.Errorf(format, args...))
+	return err.WebRPCError.WithCause(fmt.Errorf(format, args...))
 }
 
-// Deprecated: Use ErrorWithCause() instead.
+// Deprecated: Use .WithCause() method on WebRPCError.
 func WrapError(err legacyError, cause error, format string, args ...interface{}) WebRPCError {
-	return ErrorWithCause(err.WebRPCError, fmt.Errorf("%v: %w", fmt.Errorf(format, args...), cause))
+	return err.WebRPCError.WithCause(fmt.Errorf("%v: %w", fmt.Errorf(format, args...), cause))
 }
 
-// Deprecated: Use ErrorWithCause() instead.
+// Deprecated: Use fmt.Errorf() or WebRPCError.
 func Failf(format string, args ...interface{}) WebRPCError {
 	return Errorf(ErrFail, format, args...)
 }
 
-// Deprecated: Use ErrorWithCause() instead.
+// Deprecated: Use .WithCause() method on WebRPCError.
 func WrapFailf(cause error, format string, args ...interface{}) WebRPCError {
 	return WrapError(ErrFail, cause, format, args...)
 }
 
-// Deprecated: Use ErrorWithCause() instead.
+// Deprecated: Use fmt.Errorf() or WebRPCError.
 func ErrorNotFound(format string, args ...interface{}) WebRPCError {
 	return Errorf(ErrNotFound, format, args...)
 }
 
-// Deprecated: Use ErrorWithCause() instead.
+// Deprecated: Use fmt.Errorf() or WebRPCError.
 func ErrorInvalidArgument(argument string, validationMsg string) WebRPCError {
 	return Errorf(ErrInvalidArgument, argument+" "+validationMsg)
 }
 
-// Deprecated: Use ErrorWithCause() instead.
+// Deprecated: Use fmt.Errorf() or WebRPCError.
 func ErrorRequiredArgument(argument string) WebRPCError {
 	return ErrorInvalidArgument(argument, "is required")
 }
 
-// Deprecated: Use ErrorWithCause() instead.
+// Deprecated: Use fmt.Errorf() or WebRPCError.
 func ErrorInternal(format string, args ...interface{}) WebRPCError {
 	return Errorf(ErrInternal, format, args...)
 }
