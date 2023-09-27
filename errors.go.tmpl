@@ -45,7 +45,7 @@ func (e WebRPCError) Unwrap() error {
 	return e.cause
 }
 
-func (e WebRPCError) WithCause(cause error) error {
+func (e WebRPCError) WithCause(cause error) WebRPCError {
 	err := e
 	err.cause = cause
 	err.Cause = cause.Error()
