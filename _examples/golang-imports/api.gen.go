@@ -489,11 +489,9 @@ func (e WebRPCError) WithCause(cause error) error {
 	return err
 }
 
+// Deprecated: Use .WithCause() method on WebRPCError.
 func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
-	err := rpcErr
-	err.cause = cause
-	err.Cause = cause.Error()
-	return err
+	return rpcErr.WithCause(cause)
 }
 
 // Webrpc errors
