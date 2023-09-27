@@ -18,11 +18,13 @@ type WebRPCServer interface {
 
 type {{$serviceName}} struct {
 	{{$typePrefix}}{{.Name}}
+	SendErrorJSON func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
 }
 
-func New{{ .Name | firstLetterToUpper }}Server(svc {{$typePrefix}}{{.Name}}) WebRPCServer {
+func New{{ .Name | firstLetterToUpper }}Server(svc {{$typePrefix}}{{.Name}}) *{{$serviceName}} {
 	return &{{$serviceName}}{
 		{{.Name}}: svc,
+		SendErrorJSON: SendErrorJSON,
 	}
 }
 
@@ -30,7 +32,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		// In case of a panic, serve a HTTP 500 error and then panic.
 		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrWebrpcServerPanic.WithCause(fmt.Errorf("%v", rr)))
+			s.SendErrorJSON(w, r, ErrWebrpcServerPanic.WithCause(fmt.Errorf("%v", rr)))
 			panic(rr)
 		}
 	}()
@@ -47,14 +49,14 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	{{- end}}
 	default:
 		err := ErrWebrpcBadRoute.WithCause(fmt.Errorf("no handler for path %q", r.URL.Path))
-		RespondWithError(w, err)
+		s.SendErrorJSON(w, r, err)
 		return
 	}
 
 	if r.Method != "POST" {
 		w.Header().Add("Allow", "POST") // RFC 9110.
 		err := ErrWebrpcBadMethod.WithCause(fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
-		RespondWithError(w, err)
+		s.SendErrorJSON(w, r, err)
 		return
 	}
 
@@ -69,7 +71,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		handler(ctx, w, r)
 	default:
 		err := ErrWebrpcBadRequest.WithCause(fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
-		RespondWithError(w, err)
+		s.SendErrorJSON(w, r, err)
 	}
 }
 {{range .Methods }}
@@ -79,7 +81,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	{{ if gt (len .Inputs) 0 -}}
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
-		RespondWithError(w, ErrWebrpcBadRequest.WithCause(fmt.Errorf("failed to read request data: %w", err)))
+		s.SendErrorJSON(w, r, ErrWebrpcBadRequest.WithCause(fmt.Errorf("failed to read request data: %w", err)))
 		return
 	}
 	defer r.Body.Close()
@@ -90,7 +92,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	{{- end}}
 	}{}
 	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
-		RespondWithError(w, ErrWebrpcBadRequest.WithCause(fmt.Errorf("failed to unmarshal request data: %w", err)))
+		s.SendErrorJSON(w, r, ErrWebrpcBadRequest.WithCause(fmt.Errorf("failed to unmarshal request data: %w", err)))
 		return
 	}
 
@@ -99,7 +101,11 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	// Call service method implementation.
 	{{range $i, $output := .Outputs}}ret{{$i}}, {{end}}err {{if or (eq (len .Inputs) 0) (gt (len .Outputs) 0)}}:{{end}}= s.{{$name}}.{{.Name}}(ctx{{range $i, $_ := .Inputs}}, reqPayload.Arg{{$i}}{{end}})
 	if err != nil {
-		RespondWithError(w, err)
+		rpcErr, ok := err.(WebRPCError)
+		if !ok {
+			rpcErr = ErrWebrpcEndpoint.WithCause(err)
+		}
+		s.SendErrorJSON(w, r, rpcErr)
 		return
 	}
 
@@ -119,7 +125,7 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 	respBody, err := json.Marshal(respPayload)
 	{{ end -}}
 	if err != nil {
-		RespondWithError(w, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to marshal json response: %w", err)))
+		s.SendErrorJSON(w, r, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 	{{- end}}
@@ -136,12 +142,21 @@ func (s *{{$serviceName}}) serve{{ .Name | firstLetterToUpper }}JSON(ctx context
 {{end}}
 {{end -}}
 
+// Deprecated: Use SendErrorJSON().
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(WebRPCError)
 	if !ok {
 		rpcErr = ErrWebrpcEndpoint.WithCause(err)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(rpcErr.HTTPStatus)
+
+	respBody, _ := json.Marshal(rpcErr)
+	w.Write(respBody)
+}
+
+func SendErrorJSON(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(rpcErr.HTTPStatus)
 

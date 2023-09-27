@@ -60,7 +60,7 @@ func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
 	return rpcErr.WithCause(cause)
 }
 
-{{- if $opts.errorStackTrace -}}
+{{if $opts.errorStackTrace -}}
 func (e WebRPCError) StackFrames() []uintptr {
 	return e.frame.frames[:]
 }

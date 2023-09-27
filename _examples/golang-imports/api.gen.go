@@ -96,11 +96,13 @@ type WebRPCServer interface {
 
 type exampleAPIServer struct {
 	ExampleAPI
+	SendErrorJSON func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
 }
 
-func NewExampleAPIServer(svc ExampleAPI) WebRPCServer {
+func NewExampleAPIServer(svc ExampleAPI) *exampleAPIServer {
 	return &exampleAPIServer{
 		ExampleAPI: svc,
+		SendErrorJSON: errorJSON,
 	}
 }
 
@@ -108,7 +110,7 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		// In case of a panic, serve a HTTP 500 error and then panic.
 		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrWebrpcServerPanic.WithCause(fmt.Errorf("%v", rr)))
+			s.SendErrorJSON(w, r, ErrWebrpcServerPanic.WithCause(fmt.Errorf("%v", rr)))
 			panic(rr)
 		}
 	}()
@@ -125,14 +127,14 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/rpc/ExampleAPI/GetUsers": handler = s.serveGetUsersJSON
 	default:
 		err := ErrWebrpcBadRoute.WithCause(fmt.Errorf("no handler for path %q", r.URL.Path))
-		RespondWithError(w, err)
+		s.SendErrorJSON(w, r, err)
 		return
 	}
 
 	if r.Method != "POST" {
 		w.Header().Add("Allow", "POST") // RFC 9110.
 		err := ErrWebrpcBadMethod.WithCause(fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
-		RespondWithError(w, err)
+		s.SendErrorJSON(w, r, err)
 		return
 	}
 
@@ -147,7 +149,7 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		handler(ctx, w, r)
 	default:
 		err := ErrWebrpcBadRequest.WithCause(fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
-		RespondWithError(w, err)
+		s.SendErrorJSON(w, r, err)
 	}
 }
 
@@ -157,7 +159,11 @@ func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWri
 	// Call service method implementation.
 	err := s.ExampleAPI.Ping(ctx)
 	if err != nil {
-		RespondWithError(w, err)
+		rpcErr, ok := err.(WebRPCError)
+		if !ok {
+			rpcErr = ErrWebrpcEndpoint.WithCause(err)
+		}
+		s.SendErrorJSON(w, r, rpcErr)
 		return
 	}
 
@@ -172,7 +178,11 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 	// Call service method implementation.
 	ret0, err := s.ExampleAPI.Status(ctx)
 	if err != nil {
-		RespondWithError(w, err)
+		rpcErr, ok := err.(WebRPCError)
+		if !ok {
+			rpcErr = ErrWebrpcEndpoint.WithCause(err)
+		}
+		s.SendErrorJSON(w, r, rpcErr)
 		return
 	}
 
@@ -181,7 +191,7 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 	}{ret0}
 	respBody, err := json.Marshal(respPayload)
 	if err != nil {
-		RespondWithError(w, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to marshal json response: %w", err)))
+		s.SendErrorJSON(w, r, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 
@@ -196,7 +206,11 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 	// Call service method implementation.
 	ret0, ret1, err := s.ExampleAPI.GetUsers(ctx)
 	if err != nil {
-		RespondWithError(w, err)
+		rpcErr, ok := err.(WebRPCError)
+		if !ok {
+			rpcErr = ErrWebrpcEndpoint.WithCause(err)
+		}
+		s.SendErrorJSON(w, r, rpcErr)
 		return
 	}
 
@@ -206,7 +220,7 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 	}{ret0, ret1}
 	respBody, err := json.Marshal(respPayload)
 	if err != nil {
-		RespondWithError(w, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to marshal json response: %w", err)))
+		s.SendErrorJSON(w, r, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 
@@ -215,12 +229,20 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 	w.Write(respBody)
 }
 
-func RespondWithError(w http.ResponseWriter, err error) {
+func oldRespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(WebRPCError)
 	if !ok {
 		rpcErr = ErrWebrpcEndpoint.WithCause(err)
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(rpcErr.HTTPStatus)
+
+	respBody, _ := json.Marshal(rpcErr)
+	w.Write(respBody)
+}
+
+func errorJSON(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(rpcErr.HTTPStatus)
 
@@ -493,6 +515,8 @@ func (e WebRPCError) WithCause(cause error) WebRPCError {
 func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
 	return rpcErr.WithCause(cause)
 }
+
+
 
 // Webrpc errors
 var (
