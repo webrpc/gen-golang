@@ -13,6 +13,10 @@
 	{{- set $stdlibImports "encoding/json" "" -}}
 {{- end -}}
 
+{{- if $opts.errorStackTrace }}
+	{{- set $stdlibImports "runtime" "" -}}
+{{- end -}}
+
 {{- if $opts.client }}
 	{{- set $stdlibImports "bytes" "" -}}
 	{{- set $stdlibImports "io" "" -}}

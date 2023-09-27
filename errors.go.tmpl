@@ -13,6 +13,11 @@ type WebRPCError struct {
 	Cause      string `json:"cause,omitempty"`
 	HTTPStatus int    `json:"status"`
 	cause      error
+
+	{{- if $opts.errorStackTrace }}
+	{{- /* The below field is reflect-compatible with golang.org/x/xerrors.*/}}
+	frame      struct { frames [3]uintptr }
+	{{- end}}
 }
 
 var _ error = WebRPCError{}
@@ -44,8 +49,17 @@ func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
 	err := rpcErr
 	err.cause = cause
 	err.Cause = cause.Error()
+	{{- if $opts.errorStackTrace }}
+	runtime.Callers(1, err.frame.frames[:])
+	{{- end}}
 	return err
 }
+
+{{ if $opts.errorStackTrace -}}
+func (e WebRPCError) StackFrames() []uintptr {
+	return e.frame.frames[:]
+}
+{{- end }}
 
 // Webrpc errors
 var (
