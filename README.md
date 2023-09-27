@@ -30,6 +30,7 @@ Change any of the following values by passing `-option="Value"` CLI flag to `web
 | `-types=false`     | `true`     | don't generate types                                                        | v0.13.0  |
 | `-json=jsoniter`   | `"stdlib"` | use alternative json encoding package                                       | v0.12.0  |
 | `-fixEmptyArrays`  | `false`    | force empty array `[]` instead of `null` in JSON (see Go [#27589][go27589]) | v0.13.0  |
+| `-errorStackTrace` | `false`    | enables error stack traces                                                  | v0.14.0  |
 | `-legacyErrors`    | `false`    | enable legacy errors (v0.10.0 or older)                                     | v0.11.0  |
 
 Example:
