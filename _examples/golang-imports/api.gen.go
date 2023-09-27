@@ -108,7 +108,7 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		// In case of a panic, serve a HTTP 500 error and then panic.
 		if rr := recover(); rr != nil {
-			RespondWithError(w, ErrorWithCause(ErrWebrpcServerPanic, fmt.Errorf("%v", rr)))
+			RespondWithError(w, ErrWebrpcServerPanic.WithCause(fmt.Errorf("%v", rr)))
 			panic(rr)
 		}
 	}()
@@ -124,14 +124,14 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/rpc/ExampleAPI/Status": handler = s.serveStatusJSON
 	case "/rpc/ExampleAPI/GetUsers": handler = s.serveGetUsersJSON
 	default:
-		err := ErrorWithCause(ErrWebrpcBadRoute, fmt.Errorf("no handler for path %q", r.URL.Path))
+		err := ErrWebrpcBadRoute.WithCause(fmt.Errorf("no handler for path %q", r.URL.Path))
 		RespondWithError(w, err)
 		return
 	}
 
 	if r.Method != "POST" {
 		w.Header().Add("Allow", "POST") // RFC 9110.
-		err := ErrorWithCause(ErrWebrpcBadMethod, fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
+		err := ErrWebrpcBadMethod.WithCause(fmt.Errorf("unsupported method %q (only POST is allowed)", r.Method))
 		RespondWithError(w, err)
 		return
 	}
@@ -146,7 +146,7 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "application/json":
 		handler(ctx, w, r)
 	default:
-		err := ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
+		err := ErrWebrpcBadRequest.WithCause(fmt.Errorf("unexpected Content-Type: %q", r.Header.Get("Content-Type")))
 		RespondWithError(w, err)
 	}
 }
@@ -181,7 +181,7 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 	}{ret0}
 	respBody, err := json.Marshal(respPayload)
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
+		RespondWithError(w, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 
@@ -206,7 +206,7 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 	}{ret0, ret1}
 	respBody, err := json.Marshal(respPayload)
 	if err != nil {
-		RespondWithError(w, ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to marshal json response: %w", err)))
+		RespondWithError(w, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to marshal json response: %w", err)))
 		return
 	}
 
@@ -218,7 +218,7 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(WebRPCError)
 	if !ok {
-		rpcErr = ErrorWithCause(ErrWebrpcEndpoint, err)
+		rpcErr = ErrWebrpcEndpoint.WithCause(err)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -320,41 +320,41 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) error {
 	reqBody, err := json.Marshal(in)
 	if err != nil {
-		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("failed to marshal JSON body: %w", err))
+		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to marshal JSON body: %w", err))
 	}
 	if err = ctx.Err(); err != nil {
-		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("aborted because context was done: %w", err))
+		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("aborted because context was done: %w", err))
 	}
 
 	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
 	if err != nil {
-		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("could not build request: %w", err))
+		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("could not build request: %w", err))
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		return ErrorWithCause(ErrWebrpcRequestFailed, err)
+		return ErrWebrpcRequestFailed.WithCause(err)
 	}
 
 	defer func() {
 		cerr := resp.Body.Close()
 		if err == nil && cerr != nil {
-			err = ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("failed to close response body: %w", cerr))
+			err = ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to close response body: %w", cerr))
 		}
 	}()
 
 	if err = ctx.Err(); err != nil {
-		return ErrorWithCause(ErrWebrpcRequestFailed, fmt.Errorf("aborted because context was done: %w", err))
+		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("aborted because context was done: %w", err))
 	}
 
 	if resp.StatusCode != 200 {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to read server error response body: %w", err))
+			return ErrWebrpcBadResponse.WitchCause(fmt.Errorf("failed to read server error response body: %w", err))
 		}
 
 		var rpcErr WebRPCError
 		if err := json.Unmarshal(respBody, &rpcErr); err != nil {
-			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to unmarshal server error: %w", err))
+			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal server error: %w", err))
 		}
 		if rpcErr.Cause != "" {
 			rpcErr.cause = errors.New(rpcErr.Cause)
@@ -365,12 +365,12 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	if out != nil {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to read response body: %w", err))
+			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read response body: %w", err))
 		}
 
 		err = json.Unmarshal(respBody, &out)
 		if err != nil {
-			return ErrorWithCause(ErrWebrpcBadResponse, fmt.Errorf("failed to unmarshal JSON response body: %w", err))
+			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal JSON response body: %w", err))
 		}
 	}
 
