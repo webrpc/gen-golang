@@ -204,7 +204,6 @@ func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
 
 	// Call service method implementation.
@@ -220,7 +219,6 @@ func (s *exampleServiceServer) servePingJSON(ctx context.Context, w http.Respons
 }
 
 func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
 	// Call service method implementation.
@@ -245,7 +243,6 @@ func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.Respo
 }
 
 func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Version")
 
 	// Call service method implementation.
@@ -270,6 +267,8 @@ func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.Resp
 }
 
 func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
+
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
@@ -285,8 +284,6 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
 		return
 	}
-
-	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
 
 	// Call service method implementation.
 	ret0, err := s.ExampleService.GetUser(ctx, reqPayload.Arg0, reqPayload.Arg1)
@@ -310,6 +307,8 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 }
 
 func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "FindUser")
+
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
@@ -324,8 +323,6 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
 		return
 	}
-
-	ctx = context.WithValue(ctx, MethodNameCtxKey, "FindUser")
 
 	// Call service method implementation.
 	ret0, ret1, err := s.ExampleService.FindUser(ctx, reqPayload.Arg0)
@@ -350,6 +347,8 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 }
 
 func (s *exampleServiceServer) serveLogEventJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	ctx = context.WithValue(ctx, MethodNameCtxKey, "LogEvent")
+
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to read request data: %w", err)))
@@ -364,8 +363,6 @@ func (s *exampleServiceServer) serveLogEventJSON(ctx context.Context, w http.Res
 		RespondWithError(w, ErrorWithCause(ErrWebrpcBadRequest, fmt.Errorf("failed to unmarshal request data: %w", err)))
 		return
 	}
-
-	ctx = context.WithValue(ctx, MethodNameCtxKey, "LogEvent")
 
 	// Call service method implementation.
 	err = s.ExampleService.LogEvent(ctx, reqPayload.Arg0)
@@ -420,7 +417,6 @@ func NewExampleServiceClient(addr string, client HTTPClient) ExampleService {
 }
 
 func (c *exampleServiceClient) Ping(ctx context.Context) error {
-
 	err := doJSONRequest(ctx, c.client, c.urls[0], nil, nil)
 	return err
 }
@@ -473,7 +469,6 @@ func (c *exampleServiceClient) LogEvent(ctx context.Context, event string) error
 	in := struct {
 		Arg0 string `json:"event"`
 	}{event}
-
 	err := doJSONRequest(ctx, c.client, c.urls[5], in, nil)
 	return err
 }
