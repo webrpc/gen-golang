@@ -497,6 +497,8 @@ func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
 	return err
 }
 
+
+
 // Webrpc errors
 var (
 	ErrWebrpcEndpoint = WebRPCError{Code: 0, Name: "WebrpcEndpoint", Message: "endpoint error", HTTPStatus: 400}
