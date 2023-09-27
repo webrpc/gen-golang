@@ -29,8 +29,8 @@
 {{- end -}}
 
 {{- /* Import "time" if there's at least one timestamp. */ -}}
-{{ if $opts.types }}
-{{ if eq $opts.importTypesFrom "" }}
+{{ if $opts.types -}}
+{{ if eq $opts.importTypesFrom "" -}}
    {{- range $_, $type := $types -}}
        {{- range $_, $field := $type.Fields -}}
            {{- if $field.Type -}}

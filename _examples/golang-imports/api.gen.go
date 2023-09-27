@@ -5,7 +5,6 @@
 // webrpc-gen -schema=./proto/api.ridl -target=../../../gen-golang -out=./api.gen.go -pkg=main -server -client -legacyErrors=true -fmt=false
 package main
 
-
 import (
 	"bytes"
 	"context"
@@ -153,8 +152,6 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	
-
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
 
 	// Call service method implementation.
@@ -170,8 +167,6 @@ func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWri
 }
 
 func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	
-
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
 	// Call service method implementation.
@@ -196,8 +191,6 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 }
 
 func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	
-
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUsers")
 
 	// Call service method implementation.
@@ -260,7 +253,6 @@ func NewExampleAPIClient(addr string, client HTTPClient) ExampleAPI {
 }
 
 func (c *exampleAPIClient) Ping(ctx context.Context) error {
-
 	err := doJSONRequest(ctx, c.client, c.urls[0], nil, nil)
 	return err
 }
@@ -269,7 +261,7 @@ func (c *exampleAPIClient) Status(ctx context.Context) (bool, error) {
 	out := struct {
 		Ret0 bool `json:"status"`
 	}{}
-
+	
 	err := doJSONRequest(ctx, c.client, c.urls[1], nil, &out)
 	return out.Ret0, err
 }
@@ -279,7 +271,7 @@ func (c *exampleAPIClient) GetUsers(ctx context.Context) ([]*User, *Location, er
 		Ret0 []*User `json:"users"`
 		Ret1 *Location `json:"location"`
 	}{}
-
+	
 	err := doJSONRequest(ctx, c.client, c.urls[2], nil, &out)
 	return out.Ret0, out.Ret1, err
 }
@@ -496,8 +488,6 @@ func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
 	err.Cause = cause.Error()
 	return err
 }
-
-
 
 // Webrpc errors
 var (

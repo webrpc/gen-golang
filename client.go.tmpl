@@ -53,8 +53,7 @@ func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $i
 		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
 	{{- end}}
 	}{}
-	{{- end}}
-
+	{{ end }}
 	err := doJSONRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
 	return {{range $i, $output := .Outputs}}out.Ret{{$i}}, {{end}}err
 }
