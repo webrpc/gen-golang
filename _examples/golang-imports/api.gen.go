@@ -349,7 +349,7 @@ func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out i
 	if resp.StatusCode != 200 {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return ErrWebrpcBadResponse.WitchCause(fmt.Errorf("failed to read server error response body: %w", err))
+			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read server error response body: %w", err))
 		}
 
 		var rpcErr WebRPCError
