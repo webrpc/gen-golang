@@ -26,6 +26,10 @@
 {{- if $opts.server }}
 	{{- set $stdlibImports "strings" "" -}}
 	{{- set $stdlibImports "io" "" -}}
+
+	{{- if $opts.fixEmptyArrays }}
+		{{- set $stdlibImports "reflect" "" -}}
+	{{- end -}}
 {{- end -}}
 
 {{- /* Import "time" if there's at least one timestamp. */ -}}
