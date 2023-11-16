@@ -40,4 +40,16 @@ func (x *{{$name}}) UnmarshalText(b []byte) error {
 	return nil
 }
 
+func (x *{{$name}}) Is(values ...{{$name}}) bool {
+	if x == nil {
+		return false
+	}
+	for _, v := range values {
+		if *x == v {
+			return true
+		}
+	}
+	return false
+}
+
 {{- end -}}
