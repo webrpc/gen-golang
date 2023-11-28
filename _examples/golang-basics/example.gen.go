@@ -70,6 +70,18 @@ func (x *Kind) UnmarshalText(b []byte) error {
 	return nil
 }
 
+func (x *Kind) Is(values ...Kind) bool {
+	if x == nil {
+		return false
+	}
+	for _, v := range values {
+		if *x == v {
+			return true
+		}
+	}
+	return false
+}
+
 type User struct {
 	ID        uint64     `json:"id" db:"id"`
 	Uuid      uuid.UUID  `json:"uuid" db:"id"`

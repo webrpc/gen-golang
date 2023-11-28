@@ -72,6 +72,18 @@ func (x *Location) UnmarshalText(b []byte) error {
 	return nil
 }
 
+func (x *Location) Is(values ...Location) bool {
+	if x == nil {
+		return false
+	}
+	for _, v := range values {
+		if *x == v {
+			return true
+		}
+	}
+	return false
+}
+
 type ExampleAPI interface {
 	Ping(ctx context.Context) error
 	Status(ctx context.Context) (bool, error)
