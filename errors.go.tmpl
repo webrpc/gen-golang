@@ -1,7 +1,7 @@
 {{define "errors"}}
 {{- $webrpcErrors := .WebrpcErrors -}}
 {{- $schemaErrors := .SchemaErrors -}}
-{{- $opts := .Opts }}
+{{- $opts := .Opts -}}
 //
 // Errors
 //
@@ -85,6 +85,6 @@ var (
 	{{ printf "Err%s = WebRPCError{Code: %v, Name: %q, Message: %q, HTTPStatus: %v}" $error.Name $error.Code $error.Name $error.Message $error.HTTPStatus}}
 {{- end}}
 )
-{{- end}}
+{{ end -}}
 
-{{- end }}
+{{- end -}}

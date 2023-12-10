@@ -1,63 +1,182 @@
 {{define "client"}}
 {{- $typeMap := .TypeMap -}}
 {{- $typePrefix := .TypePrefix -}}
-{{- if .Services -}}
+{{- $services := .Services -}}
+{{- $opts := .Opts }}
+
+{{- if $services -}}
 //
 // Client
 //
 
-{{range .Services -}}
+{{range $services -}}
 const {{.Name}}PathPrefix = "/rpc/{{.Name}}/"
 {{end}}
 
-{{- range .Services -}}
+{{- range $_, $service := $services -}}
 
-{{ $serviceName := (printf "%sClient" (.Name | firstLetterToLower)) }}
-type {{$serviceName}} struct {
+{{- $serviceNameClient := (printf "%sClient" ($service.Name | firstLetterToLower)) }}
+{{- $ServiceNameClient := (printf "%sClient" ($service.Name | firstLetterToUpper)) }}
+type {{$serviceNameClient}} struct {
 	client HTTPClient
-	urls	 [{{len .Methods}}]string
+	urls	 [{{len $service.Methods}}]string
 }
 
-func New{{.Name | firstLetterToUpper }}Client(addr string, client HTTPClient) {{.Name}} {
-	prefix := urlBase(addr) + {{.Name}}PathPrefix
-	urls := [{{len .Methods}}]string{
-	{{- range .Methods}}
-		prefix + "{{.Name}}",
+func New{{$ServiceNameClient}}(addr string, client HTTPClient) {{$ServiceNameClient}} {
+	prefix := urlBase(addr) + {{$service.Name}}PathPrefix
+	urls := [{{len $service.Methods}}]string{
+	{{- range $_, $method := $service.Methods}}
+		prefix + "{{$method.Name}}",
 	{{- end}}
 	}
-	return &{{$serviceName}}{
+	return &{{$serviceNameClient}}{
 		client: client,
 		urls:	 urls,
 	}
 }
 
-{{- range $i, $method := .Methods -}}
-{{- $inputs := $method.Inputs -}}
-{{- $outputs := $method.Outputs }}
+{{- range $i, $method := $service.Methods -}}
 
-func (c *{{$serviceName}}) {{.Name}}(ctx context.Context{{range $_, $input := $inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len .Outputs}}){{end}} {
+{{ if eq $method.StreamOutput false }}
+
+func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta}}{{end}}) {{if len $method.Outputs}}({{end}}{{range $i, $output := $method.Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}} {
 	{{- $inputVar := "nil" -}}
 	{{- $outputVar := "nil" -}}
-	{{- if $inputs | len}}
+	{{- if $method.Inputs | len}}
 	{{- $inputVar = "in"}}
 	in := struct {
-	{{- range $i, $input := $inputs}}
+	{{- range $i, $input := $method.Inputs}}
 		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
 	{{- end}}
-	}{ {{- range $i, $input := $inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}
+	}{ {{- range $i, $input := $method.Inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}
 	{{- end}}
-	{{- if $outputs | len}}
+	{{- if $method.Outputs | len}}
 	{{- $outputVar = "&out"}}
 	out := struct {
-	{{- range $i, $output := .Outputs}}
+	{{- range $i, $output := $method.Outputs}}
 		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
 	{{- end}}
 	}{}
-	{{ end }}
-	err := doJSONRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
-	return {{range $i, $output := .Outputs}}out.Ret{{$i}}, {{end}}err
+	{{- end }}
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
+	defer func() {
+		if resp != nil {
+			cerr := resp.Body.Close()
+			if err == nil && cerr != nil {
+				err = ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to close response body: %w", cerr))
+			}
+		}
+	}()
+
+	return {{range $i, $output := $method.Outputs}}out.Ret{{$i}}, {{end}}err
 }
+
+{{- else }}
+
+func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta}}{{end}}) ({{$method.Name}}StreamReader, error) {
+	{{- $inputVar := "nil" -}}
+	{{- if $method.Inputs | len}}
+	{{- $inputVar = "in"}}
+	in := struct {
+	{{- range $i, $input := $method.Inputs}}
+		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
+	{{- end}}
+	}{ {{- range $i, $input := $method.Inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}
+	{{- end}}
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, nil)
+	if err != nil {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		return nil, err
+	}
+
+	buf := bufio.NewReader(resp.Body)
+	return &{{$method.Name | firstLetterToLower}}StreamReader{streamReader{ctx: ctx, c: resp.Body, r: buf, d: json.NewDecoder(buf)}}, nil
+}
+
+type {{firstLetterToLower $method.Name}}StreamReader struct {
+	streamReader
+}
+
+func (r *{{firstLetterToLower $method.Name}}StreamReader) Read() ({{range $i, $output := $method.Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}{{end}}, {{end}}error) {
+	{{- $outputVar := "nil" -}}
+	{{- if $method.Outputs | len}}
+	{{- $outputVar = "&out"}}
+	out := struct {
+	{{- range $i, $output := $method.Outputs}}
+		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
+	{{- end}}
+		WebRPCError *WebRPCError `json:"webrpcError"`
+	}{}
+
+	err := r.streamReader.read(&out)
+	if err != nil {
+		return {{range $i, $output := $method.Outputs}}out.Ret{{$i}}, {{end}}err
+	}
+
+	if out.WebRPCError != nil {
+		return {{range $i, $output := $method.Outputs}}out.Ret{{$i}}, {{end}}out.WebRPCError
+	}
+
+	return {{range $i, $output := $method.Outputs}}out.Ret{{$i}}, {{end}}nil
+}
+
 {{- end -}}
+{{- end -}}
+
+{{- end }}
+{{- end }}
+
+{{- if $opts.streaming }}
+
+type streamReader struct {
+	ctx context.Context
+	c   io.Closer
+	r   *bufio.Reader
+	d   *json.Decoder
+}
+
+func (r *streamReader) read(v interface {}) error {
+	for {
+		// Read newlines (keep-alive pings) and unblock decoder on ctx timeout.
+		select {
+		case <-r.ctx.Done():
+			r.c.Close()
+			return ErrWebrpcClientDisconnected.WithCause(r.ctx.Err())
+		default:
+		}
+
+		b, err := r.r.ReadByte()
+		if err != nil {
+			return r.handleReadError(err)
+		}
+		if b != '\n' {
+			r.r.UnreadByte()
+			break
+		}
+	}
+
+	if err := r.d.Decode(&v); err != nil {
+		return r.handleReadError(err)
+	}
+
+	return nil
+}
+
+func (r *streamReader) handleReadError(err error) error {
+	defer r.c.Close()
+	if errors.Is(err, io.EOF) {
+		return ErrWebrpcStreamFinished.WithCause(err)
+	}
+	if errors.Is(err, io.ErrUnexpectedEOF) {
+		return ErrWebrpcStreamLost.WithCause(err)
+	}
+	return ErrWebrpcBadResponse.WithCause(fmt.Errorf("reading stream: %w", err))
+}
+
 {{- end }}
 
 // HTTPClient is the interface used by generated clients to send HTTP requests.
@@ -100,65 +219,55 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 	return req, nil
 }
 
-// doJSONRequest is common code to make a request to the remote service.
-func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) error {
+// doHTTPRequest is common code to make a request to the remote service.
+func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
 	reqBody, err := json.Marshal(in)
 	if err != nil {
-		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to marshal JSON body: %w", err))
+		return nil, ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to marshal JSON body: %w", err))
 	}
 	if err = ctx.Err(); err != nil {
-		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("aborted because context was done: %w", err))
+		return nil, ErrWebrpcRequestFailed.WithCause(fmt.Errorf("aborted because context was done: %w", err))
 	}
 
 	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
 	if err != nil {
-		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("could not build request: %w", err))
+		return nil, ErrWebrpcRequestFailed.WithCause(fmt.Errorf("could not build request: %w", err))
 	}
+
 	resp, err := client.Do(req)
 	if err != nil {
-		return ErrWebrpcRequestFailed.WithCause(err)
-	}
-
-	defer func() {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to close response body: %w", cerr))
-		}
-	}()
-
-	if err = ctx.Err(); err != nil {
-		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("aborted because context was done: %w", err))
+		return nil, ErrWebrpcRequestFailed.WithCause(err)
 	}
 
 	if resp.StatusCode != 200 {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read server error response body: %w", err))
+			return nil, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read server error response body: %w", err))
 		}
 
 		var rpcErr WebRPCError
 		if err := json.Unmarshal(respBody, &rpcErr); err != nil {
-			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal server error: %w", err))
+			return nil, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal server error: %w", err))
 		}
 		if rpcErr.Cause != "" {
 			rpcErr.cause = errors.New(rpcErr.Cause)
 		}
-		return rpcErr
+		return nil, rpcErr
 	}
 
 	if out != nil {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read response body: %w", err))
+			return nil, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read response body: %w", err))
 		}
 
 		err = json.Unmarshal(respBody, &out)
 		if err != nil {
-			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal JSON response body: %w", err))
+			return nil, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal JSON response body: %w", err))
 		}
 	}
 
-	return nil
+	return resp, nil
 }
 
 func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {

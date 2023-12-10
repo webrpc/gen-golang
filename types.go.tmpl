@@ -5,7 +5,7 @@
 {{- $services := .Services -}}
 {{- $opts := .Opts -}}
 
-{{- if $types -}}
+{{- if $types }}
 //
 // Types
 //
@@ -23,17 +23,9 @@
 {{template "struct" dict "Name" $type.Name "TypeMap" $typeMap "TypePrefix" $typePrefix "Fields" $type.Fields}}
 {{ end -}}
 
-{{- end -}}
-{{- end -}}
+{{ end }}
+{{ end -}}
 
-{{- if and $services $opts.types -}}
-{{ range $_, $service := $services}}
-type {{$service.Name}} interface {
-	{{- range $_, $method := $service.Methods}}
-	{{.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
-	{{- end}}
-}
-{{end}}
 var WebRPCServices = map[string][]string{
 {{- range $_, $service := $services}}
 	"{{$service.Name}}": {
@@ -43,6 +35,128 @@ var WebRPCServices = map[string][]string{
 	},
 {{- end}}
 }
+
+//
+// Server types
+//
+
+{{ range $_, $service := $services -}}
+type {{$service.Name}} interface {
+	{{- range $_, $method := $service.Methods}}
+	{{ if eq $method.StreamOutput true -}}
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}, stream {{$method.Name}}StreamWriter) error
+	{{- else -}}
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
+	{{- end -}}
+
+	{{- end}}
+}
+
+{{- range $_, $method := $service.Methods}}
+{{ if eq $method.StreamOutput true -}}
+type {{$method.Name}}StreamWriter interface {
+	Write({{range $i, $output := $method.Outputs}}{{if gt $i 0}}, {{end}}{{$output.Name}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{end}}) error
+}
+{{ end }}
+{{- end }}
+
+{{- range $_, $method := $service.Methods}}
+{{- if eq $method.StreamOutput true }}
+type {{firstLetterToLower $method.Name}}StreamWriter struct {
+	streamWriter
+}
+
+func (w *{{firstLetterToLower $method.Name}}StreamWriter) Write({{range $i, $output := $method.Outputs}}{{if gt $i 0}}, {{end}}{{$output.Name}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{end}}) error {
+	out := struct {
+	{{- range $i, $output := $method.Outputs}}
+		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
+	{{- end}}
+	}{
+	{{- range $i, $output := $method.Outputs}}
+		Ret{{$i}}: {{$output.Name}},
+	{{- end}}
+	}
+
+	return w.streamWriter.write(out)
+}
+
+{{ end }}
+{{- end }}
+{{ end }}
+
+{{- if $opts.streaming -}}
+
+type streamWriter struct {
+	mu sync.Mutex // Guards concurrent writes to w.
+	w  http.ResponseWriter
+	f  http.Flusher
+	e  *json.Encoder
+
+	sendError func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
+}
+
+const StreamKeepAliveInterval = 10*time.Second
+
+func (w *streamWriter) keepAlive(ctx context.Context) {
+	for {
+		select {
+		case <-time.After(StreamKeepAliveInterval):
+			err := w.ping()
+			if err != nil {
+				return
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (w *streamWriter) ping() error {
+	defer w.f.Flush()
+
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	_, err := w.w.Write([]byte("\n"))
+	return err
+}
+
+func (w *streamWriter) write(respPayload interface{}) error {
+	defer w.f.Flush()
+
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	return w.e.Encode(respPayload)
+}
+{{- end }}
+
+//
+// Client types
+//
+
+{{ if and $services $opts.types -}}
+{{ range $_, $service := $services -}}
+type {{$service.Name}}Client interface {
+	{{- range $_, $method := $service.Methods}}
+	{{ if eq $method.StreamOutput true -}}
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) ({{$method.Name}}StreamReader, error)
+	{{- else -}}
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
+	{{- end -}}
+
+	{{- end}}
+}
+
+{{- range $_, $method := $service.Methods }}
+{{ if eq $method.StreamOutput true -}}
+type {{$method.Name}}StreamReader interface {
+	Read() ({{range $i, $output := $method.Outputs}}{{if gt $i 0}}, {{end}}{{$output.Name}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{end}}, err error)
+}
+{{ end }}
+{{- end }}
+
+{{- end -}}
 {{- end -}}
 
 {{- end -}}
