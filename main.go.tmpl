@@ -17,6 +17,15 @@
   {{- $typePrefix = (printf "%s." $typePrefix) -}}
 {{- end -}}
 
+{{- set $opts "" false -}}
+{{- range $_, $service := .Services -}}
+	{{- range $_, $method := $service.Methods -}}
+		{{ if eq $method.StreamOutput true -}}
+			{{- set $opts "streaming" true -}}
+		{{- end -}}
+	{{- end -}}
+{{- end }}
+
 {{- /* Print help on -help. */ -}}
 {{- if exists .Opts "help" -}}
   {{- template "help" $opts -}}
@@ -93,20 +102,20 @@ func WebRPCSchemaHash() string {
 {{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "TypePrefix" $typePrefix "Opts" $opts }}
 {{ end -}}
 
-{{- if $opts.server}}
+{{- if $opts.server }}
 {{ template "server" dict "Services" .Services "TypeMap" $typeMap "TypePrefix" $typePrefix "Opts" $opts }}
 {{ end -}}
 
 {{ if $opts.client }}
-{{ template "client" dict "Services" .Services "TypeMap" $typeMap "TypePrefix" $typePrefix }}
+{{ template "client" dict "Services" .Services "TypeMap" $typeMap "Opts" $opts "TypePrefix" $typePrefix }}
 {{ end -}}
 
 {{ template "helpers" dict "Opts" $opts }}
 
-{{- template "errors" dict "WebrpcErrors" .WebrpcErrors "SchemaErrors" .Errors "Opts" $opts "TypePrefix" $typePrefix }}
+{{ template "errors" dict "WebrpcErrors" .WebrpcErrors "SchemaErrors" .Errors "Opts" $opts "TypePrefix" $typePrefix }}
 
 {{- if $opts.legacyErrors }}
 {{ template "legacyErrors" . }}
 {{- end }}
 
-{{ end }}
+{{- end }}
