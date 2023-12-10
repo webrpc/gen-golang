@@ -60,14 +60,12 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 	{{- end }}
 
 	resp, err := doHTTPRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
-	defer func() {
-		if resp != nil {
-			cerr := resp.Body.Close()
-			if err == nil && cerr != nil {
-				err = ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to close response body: %w", cerr))
-			}
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to close response body: %w", cerr))
 		}
-	}()
+	}
 
 	return {{range $i, $output := $method.Outputs}}out.Ret{{$i}}, {{end}}err
 }
