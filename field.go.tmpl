@@ -52,9 +52,11 @@
     {{if $optional}}*{{end}}{{ get $typeMap $type }}
 
 {{- else -}}{{- /* structs */ -}}
-
-    *{{$typePrefix}}{{$type}}
-
+    {{- if isEnumType $type -}}
+        {{if $optional}}*{{end}}{{$typePrefix}}{{$type}}
+    {{- else -}}
+        *{{$typePrefix}}{{$type}}
+    {{- end -}}
 {{- end -}}
 
 {{- if $includeJsonTags -}}

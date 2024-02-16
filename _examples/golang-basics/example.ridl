@@ -8,6 +8,11 @@ enum Kind: uint32
   - USER
   - ADMIN
 
+enum Intent: string
+  - openSession
+  - closeSession
+  - validateSession
+
 struct User
   - id: uint64
     + go.field.name = ID
@@ -34,6 +39,10 @@ struct User
     
   - updatedAt?: timestamp
     + go.tag.db = updated_at
+
+  - kind: Kind
+
+  - intent: Intent
 
 struct Nickname
   - ID: uint64

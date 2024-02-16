@@ -83,11 +83,11 @@ func (x *Location) Is(values ...Location) bool {
 	}
 	return false
 }
-
+	
 type ExampleAPI interface {
 	Ping(ctx context.Context) error
 	Status(ctx context.Context) (bool, error)
-	GetUsers(ctx context.Context) ([]*User, *Location, error)
+	GetUsers(ctx context.Context) ([]*User, Location, error)
 }
 
 var WebRPCServices = map[string][]string{
@@ -227,7 +227,7 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 
 	respPayload := struct {
 		Ret0 []*User `json:"users"`
-		Ret1 *Location `json:"location"`
+		Ret1 Location `json:"location"`
 	}{ret0, ret1}
 	respBody, err := json.Marshal(respPayload)
 	if err != nil {
@@ -303,10 +303,10 @@ func (c *exampleAPIClient) Status(ctx context.Context) (bool, error) {
 	return out.Ret0, err
 }
 
-func (c *exampleAPIClient) GetUsers(ctx context.Context) ([]*User, *Location, error) {
+func (c *exampleAPIClient) GetUsers(ctx context.Context) ([]*User, Location, error) {
 	out := struct {
 		Ret0 []*User `json:"users"`
-		Ret1 *Location `json:"location"`
+		Ret1 Location `json:"location"`
 	}{}
 	
 	err := doJSONRequest(ctx, c.client, c.urls[2], nil, &out)
@@ -541,6 +541,9 @@ var (
 	ErrWebrpcBadResponse = WebRPCError{Code: -5, Name: "WebrpcBadResponse", Message: "bad response", HTTPStatus: 500}
 	ErrWebrpcServerPanic = WebRPCError{Code: -6, Name: "WebrpcServerPanic", Message: "server panic", HTTPStatus: 500}
 	ErrWebrpcInternalError = WebRPCError{Code: -7, Name: "WebrpcInternalError", Message: "internal error", HTTPStatus: 500}
+	ErrWebrpcClientDisconnected = WebRPCError{Code: -8, Name: "WebrpcClientDisconnected", Message: "client disconnected", HTTPStatus: 400}
+	ErrWebrpcStreamLost = WebRPCError{Code: -9, Name: "WebrpcStreamLost", Message: "stream lost", HTTPStatus: 400}
+	ErrWebrpcStreamFinished = WebRPCError{Code: -10, Name: "WebrpcStreamFinished", Message: "stream finished", HTTPStatus: 200}
 )
 
 //

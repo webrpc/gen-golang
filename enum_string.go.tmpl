@@ -1,0 +1,38 @@
+{{- define "enum_string" -}}
+    {{- $name := .Name -}}
+    {{- $type := .Type -}}
+    {{- $fields := .Fields -}}
+    {{- $opts := .Opts -}}
+
+    {{- if $opts.types -}}
+        type {{$name}} {{$type}}
+    {{- end }}
+
+    const (
+    {{- range $fields}}
+        {{$name}}_{{.Name}} {{$name}} = "{{.Name}}"
+    {{- end}}
+    )
+
+    func (x {{$name}}) MarshalText() ([]byte, error) {
+    return []byte(x), nil
+    }
+
+    func (x *{{$name}}) UnmarshalText(b []byte) error {
+    *x = {{$name}}(string(b))
+    return nil
+    }
+
+    func (x *{{$name}}) Is(values ...{{$name}}) bool {
+    if x == nil {
+    return false
+    }
+    for _, v := range values {
+    if *x == v {
+    return true
+    }
+    }
+    return false
+    }
+
+{{- end -}}
