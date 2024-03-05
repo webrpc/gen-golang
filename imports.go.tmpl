@@ -35,6 +35,7 @@
 {{- if $opts.streaming -}}
 	{{- if $opts.server }}
 	{{- set $stdlibImports "sync" "" -}}
+	{{- set $stdlibImports "time" "" -}}
 	{{- end -}}
 	{{- if $opts.client }}
 	{{- set $stdlibImports "bufio" "" -}}
