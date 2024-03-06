@@ -31,7 +31,7 @@ func (e WebRPCError) Error() string {
 
 func (e WebRPCError) Is(target error) bool {
 	if target == nil {
-		rerturn false
+		return false
 	}
 	if rpcErr, ok := target.(WebRPCError); ok {
 		return rpcErr.Code == e.Code
