@@ -15,7 +15,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
 )
 
 // WebRPC description and code-gen version
@@ -32,6 +31,7 @@ func WebRPCSchemaVersion() string {
 func WebRPCSchemaHash() string {
 	return "eb9a5d4082a36a8cb84eaa4b3e1091fc4f1f6f3d"
 }
+
 
 //
 // Types
@@ -84,12 +84,6 @@ func (x *Location) Is(values ...Location) bool {
 	return false
 }
 	
-type ExampleAPI interface {
-	Ping(ctx context.Context) error
-	Status(ctx context.Context) (bool, error)
-	GetUsers(ctx context.Context) ([]*User, Location, error)
-}
-
 var WebRPCServices = map[string][]string{
 	"ExampleAPI": {
 		"Ping",
@@ -97,6 +91,32 @@ var WebRPCServices = map[string][]string{
 		"GetUsers",
 	},
 }
+
+//
+// Server types
+//
+
+type ExampleAPI interface {
+	Ping(ctx context.Context) error
+	Status(ctx context.Context) (bool, error)
+	GetUsers(ctx context.Context) ([]*User, Location, error)
+}
+
+
+
+
+//
+// Client types
+//
+
+type ExampleAPIClient interface {
+	Ping(ctx context.Context) error
+	Status(ctx context.Context) (bool, error)
+	GetUsers(ctx context.Context) ([]*User, Location, error)
+}
+
+
+
 
 //
 // Server
@@ -133,9 +153,12 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	switch r.URL.Path {
-	case "/rpc/ExampleAPI/Ping": handler = s.servePingJSON
-	case "/rpc/ExampleAPI/Status": handler = s.serveStatusJSON
-	case "/rpc/ExampleAPI/GetUsers": handler = s.serveGetUsersJSON
+	case "/rpc/ExampleAPI/Ping":
+		handler = s.servePingJSON
+	case "/rpc/ExampleAPI/Status":
+		handler = s.serveStatusJSON
+	case "/rpc/ExampleAPI/GetUsers":
+		handler = s.serveGetUsersJSON
 	default:
 		err := ErrWebrpcBadRoute.WithCause(fmt.Errorf("no handler for path %q", r.URL.Path))
 		s.sendErrorJSON(w, r, err)
@@ -155,7 +178,7 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	contentType = strings.TrimSpace(strings.ToLower(contentType))
 
-	switch contentType  {
+	switch contentType {
 	case "application/json":
 		handler(ctx, w, r)
 	default:
@@ -166,6 +189,8 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Ping")
+
+	
 
 	// Call service method implementation.
 	err := s.ExampleAPI.Ping(ctx)
@@ -185,6 +210,8 @@ func (s *exampleAPIServer) servePingJSON(ctx context.Context, w http.ResponseWri
 
 func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
+
+	
 
 	// Call service method implementation.
 	ret0, err := s.ExampleAPI.Status(ctx)
@@ -213,6 +240,8 @@ func (s *exampleAPIServer) serveStatusJSON(ctx context.Context, w http.ResponseW
 
 func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUsers")
+
+	
 
 	// Call service method implementation.
 	ret0, ret1, err := s.ExampleAPI.GetUsers(ctx)
@@ -243,8 +272,10 @@ func (s *exampleAPIServer) serveGetUsersJSON(ctx context.Context, w http.Respons
 
 func (s *exampleAPIServer) sendErrorJSON(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError) {
 	if s.OnError != nil {
-		 s.OnError(r, &rpcErr)
+		s.OnError(r, &rpcErr)
 	}
+
+	
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(rpcErr.HTTPStatus)
@@ -252,6 +283,7 @@ func (s *exampleAPIServer) sendErrorJSON(w http.ResponseWriter, r *http.Request,
 	respBody, _ := json.Marshal(rpcErr)
 	w.Write(respBody)
 }
+
 func RespondWithError(w http.ResponseWriter, err error) {
 	rpcErr, ok := err.(WebRPCError)
 	if !ok {
@@ -265,6 +297,8 @@ func RespondWithError(w http.ResponseWriter, err error) {
 	w.Write(respBody)
 }
 
+
+
 //
 // Client
 //
@@ -276,7 +310,7 @@ type exampleAPIClient struct {
 	urls	 [3]string
 }
 
-func NewExampleAPIClient(addr string, client HTTPClient) ExampleAPI {
+func NewExampleAPIClient(addr string, client HTTPClient) ExampleAPIClient {
 	prefix := urlBase(addr) + ExampleAPIPathPrefix
 	urls := [3]string{
 		prefix + "Ping",
@@ -290,7 +324,15 @@ func NewExampleAPIClient(addr string, client HTTPClient) ExampleAPI {
 }
 
 func (c *exampleAPIClient) Ping(ctx context.Context) error {
-	err := doJSONRequest(ctx, c.client, c.urls[0], nil, nil)
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[0], nil, nil)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to close response body: %w", cerr))
+		}
+	}
+
 	return err
 }
 
@@ -298,8 +340,15 @@ func (c *exampleAPIClient) Status(ctx context.Context) (bool, error) {
 	out := struct {
 		Ret0 bool `json:"status"`
 	}{}
-	
-	err := doJSONRequest(ctx, c.client, c.urls[1], nil, &out)
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[1], nil, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to close response body: %w", cerr))
+		}
+	}
+
 	return out.Ret0, err
 }
 
@@ -308,8 +357,15 @@ func (c *exampleAPIClient) GetUsers(ctx context.Context) ([]*User, Location, err
 		Ret0 []*User `json:"users"`
 		Ret1 Location `json:"location"`
 	}{}
-	
-	err := doJSONRequest(ctx, c.client, c.urls[2], nil, &out)
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[2], nil, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to close response body: %w", cerr))
+		}
+	}
+
 	return out.Ret0, out.Ret1, err
 }
 
@@ -353,65 +409,55 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 	return req, nil
 }
 
-// doJSONRequest is common code to make a request to the remote service.
-func doJSONRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) error {
+// doHTTPRequest is common code to make a request to the remote service.
+func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
 	reqBody, err := json.Marshal(in)
 	if err != nil {
-		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to marshal JSON body: %w", err))
+		return nil, ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to marshal JSON body: %w", err))
 	}
 	if err = ctx.Err(); err != nil {
-		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("aborted because context was done: %w", err))
+		return nil, ErrWebrpcRequestFailed.WithCause(fmt.Errorf("aborted because context was done: %w", err))
 	}
 
 	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
 	if err != nil {
-		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("could not build request: %w", err))
+		return nil, ErrWebrpcRequestFailed.WithCause(fmt.Errorf("could not build request: %w", err))
 	}
+
 	resp, err := client.Do(req)
 	if err != nil {
-		return ErrWebrpcRequestFailed.WithCause(err)
-	}
-
-	defer func() {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCause(fmt.Errorf("failed to close response body: %w", cerr))
-		}
-	}()
-
-	if err = ctx.Err(); err != nil {
-		return ErrWebrpcRequestFailed.WithCause(fmt.Errorf("aborted because context was done: %w", err))
+		return nil, ErrWebrpcRequestFailed.WithCause(err)
 	}
 
 	if resp.StatusCode != 200 {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read server error response body: %w", err))
+			return nil, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read server error response body: %w", err))
 		}
 
 		var rpcErr WebRPCError
 		if err := json.Unmarshal(respBody, &rpcErr); err != nil {
-			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal server error: %w", err))
+			return nil, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal server error: %w", err))
 		}
 		if rpcErr.Cause != "" {
 			rpcErr.cause = errors.New(rpcErr.Cause)
 		}
-		return rpcErr
+		return nil, rpcErr
 	}
 
 	if out != nil {
 		respBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read response body: %w", err))
+			return nil, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to read response body: %w", err))
 		}
 
 		err = json.Unmarshal(respBody, &out)
 		if err != nil {
-			return ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal JSON response body: %w", err))
+			return nil, ErrWebrpcBadResponse.WithCause(fmt.Errorf("failed to unmarshal JSON response body: %w", err))
 		}
 	}
 
-	return nil
+	return resp, nil
 }
 
 func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {
@@ -481,7 +527,6 @@ func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
 	w, _ := ctx.Value(HTTPResponseWriterCtxKey).(http.ResponseWriter)
 	return w
 }
-
 
 //
 // Errors
@@ -636,4 +681,3 @@ var (
 	// Deprecated. Define errors in RIDL schema.
 	ErrNone = legacyError{WebRPCError{Code: -10018, Name: "ErrNone", Message: "", HTTPStatus: 200 /* OK */ }}
 )
-
