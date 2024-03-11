@@ -20,6 +20,11 @@
 {{ end -}}
 
 {{- if and (eq $type.Kind "struct") $opts.types }}
+{{- if gt (len $type.Comments) 0 }}
+	{{- range $_, $comment := $type.Comments }}
+		// {{ replaceAll $comment "\"" "'" }}
+	{{- end }}
+{{- end }}
 {{template "struct" dict "Name" $type.Name "TypeMap" $typeMap "TypePrefix" $typePrefix "Fields" $type.Fields}}
 {{ end -}}
 
