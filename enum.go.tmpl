@@ -10,8 +10,13 @@ type {{$name}} {{$type}}
 {{- end }}
 
 const (
-{{- range $fields}}
-	{{$name}}_{{.Name}} {{$name}} = {{.Value}}
+{{- range $_, $field := $fields }}
+	{{- if gt (len $field.Comments) 0 -}}
+		{{- range $_, $comment := $field.Comments }}
+			// {{ replaceAll $comment "\"" "'" }}
+		{{- end }}
+	{{- end }}
+	{{$name}}_{{.Name}} {{$name}} = {{$field.Value}}
 {{- end}}
 )
 

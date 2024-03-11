@@ -12,7 +12,7 @@ type {{$name}} struct {
 			// {{ replaceAll $comment "\"" "'" }}
 		{{- end }}
 	{{- end }}
-	{{template "field" dict "Name" $field.Name "PrintName" true "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "JsonTags" true "StructTags" true -}}
-{{end -}}
+	{{template "field" dict "Name" $field.Name "PrintName" true "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "JsonTags" true "StructTags" true }}
+{{- end }}
 }
 {{- end }}

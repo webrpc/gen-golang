@@ -4,8 +4,14 @@ name = example          # name of your backend app
 version = v0.0.1        # version of your schema
               
 
+# user role
+# which defines which type of operations user can do
 enum Kind: uint32
-  - USER
+  - USER # user can only see number of transactions
+    # admin permissions
+    # can manage transactions
+    # revert transactions
+    # see analytics dashboard
   - ADMIN
 
 enum Intent: string
@@ -13,6 +19,7 @@ enum Intent: string
   - closeSession
   - validateSession
 
+# Defines users within out wallet app
 struct User
   - id: uint64
     + go.field.name = ID
@@ -23,7 +30,8 @@ struct User
     + go.field.type = uuid.UUID
     + go.type.import = github.com/google/uuid
 
-  - username: string
+  # unique identifier of the user
+  - username: string # must be unique !
     + json = USERNAME
     + go.tag.db = username
 
