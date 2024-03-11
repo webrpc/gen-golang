@@ -6,8 +6,13 @@
 {{- $typePrefix := .TypePrefix -}}
 
 type {{$name}} struct {
-{{range $_, $field := $fields -}}
-	{{template "field" dict "Name" $field.Name "PrintName" true "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "JsonTags" true "StructTags" true}}
-{{end -}}
+{{- range $_, $field := $fields -}}
+	{{- if gt (len $field.Comments) 0 -}}
+		{{- range $_, $comment := $field.Comments }}
+			// {{ replaceAll $comment "\"" "'" }}
+		{{- end }}
+	{{- end }}
+	{{template "field" dict "Name" $field.Name "PrintName" true "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "JsonTags" true "StructTags" true }}
+{{- end }}
 }
 {{- end }}

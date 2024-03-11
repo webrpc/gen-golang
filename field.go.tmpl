@@ -48,7 +48,6 @@
     []{{template "field" dict "Name" $name "Type" (listElemType $type) "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $typeMeta}}
 
 {{- else if isCoreType $type -}}
-
     {{if $optional}}*{{end}}{{ get $typeMap $type }}
 
 {{- else -}}{{- /* structs */ -}}
