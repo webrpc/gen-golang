@@ -80,22 +80,28 @@ import (
 	{{- set $imports $opts.importTypesFrom "" -}}
 {{- else -}}
 	{{- range $_, $type := $types -}}
-		{{- range $_, $field := $type.Fields -}}
-			{{- range $meta := $field.Meta -}}
+		{{- /* TODO: We might need to loop through method args too. */ -}}
+		{{- range $meta := $type.Meta -}}
 				{{- if exists $meta "go.type.import" -}}
 					{{- set $imports (get $meta "go.type.import") "" -}}
 				{{- end -}}
 			{{- end -}}
-		{{- end -}}
+		{{- if $opts.types }}
+			{{- range $_, $field := $type.Fields -}}
+				{{- range $meta := $field.Meta -}}
+					{{- if exists $meta "go.type.import" -}}
+						{{- set $imports (get $meta "go.type.import") "" -}}
+					{{- end -}}
+				{{- end -}}
+			{{- end -}}
+		{{- end }}
 	{{- end -}}
 {{- end }}
-{{- if $opts.types }}
 {{ range $import, $rename := $imports }}
 	{{- if not (exists $stdlibImports $import)}}
 	{{if ne $rename ""}}{{$rename}} {{end}}"{{$import}}"
-	{{end}}
+	{{- end }}
 {{- end }}
-{{- end -}}
 )
 
 {{- if eq $opts.json "jsoniter" }}
