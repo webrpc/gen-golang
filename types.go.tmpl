@@ -5,18 +5,17 @@
 {{- $services := .Services -}}
 {{- $opts := .Opts -}}
 
-{{- if $types }}
 //
-// Types
+// Common types
 //
 {{ range $_, $type := $types -}}
 
 {{- if eq $type.Kind "enum" }}
 	{{- if eq $type.Type.Expr "string" }}
 {{template "enum_string" dict "Name" $type.Name "Type" $type.Type "TypePrefix" $typePrefix "Fields" $type.Fields "Opts" $opts}}
-	{{ else }}
+	{{- else }}
 {{template "enum" dict "Name" $type.Name "Type" $type.Type "TypePrefix" $typePrefix "Fields" $type.Fields "Opts" $opts}}
-	{{ end -}}
+	{{- end -}}
 {{ end -}}
 
 {{- if and (eq $type.Kind "struct") $opts.types }}
@@ -28,8 +27,7 @@
 {{template "struct" dict "Name" $type.Name "TypeMap" $typeMap "TypePrefix" $typePrefix "Fields" $type.Fields}}
 {{ end -}}
 
-{{ end }}
-{{ end -}}
+{{- end }}
 
 var WebRPCServices = map[string][]string{
 {{- range $_, $service := $services}}
@@ -46,6 +44,7 @@ var WebRPCServices = map[string][]string{
 //
 
 {{ range $_, $service := $services -}}
+{{ if $opts.types -}}
 type {{$service.Name}} interface {
 	{{- range $_, $method := $service.Methods}}
 	{{ if eq $method.StreamOutput true -}}
@@ -56,9 +55,10 @@ type {{$service.Name}} interface {
 
 	{{- end}}
 }
+{{- end }}
 
-{{- range $_, $method := $service.Methods}}
-{{ if eq $method.StreamOutput true -}}
+{{- range $_, $method := $service.Methods -}}
+{{ if eq $method.StreamOutput true }}
 type {{$method.Name}}StreamWriter interface {
 	Write({{range $i, $output := $method.Outputs}}{{if gt $i 0}}, {{end}}{{$output.Name}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{end}}) error
 }
