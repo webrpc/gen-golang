@@ -92,7 +92,7 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 	}
 
 	buf := bufio.NewReader(resp.Body)
-	return &{{$method.Name | firstLetterToLower}}StreamReader{streamReader{ctx: ctx, c: resp.Body, r: buf, d: json.NewDecoder(buf)}}, nil
+	return &{{$method.Name | firstLetterToLower}}StreamReader{streamReader{ctx: ctx, c: resp.Body, r: buf}}, nil
 }
 
 type {{firstLetterToLower $method.Name}}StreamReader struct {
@@ -134,7 +134,6 @@ type streamReader struct {
 	ctx context.Context
 	c   io.Closer
 	r   *bufio.Reader
-	d   *json.Decoder
 }
 
 func (r *streamReader) read(v interface {}) error {
