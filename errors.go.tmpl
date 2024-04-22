@@ -62,7 +62,6 @@ func (e WebRPCError) WithCausef(msg string, args ...any) WebRPCError {
 	return e.WithCause(fmt.Errof(msg, args...))
 }
 
-
 // Deprecated: Use .WithCause() method on WebRPCError.
 func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
 	return rpcErr.WithCause(cause)
