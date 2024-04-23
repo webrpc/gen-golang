@@ -864,7 +864,7 @@ func (e WebRPCError) WithCause(cause error) WebRPCError {
 	return err
 }
 
-func (e WebRPCError) WithCausef(msg string, args ...any) WebRPCError {
+func (e WebRPCError) WithCausef(fmt string, args ...interface{}) WebRPCError {
 	return e.WithCause(fmt.Errorf(msg, args...))
 }
 
