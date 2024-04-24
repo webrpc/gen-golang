@@ -89,6 +89,9 @@ error 400300 UserNotFound    "user not found"
 
 service ExampleService
   - Ping()
+  # Status endpoint
+  #
+  # gives you current status of running application
   - Status() => (status: bool)
   - Version() => (version: Version)
   - GetUser(header: map<string,string>, userID: uint64) => (user: User)
