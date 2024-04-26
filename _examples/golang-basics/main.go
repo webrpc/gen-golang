@@ -1,4 +1,5 @@
 //go:generate webrpc-gen -schema=example.ridl -target=../../../gen-golang -pkg=main -server -client -legacyErrors -fixEmptyArrays -out=./example.gen.go
+//go:generate webrpc-gen -schema=example.ridl -target=../../../gen-golang -pkg=example -client -legacyErrors -fixEmptyArrays -out=./client/example.gen.go
 package main
 
 import (
