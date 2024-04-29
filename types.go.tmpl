@@ -39,13 +39,13 @@ var WebRPCServices = map[string][]string{
 {{- end}}
 }
 
-var WebRPCServicesMap = map[string]map[string]struct{}{
+type Route struct{}
+
+var WebRPCServicesMap = map[string]Route{
 {{- range $_, $service := $services}}
-	"{{$service.Name}}": {
-		{{- range $_, $method := $service.Methods}}
-		"{{$method.Name}}": struct{}{},
-		{{- end}}
-	},
+	{{- range $_, $method := $service.Methods}}
+    "/rpc/{{$service.Name}}/{{$method.Name}}": {},
+	{{- end}}
 {{- end}}
 }
 
