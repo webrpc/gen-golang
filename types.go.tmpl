@@ -39,6 +39,16 @@ var WebRPCServices = map[string][]string{
 {{- end}}
 }
 
+type Route struct{}
+
+var WebRPCServicesMap = map[string]Route{
+{{- range $_, $service := $services}}
+	{{- range $_, $method := $service.Methods}}
+    "/rpc/{{$service.Name}}/{{$method.Name}}": {},
+	{{- end}}
+{{- end}}
+}
+
 //
 // Server types
 //
