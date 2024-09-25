@@ -20,6 +20,7 @@ type WebRPCServer interface {
 type {{$serviceName}} struct {
 	{{$typePrefix}}{{$service.Name}}
 	OnError func(r *http.Request, rpcErr *WebRPCError)
+	OnDeprecate func(endpoint string, newEndpoint string)
 }
 
 func New{{firstLetterToUpper $service.Name}}Server(svc {{$typePrefix}}{{.Name}}) *{{$serviceName}} {
@@ -46,6 +47,10 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	{{- range $_, $method := $service.Methods}}
 	case "/rpc/{{$name}}/{{$method.Name}}":
+	    {{- $deprecated := $method.Annotations.Deprecated -}}
+	    {{- if $deprecated -}}
+	        s.OnDeprecate("{{ $method.Name }}", "{{ index $deprecated.Args 0 }}")
+	    {{- end}}
 		handler = s.serve{{$method.Name | firstLetterToUpper}}JSON{{if $method.StreamOutput}}Stream{{end}}
 	{{- end}}
 	default:
