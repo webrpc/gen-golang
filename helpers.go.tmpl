@@ -45,7 +45,7 @@ func RequestFromContext(ctx context.Context) *http.Request {
 	return r
 }
 
-func AnnotationsFromContext(ctx context.Context) map[string]string {
+func MethodAnnotationsFromContext(ctx context.Context) map[string]string {
 	annotations, _ := ctx.Value(AnnotationsCtxKey).(map[string]string)
 	return annotations
 }
