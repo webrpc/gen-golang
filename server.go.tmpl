@@ -32,7 +32,7 @@ var (
 type {{$serviceName}} struct {
 	{{$typePrefix}}{{$service.Name}}
 	OnError func(r *http.Request, rpcErr *WebRPCError)
-	OnRequest func(w http.ResponseWriter, r *http.Request)
+	OnRequest func(w http.ResponseWriter, r *http.Request) error
 }
 
 func New{{firstLetterToUpper $service.Name}}Server(svc {{$typePrefix}}{{.Name}}) *{{$serviceName}} {
