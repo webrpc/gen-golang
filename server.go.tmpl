@@ -42,7 +42,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "{{.Name}}")
-	ctx = context.WithValue(ctx, AnnotationsCtxKey, annotations[r.URL.Path])
+	ctx = context.WithValue(ctx, MethodAnnotationsCtxKey, methodAnnotations[r.URL.Path])
 
     if s.OnRequest != nil {
         s.OnRequest(w, r)

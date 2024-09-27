@@ -27,7 +27,7 @@ var (
 
 	MethodNameCtxKey = &contextKey{"MethodName"}
 
-	AnnotationsCtxKey = &contextKey{"Annotations"}
+	MethodAnnotationsCtxKey = &contextKey{"MethodAnnotations"}
 )
 
 func ServiceNameFromContext(ctx context.Context) string {
@@ -46,7 +46,7 @@ func RequestFromContext(ctx context.Context) *http.Request {
 }
 
 func MethodAnnotationsFromContext(ctx context.Context) map[string]string {
-	annotations, _ := ctx.Value(AnnotationsCtxKey).(map[string]string)
+	annotations, _ := ctx.Value(MethodAnnotationsCtxKey).(map[string]string)
 	return annotations
 }
 

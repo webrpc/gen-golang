@@ -92,6 +92,7 @@ service ExampleService
   # Status endpoint
   #
   # gives you current status of running application
+  @internal
   - Status() => (status: bool)
   - Version() => (version: Version)
   - GetUser(header: map<string,string>, userID: uint64) => (user: User)
