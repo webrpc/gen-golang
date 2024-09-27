@@ -31,7 +31,7 @@
 
 {{- range $_, $service := $services -}}
 var (
-	annotations = map[string]map[string]string{
+	methodAnnotations = map[string]map[string]string{
     	{{- range $_, $method := $service.Methods }}
     	"/rpc/{{$service.Name}}/{{$method.Name}}": {
     	    {{- range $_, $annotation := $method.Annotations -}}
