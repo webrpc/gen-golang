@@ -17,18 +17,6 @@ type WebRPCServer interface {
 {{- $name := $service.Name -}}
 {{ $serviceName := (printf "%sServer" (firstLetterToLower $service.Name)) }}
 
-var (
-	annotations = map[string]map[string]string{
-    	{{- range $_, $method := $service.Methods}}
-    	"/rpc/{{$name}}/{{$method.Name}}": {
-    	    {{- range $_, $annotation := $method.Annotations -}}
-    	        "{{$annotation.AnnotationType}}": "{{$annotation.Value}}",
-    	    {{- end -}}
-    	},
-    	{{- end -}}
-	}
-)
-
 type {{$serviceName}} struct {
 	{{$typePrefix}}{{$service.Name}}
 	OnError func(r *http.Request, rpcErr *WebRPCError)

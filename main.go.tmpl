@@ -102,6 +102,22 @@ func WebRPCSchemaHash() string {
 {{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "TypePrefix" $typePrefix "Opts" $opts }}
 {{ end -}}
 
+{{- if .Services -}}
+{{- range $_, $service := .Services -}}
+var (
+	annotations = map[string]map[string]string{
+    	{{- range $_, $method := $service.Methods }}
+    	"/rpc/{{$service.Name}}/{{$method.Name}}": {
+    	    {{- range $_, $annotation := $method.Annotations -}}
+    	        "{{$annotation.AnnotationType}}": "{{$annotation.Value}}",
+    	    {{- end -}}
+    	},
+    	{{- end }}
+	}
+)
+{{ end }}
+{{- end}}
+
 {{- if $opts.server }}
 {{ template "server" dict "Services" .Services "TypeMap" $typeMap "TypePrefix" $typePrefix "Opts" $opts }}
 {{ end -}}
