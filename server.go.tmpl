@@ -42,7 +42,6 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "{{.Name}}")
-	ctx = context.WithValue(ctx, methodAnnotationsCtxKey, methodAnnotations[r.URL.Path])
 
 	var handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	switch r.URL.Path {

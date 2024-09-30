@@ -271,7 +271,6 @@ func (s *exampleServiceServer) ServeHTTP(w http.ResponseWriter, r *http.Request)
 	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "ExampleService")
-	ctx = context.WithValue(ctx, methodAnnotationsCtxKey, methodAnnotations[r.URL.Path])
 
 	var handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	switch r.URL.Path {
@@ -820,8 +819,6 @@ var (
 	ServiceNameCtxKey = &contextKey{"ServiceName"}
 
 	MethodNameCtxKey = &contextKey{"MethodName"}
-
-	methodAnnotationsCtxKey = &contextKey{"MethodAnnotations"}
 )
 
 func ServiceNameFromContext(ctx context.Context) string {
@@ -839,19 +836,13 @@ func RequestFromContext(ctx context.Context) *http.Request {
 	return r
 }
 
-func MethodFromContext(ctx context.Context) MethodCtx {
-	name, _ := ctx.Value(MethodNameCtxKey).(string)
-	service, _ := ctx.Value(ServiceNameCtxKey).(string)
-	annotations, ok := ctx.Value(methodAnnotationsCtxKey).(map[string]string)
+func GetMethodCtx(r *http.Request) (MethodCtx, bool) {
+	ctx, ok := methodAnnotations[r.URL.Path]
 	if !ok {
-		annotations = map[string]string{}
+		return MethodCtx{}, false
 	}
 
-	return MethodCtx{
-		Name:        name,
-		Service:     service,
-		Annotations: annotations,
-	}
+	return ctx, true
 }
 
 func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
