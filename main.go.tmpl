@@ -81,6 +81,10 @@ package {{get $opts "pkg"}}
 
 {{template "imports" dict "Types" .Types "Opts" $opts }}
 
+const WebRPCHeader = "{{ .WebrpcHeader }}"
+
+const WebRPCHeaderName = "Webrpc"
+
 // WebRPC description and code-gen version
 func WebRPCVersion() string {
 	return "{{.WebrpcVersion}}"
@@ -94,6 +98,66 @@ func WebRPCSchemaVersion() string {
 // Schema hash generated from your RIDL schema
 func WebRPCSchemaHash() string {
 	return "{{.SchemaHash}}"
+}
+
+type WebRPCGenVersions struct {
+    WebRPCGenVersion string
+    CodeGenName string
+    CodeGenVersion string
+    SchemaName string
+    SchemaVersion string
+}
+
+func ServerVersion() (*WebRPCGenVersions, error)  {
+    versions, err := parseWebRPCGenVersions(WebRPCHeader)
+    if err != nil {
+        return nil, fmt.Errorf("webrpc header is invalid: %w", err)
+    }
+
+    return versions, nil
+}
+
+func VersionFromHeader(h http.Header) (*WebRPCGenVersions, error) {
+    if h.Get(WebRPCHeaderName) == "" {
+        return nil, fmt.Errorf("header is empty or missing")
+    }
+
+    versions, err := parseWebRPCGenVersions(h.Get(WebRPCHeaderName))
+    if err != nil {
+        return nil, fmt.Errorf("webrpc header is invalid: %w", err)
+    }
+
+    return versions, nil
+}
+
+func parseWebRPCGenVersions(header string) (*WebRPCGenVersions, error) {
+    versions := strings.Split(header, ";")
+    if len(versions) < 3 {
+        return nil, fmt.Errorf("expected at least 3 parts while parsing webrpc header: %v", header)
+    }
+
+    _, webrpcGenVersion, ok := strings.Cut(versions[0], "@")
+    if !ok {
+        return nil, fmt.Errorf("webrpc gen version could not be parsed from: %s", versions[0])
+    }
+
+    tmplTarget, tmplVersion, ok := strings.Cut(versions[1], "@")
+    if !ok {
+        return nil, fmt.Errorf("tmplTarget and tmplVersion could not be parsed from: %s", versions[1])
+    }
+
+    schemaName, schemaVersion, ok := strings.Cut(versions[2], "@")
+    if !ok {
+		return nil, fmt.Errorf("schema name and schema version could not be parsed from: %s", versions[2])
+	}
+
+    return &WebRPCGenVersions{
+        WebRPCGenVersion: webrpcGenVersion,
+        CodeGenName: tmplTarget,
+        CodeGenVersion: tmplVersion,
+        SchemaName: schemaName,
+        SchemaVersion: schemaVersion,
+    }, nil
 }
 
 {{- printf "\n" -}}

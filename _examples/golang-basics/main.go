@@ -48,10 +48,34 @@ func (rpc *ExampleServiceRPC) Status(ctx context.Context) (bool, error) {
 }
 
 func (rpc *ExampleServiceRPC) Version(ctx context.Context) (*Version, error) {
+	serverVersions, err := ServerVersion()
+	if err != nil {
+		return nil, fmt.Errorf("parse server webrpc gen versions: %w", err)
+	}
+
+	req := RequestFromContext(ctx)
+
+	clientVersions, err := VersionFromHeader(req.Header)
+	if err != nil {
+		return nil, fmt.Errorf("parse client webrpc gen versions: %w", err)
+	}
+
 	return &Version{
 		WebrpcVersion: WebRPCVersion(),
 		SchemaVersion: WebRPCSchemaVersion(),
 		SchemaHash:    WebRPCSchemaHash(),
+		ClientGenVersion: &GenVersions{
+			WebRPCGenVersion: clientVersions.WebRPCGenVersion,
+			TmplTarget:       clientVersions.CodeGenName,
+			TmplVersion:      clientVersions.CodeGenVersion,
+			SchemaVersion:    clientVersions.CodeGenVersion,
+		},
+		ServerGenVersion: &GenVersions{
+			WebRPCGenVersion: serverVersions.WebRPCGenVersion,
+			TmplTarget:       serverVersions.CodeGenName,
+			TmplVersion:      serverVersions.CodeGenVersion,
+			SchemaVersion:    serverVersions.CodeGenVersion,
+		},
 	}, nil
 }
 

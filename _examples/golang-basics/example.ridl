@@ -2,7 +2,6 @@ webrpc = v1             # version of webrpc schema format (ridl or json)
 
 name = example          # name of your backend app
 version = v0.0.1        # version of your schema
-              
 
 # user role
 # which defines which type of operations user can do
@@ -69,6 +68,8 @@ struct Version
   - webrpcVersion: string
   - schemaVersion: string
   - schemaHash: string
+  - clientGenVersion: GenVersions
+  - serverGenVersion: GenVersions
 
 struct ComplexType
   - meta: map<string,any>
@@ -80,6 +81,12 @@ struct ComplexType
   - listOfUsers: []User
   - mapOfUsers: map<string,User>
   - user: User
+
+struct GenVersions
+  - WebRPCGenVersion: string
+  - TmplTarget: string
+  - TmplVersion: string
+  - SchemaVersion: string
 
 error 500100 MissingArgument "missing argument"
 error 500101 InvalidUsername "invalid username"
