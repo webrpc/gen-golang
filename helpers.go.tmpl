@@ -6,9 +6,9 @@
 //
 
 type MethodCtx struct  {
-  Name string
-  Service string
-  Annotations map[string]string
+	Name string
+	Service string
+	Annotations map[string]string
 }
 
 type contextKey struct {
@@ -54,7 +54,10 @@ func RequestFromContext(ctx context.Context) *http.Request {
 func MethodFromContext(ctx context.Context) MethodCtx {
 	name, _ := ctx.Value(MethodNameCtxKey).(string)
 	service, _ := ctx.Value(ServiceNameCtxKey).(string)
-	annotations, _ := ctx.Value(methodAnnotationsCtxKey).(map[string]string)
+	annotations, ok := ctx.Value(methodAnnotationsCtxKey).(map[string]string)
+	if !ok {
+		annotations = map[string]string{}
+	}
 
 	return MethodCtx{
 		Name: name,

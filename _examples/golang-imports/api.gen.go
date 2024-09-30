@@ -190,7 +190,7 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch contentType {
 	case "application/json":
-        if s.OnRequest != nil {
+		if s.OnRequest != nil {
 			if err := s.OnRequest(w, r); err != nil {
 				rpcErr, ok := err.(WebRPCError)
 				if !ok {
@@ -199,7 +199,7 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				s.sendErrorJSON(w, r, rpcErr)
 				return
 			}
-        }
+		}
 
 		handler(ctx, w, r)
 	default:
@@ -556,7 +556,10 @@ func RequestFromContext(ctx context.Context) *http.Request {
 func MethodFromContext(ctx context.Context) MethodCtx {
 	name, _ := ctx.Value(MethodNameCtxKey).(string)
 	service, _ := ctx.Value(ServiceNameCtxKey).(string)
-	annotations, _ := ctx.Value(methodAnnotationsCtxKey).(map[string]string)
+	annotations, ok := ctx.Value(methodAnnotationsCtxKey).(map[string]string)
+	if !ok {
+		annotations = map[string]string{}
+	}
 
 	return MethodCtx{
 		Name: name,

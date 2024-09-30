@@ -35,7 +35,7 @@ var (
 			{{- range $_, $method := $service.Methods }}
 			"/rpc/{{$service.Name}}/{{$method.Name}}": {
 				{{- range $_, $annotation := $method.Annotations -}}
-					"{{$annotation.AnnotationType}}": "{{$annotation.Value}}",
+				"{{$annotation.AnnotationType}}": "{{$annotation.Value}}",
 				{{- end -}}
 			},
 			{{- end -}}

@@ -71,7 +71,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch contentType {
 	case "application/json":
-        if s.OnRequest != nil {
+		if s.OnRequest != nil {
 			if err := s.OnRequest(w, r); err != nil {
 				rpcErr, ok := err.(WebRPCError)
 				if !ok {
@@ -80,7 +80,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				s.sendErrorJSON(w, r, rpcErr)
 				return
 			}
-        }
+		}
 
 		handler(ctx, w, r)
 	default:
