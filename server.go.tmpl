@@ -42,11 +42,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "{{.Name}}")
-	ctx = context.WithValue(ctx, MethodAnnotationsCtxKey, methodAnnotations[r.URL.Path])
-
-    if s.OnRequest != nil {
-        s.OnRequest(w, r)
-    }
+	ctx = context.WithValue(ctx, methodAnnotationsCtxKey, methodAnnotations[r.URL.Path])
 
 	var handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	switch r.URL.Path {
@@ -75,6 +71,17 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	switch contentType {
 	case "application/json":
+        if s.OnRequest != nil {
+            if err := s.OnRequest(w, r); err != nil {
+                rpcErr, ok := err.(WebRPCError)
+                if !ok {
+                    rpcErr = ErrWebrpcEndpoint.WithCause(err)
+                }
+                s.sendErrorJSON(w, r, rpcErr)
+                return
+            }
+        }
+
 		handler(ctx, w, r)
 	default:
 		err := ErrWebrpcBadRequest.WithCause(fmt.Errorf("unsupported Content-Type %q (only application/json is allowed)", r.Header.Get("Content-Type")))

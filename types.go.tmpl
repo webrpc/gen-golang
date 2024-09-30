@@ -29,7 +29,7 @@
 
 {{- end }}
 
-{{- range $_, $service := $services -}}
+{{ range $_, $service := $services -}}
 var (
 	methodAnnotations = map[string]map[string]string{
     	{{- range $_, $method := $service.Methods }}

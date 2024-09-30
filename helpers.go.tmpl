@@ -5,6 +5,12 @@
 // Helpers
 //
 
+type MethodCtx struct  {
+  Name string
+  Service string
+  Annotations map[string]string
+}
+
 type contextKey struct {
 	name string
 }
@@ -27,7 +33,7 @@ var (
 
 	MethodNameCtxKey = &contextKey{"MethodName"}
 
-	MethodAnnotationsCtxKey = &contextKey{"MethodAnnotations"}
+	methodAnnotationsCtxKey = &contextKey{"MethodAnnotations"}
 )
 
 func ServiceNameFromContext(ctx context.Context) string {
@@ -45,12 +51,19 @@ func RequestFromContext(ctx context.Context) *http.Request {
 	return r
 }
 
-func MethodAnnotationsFromContext(ctx context.Context) map[string]string {
-	annotations, _ := ctx.Value(MethodAnnotationsCtxKey).(map[string]string)
-	return annotations
+func MethodFromContext(ctx context.Context) MethodCtx {
+	name, _ := ctx.Value(MethodNameCtxKey).(string)
+	service, _ := ctx.Value(ServiceNameCtxKey).(string)
+	annotations, _ := ctx.Value(methodAnnotationsCtxKey).(map[string]string)
+
+	return MethodCtx{
+		Name: name,
+		Service: service,
+		Annotations: annotations,
+	}
 }
 
-{{- if $opts.server}}
+{{ if $opts.server}}
 func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
 	w, _ := ctx.Value(HTTPResponseWriterCtxKey).(http.ResponseWriter)
 	return w
