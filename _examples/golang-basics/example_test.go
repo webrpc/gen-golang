@@ -38,6 +38,14 @@ func TestStatus(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestVersion(t *testing.T) {
+	version, err := client.Version(context.Background())
+
+	assert.NoError(t, err)
+	assert.NotNil(t, version.ClientGenVersion)
+	assert.NotNil(t, version.ServerGenVersion)
+}
+
 func TestGetUser(t *testing.T) {
 	{
 		arg1 := map[string]string{"a": "1"}
