@@ -193,14 +193,14 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch contentType {
 	case "application/json":
         if s.OnRequest != nil {
-            if err := s.OnRequest(w, r); err != nil {
-                rpcErr, ok := err.(WebRPCError)
-                if !ok {
-                    rpcErr = ErrWebrpcEndpoint.WithCause(err)
-                }
-                s.sendErrorJSON(w, r, rpcErr)
-                return
-            }
+			if err := s.OnRequest(w, r); err != nil {
+				rpcErr, ok := err.(WebRPCError)
+				if !ok {
+					rpcErr = ErrWebrpcEndpoint.WithCause(err)
+				}
+				s.sendErrorJSON(w, r, rpcErr)
+				return
+			}
         }
 
 		handler(ctx, w, r)
