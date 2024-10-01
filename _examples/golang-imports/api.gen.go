@@ -172,6 +172,8 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, HTTPRequestCtxKey, r)
 	ctx = context.WithValue(ctx, ServiceNameCtxKey, "ExampleAPI")
 
+	r = r.WithContext(ctx)
+
 	var handler func(ctx context.Context, w http.ResponseWriter, r *http.Request)
 	switch r.URL.Path {
 	case "/rpc/ExampleAPI/Ping":
