@@ -30,7 +30,7 @@
 {{- end }}
 
 var (
-	methodAnnotations = map[string]MethodCtx{
+	methods = map[string]method{
 		{{- range $_, $service := $services -}}
 			{{- range $_, $method := $service.Methods }}
 			"/rpc/{{$service.Name}}/{{$method.Name}}": {
