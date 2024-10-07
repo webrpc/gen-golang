@@ -81,9 +81,9 @@ package {{get $opts "pkg"}}
 
 {{template "imports" dict "Types" .Types "Opts" $opts }}
 
-const WebRPCHeader = "{{ .WebrpcHeader }}"
+const WebRpcHeader = "{{ .WebrpcHeader }}"
 
-const WebRPCHeaderName = "Webrpc"
+const WebRpcHeaderName = "Webrpc"
 
 // WebRPC description and code-gen version
 func WebRPCVersion() string {
@@ -100,16 +100,16 @@ func WebRPCSchemaHash() string {
 	return "{{.SchemaHash}}"
 }
 
-type WebRPCGenVersions struct {
-    WebRPCGenVersion string
+type WebRpcGenVersions struct {
+    WebRpcGenVersion string
     CodeGenName string
     CodeGenVersion string
     SchemaName string
     SchemaVersion string
 }
 
-func ServerVersion() (*WebRPCGenVersions, error)  {
-    versions, err := parseWebRPCGenVersions(WebRPCHeader)
+func ServerVersion() (*WebRpcGenVersions, error)  {
+    versions, err := parseWebRpcGenVersions(WebRpcHeader)
     if err != nil {
         return nil, fmt.Errorf("webrpc header is invalid: %w", err)
     }
@@ -117,12 +117,12 @@ func ServerVersion() (*WebRPCGenVersions, error)  {
     return versions, nil
 }
 
-func VersionFromHeader(h http.Header) (*WebRPCGenVersions, error) {
-    if h.Get(WebRPCHeaderName) == "" {
+func VersionFromHeader(h http.Header) (*WebRpcGenVersions, error) {
+    if h.Get(WebRpcHeaderName) == "" {
         return nil, fmt.Errorf("header is empty or missing")
     }
 
-    versions, err := parseWebRPCGenVersions(h.Get(WebRPCHeaderName))
+    versions, err := parseWebRpcGenVersions(h.Get(WebRpcHeaderName))
     if err != nil {
         return nil, fmt.Errorf("webrpc header is invalid: %w", err)
     }
@@ -130,7 +130,7 @@ func VersionFromHeader(h http.Header) (*WebRPCGenVersions, error) {
     return versions, nil
 }
 
-func parseWebRPCGenVersions(header string) (*WebRPCGenVersions, error) {
+func parseWebRpcGenVersions(header string) (*WebRpcGenVersions, error) {
     versions := strings.Split(header, ";")
     if len(versions) < 3 {
         return nil, fmt.Errorf("expected at least 3 parts while parsing webrpc header: %v", header)
@@ -148,11 +148,11 @@ func parseWebRPCGenVersions(header string) (*WebRPCGenVersions, error) {
 
     schemaName, schemaVersion, ok := strings.Cut(versions[2], "@")
     if !ok {
-		return nil, fmt.Errorf("schema name and schema version could not be parsed from: %s", versions[2])
-	}
+        return nil, fmt.Errorf("schema name and schema version could not be parsed from: %s", versions[2])
+    }
 
-    return &WebRPCGenVersions{
-        WebRPCGenVersion: webrpcGenVersion,
+    return &WebRpcGenVersions{
+        WebRpcGenVersion: webrpcGenVersion,
         CodeGenName: tmplTarget,
         CodeGenVersion: tmplVersion,
         SchemaName: schemaName,

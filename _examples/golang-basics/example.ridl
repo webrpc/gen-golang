@@ -83,7 +83,7 @@ struct ComplexType
   - user: User
 
 struct GenVersions
-  - WebRPCGenVersion: string
+  - WebRpcGenVersion: string
   - TmplTarget: string
   - TmplVersion: string
   - SchemaVersion: string
