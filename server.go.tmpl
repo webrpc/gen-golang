@@ -38,7 +38,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	w.Header().Set(WebRpcHeader, WebRpcHeaderValue)
+	w.Header().Set(WebrpcHeader, WebrpcHeaderValue)
 
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
