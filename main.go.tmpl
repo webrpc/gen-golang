@@ -109,15 +109,6 @@ type WebRpcGenVersions struct {
     SchemaVersion string
 }
 
-func ServerVersion() (*WebRpcGenVersions, error)  {
-    versions, err := parseWebRpcGenVersions(WebrpcHeaderValue)
-    if err != nil {
-        return nil, fmt.Errorf("webrpc header is invalid: %w", err)
-    }
-
-    return versions, nil
-}
-
 func VersionFromHeader(h http.Header) (*WebRpcGenVersions, error) {
     if h.Get(WebrpcHeader) == "" {
         return nil, fmt.Errorf("header is empty or missing")

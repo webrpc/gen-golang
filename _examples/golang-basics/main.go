@@ -48,13 +48,13 @@ func (rpc *ExampleServiceRPC) Status(ctx context.Context) (bool, error) {
 }
 
 func (rpc *ExampleServiceRPC) Version(ctx context.Context) (*Version, error) {
-	serverVersions, err := ServerVersion()
+	resp := ResponseWriterFromContext(ctx)
+	serverVersions, err := VersionFromHeader(resp.Header())
 	if err != nil {
 		return nil, fmt.Errorf("parse server webrpc gen versions: %w", err)
 	}
 
 	req := RequestFromContext(ctx)
-
 	clientVersions, err := VersionFromHeader(req.Header)
 	if err != nil {
 		return nil, fmt.Errorf("parse client webrpc gen versions: %w", err)
