@@ -81,9 +81,9 @@ package {{get $opts "pkg"}}
 
 {{template "imports" dict "Types" .Types "Opts" $opts }}
 
-const WebRpcHeader = "{{ .WebrpcHeader }}"
+const WebRpcHeader = "Webrpc"
 
-const WebRpcHeaderName = "Webrpc"
+const WebRpcHeaderValue = "{{ .WebrpcHeader }}"
 
 // WebRPC description and code-gen version
 func WebRPCVersion() string {
@@ -109,7 +109,7 @@ type WebRpcGenVersions struct {
 }
 
 func ServerVersion() (*WebRpcGenVersions, error)  {
-    versions, err := parseWebRpcGenVersions(WebRpcHeader)
+    versions, err := parseWebRpcGenVersions(WebRpcHeaderValue)
     if err != nil {
         return nil, fmt.Errorf("webrpc header is invalid: %w", err)
     }
@@ -118,11 +118,11 @@ func ServerVersion() (*WebRpcGenVersions, error)  {
 }
 
 func VersionFromHeader(h http.Header) (*WebRpcGenVersions, error) {
-    if h.Get(WebRpcHeaderName) == "" {
+    if h.Get(WebRpcHeader) == "" {
         return nil, fmt.Errorf("header is empty or missing")
     }
 
-    versions, err := parseWebRpcGenVersions(h.Get(WebRpcHeaderName))
+    versions, err := parseWebRpcGenVersions(h.Get(WebRpcHeader))
     if err != nil {
         return nil, fmt.Errorf("webrpc header is invalid: %w", err)
     }
