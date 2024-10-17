@@ -65,13 +65,13 @@ func (rpc *ExampleServiceRPC) Version(ctx context.Context) (*Version, error) {
 		SchemaVersion: WebRPCSchemaVersion(),
 		SchemaHash:    WebRPCSchemaHash(),
 		ClientGenVersion: &GenVersions{
-			WebRpcGenVersion: clientVersions.WebRpcGenVersion,
+			WebrpcGenVersion: clientVersions.WebrpcGenVersion,
 			TmplTarget:       clientVersions.CodeGenName,
 			TmplVersion:      clientVersions.CodeGenVersion,
 			SchemaVersion:    clientVersions.CodeGenVersion,
 		},
 		ServerGenVersion: &GenVersions{
-			WebRpcGenVersion: serverVersions.WebRpcGenVersion,
+			WebrpcGenVersion: serverVersions.WebrpcGenVersion,
 			TmplTarget:       serverVersions.CodeGenName,
 			TmplVersion:      serverVersions.CodeGenVersion,
 			SchemaVersion:    serverVersions.CodeGenVersion,

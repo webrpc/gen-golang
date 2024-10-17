@@ -101,20 +101,20 @@ func WebRPCSchemaHash() string {
 	return "{{.SchemaHash}}"
 }
 
-type WebRpcGenVersions struct {
-    WebRpcGenVersion string
+type WebrpcGenVersions struct {
+    WebrpcGenVersion string
     CodeGenName string
     CodeGenVersion string
     SchemaName string
     SchemaVersion string
 }
 
-func VersionFromHeader(h http.Header) (*WebRpcGenVersions, error) {
+func VersionFromHeader(h http.Header) (*WebrpcGenVersions, error) {
     if h.Get(WebrpcHeader) == "" {
         return nil, fmt.Errorf("header is empty or missing")
     }
 
-    versions, err := parseWebRpcGenVersions(h.Get(WebrpcHeader))
+    versions, err := parseWebrpcGenVersions(h.Get(WebrpcHeader))
     if err != nil {
         return nil, fmt.Errorf("webrpc header is invalid: %w", err)
     }
@@ -122,7 +122,7 @@ func VersionFromHeader(h http.Header) (*WebRpcGenVersions, error) {
     return versions, nil
 }
 
-func parseWebRpcGenVersions(header string) (*WebRpcGenVersions, error) {
+func parseWebrpcGenVersions(header string) (*WebrpcGenVersions, error) {
     versions := strings.Split(header, ";")
     if len(versions) < 3 {
         return nil, fmt.Errorf("expected at least 3 parts while parsing webrpc header: %v", header)
@@ -143,8 +143,8 @@ func parseWebRpcGenVersions(header string) (*WebRpcGenVersions, error) {
         return nil, fmt.Errorf("schema name and schema version could not be parsed from: %s", versions[2])
     }
 
-    return &WebRpcGenVersions{
-        WebRpcGenVersion: webrpcGenVersion,
+    return &WebrpcGenVersions{
+        WebrpcGenVersion: webrpcGenVersion,
         CodeGenName: tmplTarget,
         CodeGenVersion: tmplVersion,
         SchemaName: schemaName,
