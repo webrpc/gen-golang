@@ -707,6 +707,7 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 	}
 	req.Header.Set("Accept", contentType)
 	req.Header.Set("Content-Type", contentType)
+	req.Header.Set(WebrpcHeader, WebrpcHeaderValue)
 	if headers, ok := HTTPRequestHeaders(ctx); ok {
 		for k := range headers {
 			for _, v := range headers[k] {

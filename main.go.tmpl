@@ -11,7 +11,7 @@
 {{- set $opts "fixEmptyArrays" (ternary (in .Opts.fixEmptyArrays "" "true") true false) -}}
 {{- set $opts "errorStackTrace" (ternary (in .Opts.errorStackTrace "" "true") true false) -}}
 {{- set $opts "legacyErrors" (ternary (in .Opts.legacyErrors "" "true") true false) -}}
-{{- set $opts "webrpcHeader" (ternary (in .Opts.webrpcHeader "" "true") true false) -}}
+{{- set $opts "webrpcHeader" (ternary (eq (default .Opts.webrpcHeader "true") "false") false true) -}}
 
 {{- $typePrefix := (last (split "/" $opts.importTypesFrom)) -}}
 {{- if ne $typePrefix "" -}}
