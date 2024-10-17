@@ -5,12 +5,12 @@
 
 // Deprecated: Use fmt.Errorf() or WebRPCError.
 func Errorf(err legacyError, format string, args ...interface{}) WebRPCError {
-	return err.WebRPCError.WithCause(fmt.Errorf(format, args...))
+	return err.WebRPCError.WithCausef(format, args...)
 }
 
 // Deprecated: Use .WithCause() method on WebRPCError.
 func WrapError(err legacyError, cause error, format string, args ...interface{}) WebRPCError {
-	return err.WebRPCError.WithCause(fmt.Errorf("%v: %w", fmt.Errorf(format, args...), cause))
+	return err.WebRPCError.WithCausef("%v: %w", fmt.Errorf(format, args...), cause)
 }
 
 // Deprecated: Use fmt.Errorf() or WebRPCError.
