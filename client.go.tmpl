@@ -208,6 +208,9 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 	}
 	req.Header.Set("Accept", contentType)
 	req.Header.Set("Content-Type", contentType)
+	{{- if eq $opts.webrpcHeader true }}
+		req.Header.Set(WebrpcHeader, WebrpcHeaderValue)
+	{{- end }}
 	if headers, ok := HTTPRequestHeaders(ctx); ok {
 		for k := range headers {
 			for _, v := range headers[k] {
