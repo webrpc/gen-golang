@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	client ExampleService
+	client ExampleServiceClient
 )
 
 // func TestMain()
