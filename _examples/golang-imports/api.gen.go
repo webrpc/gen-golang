@@ -18,6 +18,10 @@ import (
 
 )
 
+const WebrpcHeader = "Webrpc"
+
+const WebrpcHeaderValue = "webrpc@v0.20.3-1-gf6584bc;gen-golang@unknown;example-api-service@v1.0.0"
+
 // WebRPC description and code-gen version
 func WebRPCVersion() string {
 	return "v1"
@@ -31,6 +35,57 @@ func WebRPCSchemaVersion() string {
 // Schema hash generated from your RIDL schema
 func WebRPCSchemaHash() string {
 	return "cae4e128f4fb4c938bfe1ea312deeea3dfd6b6af"
+}
+
+type WebrpcGenVersions struct {
+    WebrpcGenVersion string
+    CodeGenName string
+    CodeGenVersion string
+    SchemaName string
+    SchemaVersion string
+}
+
+func VersionFromHeader(h http.Header) (*WebrpcGenVersions, error) {
+    if h.Get(WebrpcHeader) == "" {
+        return nil, fmt.Errorf("header is empty or missing")
+    }
+
+    versions, err := parseWebrpcGenVersions(h.Get(WebrpcHeader))
+    if err != nil {
+        return nil, fmt.Errorf("webrpc header is invalid: %w", err)
+    }
+
+    return versions, nil
+}
+
+func parseWebrpcGenVersions(header string) (*WebrpcGenVersions, error) {
+    versions := strings.Split(header, ";")
+    if len(versions) < 3 {
+        return nil, fmt.Errorf("expected at least 3 parts while parsing webrpc header: %v", header)
+    }
+
+    _, webrpcGenVersion, ok := strings.Cut(versions[0], "@")
+    if !ok {
+        return nil, fmt.Errorf("webrpc gen version could not be parsed from: %s", versions[0])
+    }
+
+    tmplTarget, tmplVersion, ok := strings.Cut(versions[1], "@")
+    if !ok {
+        return nil, fmt.Errorf("tmplTarget and tmplVersion could not be parsed from: %s", versions[1])
+    }
+
+    schemaName, schemaVersion, ok := strings.Cut(versions[2], "@")
+    if !ok {
+        return nil, fmt.Errorf("schema name and schema version could not be parsed from: %s", versions[2])
+    }
+
+    return &WebrpcGenVersions{
+        WebrpcGenVersion: webrpcGenVersion,
+        CodeGenName: tmplTarget,
+        CodeGenVersion: tmplVersion,
+        SchemaName: schemaName,
+        SchemaVersion: schemaVersion,
+    }, nil
 }
 
 //
@@ -166,6 +221,8 @@ func (s *exampleAPIServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			panic(rr)
 		}
 	}()
+
+	w.Header().Set(WebrpcHeader, WebrpcHeaderValue)
 
 	ctx := r.Context()
 	ctx = context.WithValue(ctx, HTTPResponseWriterCtxKey, w)
