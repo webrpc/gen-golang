@@ -105,7 +105,7 @@ service ExampleService
   # Get user endpoint
   #
   # gives you basic info about user
-  @deprecated:GetUserV2
+  @deprecated
   - GetUser(header: map<string,string>, userID: uint64) => (user: User)
   - FindUser(s: SearchFilter) => (name: string, user: User)
   - LogEvent(event: string)

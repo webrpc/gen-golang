@@ -72,7 +72,7 @@ type {{$service.Name}} interface {
 	{{- end }}
 	{{- $deprecated := index $method.Annotations "deprecated" -}}
 	{{- if $deprecated }}
-	// Deprecated: {{ if ne $deprecated.Value "" }}use {{ $deprecated.Value }}{{ end }}
+	// Deprecated:
 	{{- end }}
 	{{ if eq $method.StreamOutput true -}}
 	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}, stream {{$method.Name}}StreamWriter) error
@@ -178,7 +178,7 @@ type {{$service.Name}}Client interface {
 	{{- end }}
 	{{- $deprecated := index $method.Annotations "deprecated" -}}
 	{{- if $deprecated }}
-	// Deprecated: {{ if ne $deprecated.Value "" }}use {{ $deprecated.Value }}{{ end }}
+	// Deprecated:
 	{{- end }}
 	{{ if eq $method.StreamOutput true -}}
 	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) ({{$method.Name}}StreamReader, error)
