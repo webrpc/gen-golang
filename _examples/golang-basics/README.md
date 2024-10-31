@@ -8,13 +8,10 @@ A simple example of a Go web service built using webrpc.
 
 The process of developing something like this is..
 
-1. Start with your webrpc schema file, in this case, [./example.ridl](./example.ridl) in RIDL format.. or,
-you can also write your schema in JSON format like so, [./example.webrpc.json](./example.webrpc.json). RIDL is simpler :)
-2. Design your schema file and think about the methods calls clients will need to make
-to your service
+1. Start with your webrpc schema file, in this case, [./example.ridl](./example.ridl) in RIDL format.
+2. Design your schema file and think about the methods calls clients will need to make to your service
 3. Write the "services" section of the schema file
-4. From the inputs and outputs for the function definitions, start writing the "structs"
-section of the data types needed in your program.
+4. From the inputs and outputs for the function definitions, start writing the "structs" section of the data types needed in your program.
 5. Run the code generator to build the server and client:
   * `webrpc-gen -schema=example.ridl -target=golang -pkg=main -server -client -out=./example.gen.go`
   * or...   * `webrpc-gen -schema=example.webrpc.json -target=golang -pkg=main -server -client -out=./example.gen.go`
