@@ -6,7 +6,6 @@ require (
 	github.com/go-chi/chi/v5 v5.0.10
 	github.com/google/uuid v1.6.0
 	github.com/stretchr/testify v1.9.0
-	github.com/webrpc/webrpc v0.21.0
 )
 
 require (
