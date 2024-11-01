@@ -1,5 +1,6 @@
-//go:generate webrpc-gen -schema=./proto/api.ridl -target=../../../gen-golang -out=./api.gen.go -pkg=main -server -client -legacyErrors=true -fmt=false
 package main
+
+//go:generate go run github.com/webrpc/webrpc/cmd/webrpc-gen -schema=./proto/api.ridl -target=../../../gen-golang -out=./api.gen.go -pkg=main -server -client -legacyErrors=true -fmt=false
 
 import (
 	"context"
@@ -44,9 +45,9 @@ func (s *ExampleRPC) Status(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (s *ExampleRPC) GetUsers(ctx context.Context) ([]*User, *Location, error) {
+func (s *ExampleRPC) GetUsers(ctx context.Context) ([]*User, Location, error) {
 	loc := Location_TORONTO
 	return []*User{
 		{Username: "pk", Age: 99},
-	}, &loc, nil
+	}, loc, nil
 }
