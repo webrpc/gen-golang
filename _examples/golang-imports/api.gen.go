@@ -139,25 +139,32 @@ func (x *Location) Is(values ...Location) bool {
 	return false
 }
 
-var (
-	methods = map[string]method{
-			"/rpc/ExampleAPI/Ping": {
-				Name: "Ping",
-				Service: "ExampleAPI",
-				Annotations: map[string]string{},
-			},
-			"/rpc/ExampleAPI/Status": {
-				Name: "Status",
-				Service: "ExampleAPI",
-				Annotations: map[string]string{},
-			},
-			"/rpc/ExampleAPI/GetUsers": {
-				Name: "GetUsers",
-				Service: "ExampleAPI",
-				Annotations: map[string]string{},
-			},
+var methods = map[string]method{
+	"/rpc/ExampleAPI/Ping": {
+		Name: "Ping",
+		Service: "ExampleAPI",
+		Annotations: map[string]string{},
+	},
+	"/rpc/ExampleAPI/Status": {
+		Name: "Status",
+		Service: "ExampleAPI",
+		Annotations: map[string]string{},
+	},
+	"/rpc/ExampleAPI/GetUsers": {
+		Name: "GetUsers",
+		Service: "ExampleAPI",
+		Annotations: map[string]string{},
+	},
+}
+
+func Methods() map[string]method {
+	res := make(map[string]method, len(methods))
+	for k, v := range methods {
+		res[k] = v
 	}
-)
+
+	return res
+}
 
 var WebRPCServices = map[string][]string{
 	"ExampleAPI": {
