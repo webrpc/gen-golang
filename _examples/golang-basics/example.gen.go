@@ -224,40 +224,47 @@ type GenVersions struct {
 	SchemaVersion    string `json:"SchemaVersion"`
 }
 
-var (
-	methods = map[string]method{
-		"/rpc/ExampleService/Ping": {
-			Name:        "Ping",
-			Service:     "ExampleService",
-			Annotations: map[string]string{},
-		},
-		"/rpc/ExampleService/Status": {
-			Name:        "Status",
-			Service:     "ExampleService",
-			Annotations: map[string]string{"internal": ""},
-		},
-		"/rpc/ExampleService/Version": {
-			Name:        "Version",
-			Service:     "ExampleService",
-			Annotations: map[string]string{},
-		},
-		"/rpc/ExampleService/GetUser": {
-			Name:        "GetUser",
-			Service:     "ExampleService",
-			Annotations: map[string]string{"deprecated": ""},
-		},
-		"/rpc/ExampleService/FindUser": {
-			Name:        "FindUser",
-			Service:     "ExampleService",
-			Annotations: map[string]string{},
-		},
-		"/rpc/ExampleService/LogEvent": {
-			Name:        "LogEvent",
-			Service:     "ExampleService",
-			Annotations: map[string]string{},
-		},
+var methods = map[string]method{
+	"/rpc/ExampleService/Ping": {
+		Name:        "Ping",
+		Service:     "ExampleService",
+		Annotations: map[string]string{},
+	},
+	"/rpc/ExampleService/Status": {
+		Name:        "Status",
+		Service:     "ExampleService",
+		Annotations: map[string]string{"internal": ""},
+	},
+	"/rpc/ExampleService/Version": {
+		Name:        "Version",
+		Service:     "ExampleService",
+		Annotations: map[string]string{},
+	},
+	"/rpc/ExampleService/GetUser": {
+		Name:        "GetUser",
+		Service:     "ExampleService",
+		Annotations: map[string]string{"deprecated": ""},
+	},
+	"/rpc/ExampleService/FindUser": {
+		Name:        "FindUser",
+		Service:     "ExampleService",
+		Annotations: map[string]string{},
+	},
+	"/rpc/ExampleService/LogEvent": {
+		Name:        "LogEvent",
+		Service:     "ExampleService",
+		Annotations: map[string]string{},
+	},
+}
+
+func WebrpcMethods() map[string]method {
+	res := make(map[string]method, len(methods))
+	for k, v := range methods {
+		res[k] = v
 	}
-)
+
+	return res
+}
 
 var WebRPCServices = map[string][]string{
 	"ExampleService": {
