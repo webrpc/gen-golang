@@ -157,7 +157,7 @@ var methods = map[string]method{
 	},
 }
 
-func Methods() map[string]method {
+func WebrpcMethods() map[string]method {
 	res := make(map[string]method, len(methods))
 	for k, v := range methods {
 		res[k] = v
