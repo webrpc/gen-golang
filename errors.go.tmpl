@@ -36,11 +36,6 @@ func (e WebRPCError) Is(target error) bool {
 	if rpcErr, ok := target.(WebRPCError); ok {
 		return rpcErr.Code == e.Code
 	}
-{{- if $opts.legacyErrors }}
-	if legacyErr, ok := target.(legacyError); ok {
-		return legacyErr.Code == e.Code
-	}
-{{- end }}
 	return errors.Is(e.cause, target)
 }
 
