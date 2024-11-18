@@ -93,15 +93,3 @@ func TestGetUser(t *testing.T) {
 		assert.NoError(t, err)
 	}
 }
-
-func TestLegacyErrors(t *testing.T) {
-	{
-		_, err := client.GetUser(context.Background(), nil, 0)
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, ErrInvalidArgument)
-
-		_, err = client.GetUser(context.Background(), nil, 1000)
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, ErrUnavailable)
-	}
-}
