@@ -1,11 +1,10 @@
 package main
 
-//go:generate go run github.com/webrpc/webrpc/cmd/webrpc-gen -schema=example.ridl -target=../../../gen-golang -pkg=main -server -client -legacyErrors -fixEmptyArrays -out=./example.gen.go
+//go:generate go run github.com/webrpc/webrpc/cmd/webrpc-gen -schema=example.ridl -target=../../../gen-golang -pkg=main -server -client -fixEmptyArrays -out=./example.gen.go
 
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 
@@ -82,21 +81,13 @@ func (rpc *ExampleServiceRPC) Version(ctx context.Context) (*Version, error) {
 
 func (s *ExampleServiceRPC) GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error) {
 	if userID == 911 {
-		return nil, ErrorWithCause(ErrUserNotFound, fmt.Errorf("unknown user id %d", userID))
+		return nil, ErrUserNotFound.WithCausef("unknown user id %d", userID)
 	}
 	if userID == 31337 {
 		return nil, ErrUnauthorized
 	}
 	if userID == 666 {
 		panic("oh no")
-	}
-
-	// Legacy errors.
-	switch userID {
-	case 0:
-		return nil, Errorf(ErrInvalidArgument, "userId is required")
-	case 1000:
-		return nil, WrapError(ErrUnavailable, io.ErrUnexpectedEOF, "service unavailable")
 	}
 
 	return &User{
@@ -107,7 +98,7 @@ func (s *ExampleServiceRPC) GetUser(ctx context.Context, header map[string]strin
 
 func (rpc *ExampleServiceRPC) FindUser(ctx context.Context, s *SearchFilter) (string, *User, error) {
 	if s == nil {
-		return "", nil, ErrorWithCause(ErrMissingArgument, fmt.Errorf("s search filter required"))
+		return "", nil, ErrMissingArgument.WithCausef("s search filter required")
 	}
 	name := s.Q
 	return s.Q, &User{
