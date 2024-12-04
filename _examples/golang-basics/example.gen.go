@@ -1055,3 +1055,35 @@ var (
 	ErrUnauthorized    = WebRPCError{Code: 400200, Name: "Unauthorized", Message: "unauthorized", HTTPStatus: 401}
 	ErrUserNotFound    = WebRPCError{Code: 400300, Name: "UserNotFound", Message: "user not found", HTTPStatus: 400}
 )
+
+func ErrorByCode(code int) (WebRPCError, bool) {
+	switch code {
+	case ErrMissingArgument.Code:
+		return ErrMissingArgument, true
+	case ErrInvalidUsername.Code:
+		return ErrInvalidUsername, true
+	case ErrMemoryFull.Code:
+		return ErrMemoryFull, true
+	case ErrUnauthorized.Code:
+		return ErrUnauthorized, true
+	case ErrUserNotFound.Code:
+		return ErrUserNotFound, true
+	}
+	return WebRPCError{}, false
+}
+
+func ErrorByName(name string) (WebRPCError, bool) {
+	switch name {
+	case ErrMissingArgument.Name:
+		return ErrMissingArgument, true
+	case ErrInvalidUsername.Name:
+		return ErrInvalidUsername, true
+	case ErrMemoryFull.Name:
+		return ErrMemoryFull, true
+	case ErrUnauthorized.Name:
+		return ErrUnauthorized, true
+	case ErrUserNotFound.Name:
+		return ErrUserNotFound, true
+	}
+	return WebRPCError{}, false
+}

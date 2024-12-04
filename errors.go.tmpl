@@ -91,6 +91,26 @@ var (
 	{{ printf "Err%s = WebRPCError{Code: %v, Name: %q, Message: %q, HTTPStatus: %v}" $error.Name $error.Code $error.Name $error.Message $error.HTTPStatus}}
 {{- end}}
 )
+
+func ErrorByCode(code int) (WebRPCError, bool) {
+	switch code {
+	{{- range $_, $error := $schemaErrors}}
+	case Err{{$error.Name}}.Code:
+		return Err{{$error.Name}}, true
+	{{- end}}
+	}
+	return WebRPCError{}, false
+}
+
+func ErrorByName(name string) (WebRPCError, bool) {
+	switch name {
+	{{- range $_, $error := $schemaErrors}}
+	case Err{{$error.Name}}.Name:
+		return Err{{$error.Name}}, true
+	{{- end}}
+	}
+	return WebRPCError{}, false
+}
 {{ end -}}
 
 {{- end -}}
