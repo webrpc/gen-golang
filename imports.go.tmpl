@@ -8,6 +8,7 @@
 {{- set $stdlibImports "errors" "" -}}
 {{- set $stdlibImports "fmt" "" -}}
 {{- set $stdlibImports "net/http" "" -}}
+{{- set $stdlibImports "strings" "" -}}
 
 {{- if eq $opts.json "stdlib" -}}
 	{{- set $stdlibImports "encoding/json" "" -}}
@@ -24,7 +25,6 @@
 {{- end -}}
 
 {{- if $opts.server }}
-	{{- set $stdlibImports "strings" "" -}}
 	{{- set $stdlibImports "io" "" -}}
 
 	{{- if $opts.fixEmptyArrays }}
