@@ -72,8 +72,7 @@ import (
 {{- else if eq $opts.json "jsoniter" -}}
 	{{- set $imports "github.com/json-iterator/go" "jsoniter" -}}
 {{- else -}}
-	{{- stderrPrintf "unsupported -json=%s" $opts.json -}}
-	{{- exit 1 -}}
+	{{- set $imports $opts.json "json" -}}
 {{- end -}}
 
 {{- if ne $opts.importTypesFrom "" }}
