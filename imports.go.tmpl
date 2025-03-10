@@ -71,6 +71,8 @@ import (
 	{{- /* Already imported in the stdlib section. */ -}}
 {{- else if eq $opts.json "jsoniter" -}}
 	{{- set $imports "github.com/json-iterator/go" "jsoniter" -}}
+{{- else if eq $opts.json "sonic" -}}
+	{{- set $imports "github.com/bytedance/sonic" "" -}}
 {{- else -}}
 	{{- set $imports $opts.json "json" -}}
 {{- end -}}
@@ -106,6 +108,16 @@ import (
 {{- if eq $opts.json "jsoniter" }}
 
 var json = jsoniter.ConfigCompatibleWithStandardLibrary
+
+{{- else if eq $opts.json "sonic" }}
+
+// Opinionated config for -json=sonic, see https://github.com/bytedance/sonic/blob/main/api.go.
+var json = sonic.Config{
+	NoNullSliceOrMap: true, // Encode empty Array or Object as '[]' or '{}' instead of 'null'.
+	CompactMarshaler: true,
+	CopyString : true,
+	ValidateString : true,
+}.Froze()
 {{- end -}}
 
 {{- end -}}
