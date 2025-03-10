@@ -22,18 +22,18 @@ As you can see, the `-target` supports default `golang`, any git URI, or a local
 ### Set custom template variables
 Change any of the following values by passing `-option="Value"` CLI flag to `webrpc-gen`.
 
-| webrpc-gen -option    | Default    | Description                                                                 | Added in |
-|-----------------------|------------|-----------------------------------------------------------------------------|----------|
-| `-pkg=<name>`         | `"proto"`  | package name                                                                | v0.5.0   |
-| `-client`             | `false`    | generate client code                                                        | v0.5.0   |
-| `-server`             | `false`    | generate server code                                                        | v0.5.0   |
-| `-types=false`        | `true`     | don't generate types                                                        | v0.13.0  |
-| `-json=github.com/bytedance/sonic`|| use [sonic](https://github.com/bytedance/sonic) for JSON encoding           | v0.18.0  |
-| `-json=jsoniter`      | `""`       | use [jsoniter](https://github.com/json-iterator/go) for JSON encoding       | v0.12.0  |
-| `-json=<pkg>`         |            | use other drop-in replacement JSON encoding package                         | v0.18.0  |
-| `-fixEmptyArrays`     | `false`    | force empty array `[]` instead of `null` in JSON (see Go [#27589][go27589]) | v0.13.0  |
-| `-errorStackTrace`    | `false`    | enables error stack traces                                                  | v0.14.0  |
-| `-webrpcHeader=false` | `true`     | enable client send webrpc version in http headers                           | v0.16.0  |
+| webrpc-gen -option    | Default   | Description                                                                 | Added in |
+|-----------------------|-----------|-----------------------------------------------------------------------------|----------|
+| `-pkg=<name>`         | `"proto"` | package name                                                                | v0.5.0   |
+| `-client`             | `false`   | generate client code                                                        | v0.5.0   |
+| `-server`             | `false`   | generate server code                                                        | v0.5.0   |
+| `-types=false`        | `true`    | don't generate types                                                        | v0.13.0  |
+| `-json=sonic`         |           | use [sonic](https://github.com/bytedance/sonic) for JSON encoding           | v0.18.0  |
+| `-json=jsoniter`      |           | use [jsoniter](https://github.com/json-iterator/go) for JSON encoding       | v0.12.0  |
+| `-json=<pkg>`         |           | use alternative drop-in replacement import path for JSON encoding package   | v0.18.0  |
+| `-fixEmptyArrays`     | `false`   | `encoding/json`: fix `null` arrays with reflect (see Go [#27589][go27589])  | v0.13.0  |
+| `-errorStackTrace`    | `false`   | enables error stack traces                                                  | v0.14.0  |
+| `-webrpcHeader=false` | `true`    | enable client send webrpc version in http headers                           | v0.16.0  |
 
 Example:
 ```
