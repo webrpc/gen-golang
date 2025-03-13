@@ -70,9 +70,9 @@ import (
 {{- if eq $opts.json "stdlib" -}}
 	{{- /* Already imported in the stdlib section. */ -}}
 {{- else if eq $opts.json "jsoniter" -}}
-	{{- set $imports "github.com/json-iterator/go" "json" -}}
+	{{- set $imports "github.com/json-iterator/go" "" -}}
 {{- else if eq $opts.json "sonic" -}}
-	{{- set $imports "github.com/bytedance/sonic" "json" -}}
+	{{- set $imports "github.com/bytedance/sonic" "" -}}
 {{- else -}}
 	{{- set $imports $opts.json "json" -}}
 {{- end -}}
