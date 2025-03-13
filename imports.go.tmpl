@@ -107,7 +107,10 @@ import (
 
 {{- if eq $opts.json "jsoniter" }}
 
-var json = jsoniter.ConfigCompatibleWithStandardLibrary
+// Opinionated config for -json=jsoniter, see https://github.com/json-iterator/go/blob/master/config.go.
+var json = jsoniter.Config{
+	ValidateJsonRawMessage: true,
+}.Froze()
 
 {{- else if eq $opts.json "sonic" }}
 
@@ -118,6 +121,7 @@ var json = sonic.Config{
 	CopyString : true,
 	ValidateString : true,
 }.Froze()
+
 {{- end -}}
 
 {{- end -}}
