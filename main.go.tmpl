@@ -157,12 +157,18 @@ func parseWebrpcGenVersions(header string) (*WebrpcGenVersions, error) {
 {{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "TypePrefix" $typePrefix "Opts" $opts }}
 {{ end -}}
 
+{{- /* Allow using custom JSON configuration. */ -}}
+{{- $json := "json" -}}
+{{- if or (eq $opts.json "jsoniter") (eq $opts.json "sonic") -}}
+  {{- $json = "jsonCfg" -}}
+{{- end -}}
+
 {{- if $opts.server }}
-{{ template "server" dict "Services" .Services "TypeMap" $typeMap "TypePrefix" $typePrefix "Opts" $opts }}
+{{ template "server" dict "Services" .Services "TypeMap" $typeMap "TypePrefix" $typePrefix "Json" $json "Opts" $opts }}
 {{ end -}}
 
 {{ if $opts.client }}
-{{ template "client" dict "Services" .Services "TypeMap" $typeMap "Opts" $opts "TypePrefix" $typePrefix }}
+{{ template "client" dict "Services" .Services "TypeMap" $typeMap "Json" $json "Opts" $opts "TypePrefix" $typePrefix }}
 {{ end -}}
 
 {{ template "helpers" dict "Opts" $opts }}

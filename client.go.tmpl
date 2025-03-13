@@ -2,6 +2,7 @@
 {{- $typeMap := .TypeMap -}}
 {{- $typePrefix := .TypePrefix -}}
 {{- $services := .Services -}}
+{{- $json := .Json -}}
 {{- $opts := .Opts }}
 
 {{- if $services -}}
@@ -155,7 +156,7 @@ func (r *streamReader) read(v interface {}) error {
 			continue
 		}
 
-		if err := json.Unmarshal(line, &v); err != nil {
+		if err := {{$json}}.Unmarshal(line, &v); err != nil {
 			return r.handleReadError(err)
 		}
 		return nil
@@ -223,7 +224,7 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 
 // doHTTPRequest is common code to make a request to the remote service.
 func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
-	reqBody, err := json.Marshal(in)
+	reqBody, err := {{$json}}.Marshal(in)
 	if err != nil {
 		return nil, ErrWebrpcRequestFailed.WithCausef("failed to marshal JSON body: %w", err)
 	}
@@ -248,7 +249,7 @@ func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out i
 		}
 
 		var rpcErr WebRPCError
-		if err := json.Unmarshal(respBody, &rpcErr); err != nil {
+		if err := {{$json}}.Unmarshal(respBody, &rpcErr); err != nil {
 			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal server error: %w", err)
 		}
 		if rpcErr.Cause != "" {
@@ -263,7 +264,7 @@ func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out i
 			return nil, ErrWebrpcBadResponse.WithCausef("failed to read response body: %w", err)
 		}
 
-		err = json.Unmarshal(respBody, &out)
+		err = {{$json}}.Unmarshal(respBody, &out)
 		if err != nil {
 			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal JSON response body: %w", err)
 		}

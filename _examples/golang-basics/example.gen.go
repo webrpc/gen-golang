@@ -21,7 +21,7 @@ import (
 )
 
 // Opinionated config for -json=sonic, see https://github.com/bytedance/sonic/blob/main/api.go.
-var json = sonic.Config{
+var jsonCfg = sonic.Config{
 	NoNullSliceOrMap: true, // Encode empty Array or Object as '[]' or '{}' instead of 'null'.
 	CompactMarshaler: true,
 	CopyString:       true,
@@ -451,7 +451,7 @@ func (s *exampleServiceServer) serveStatusJSON(ctx context.Context, w http.Respo
 	respPayload := struct {
 		Ret0 bool `json:"status"`
 	}{ret0}
-	respBody, err := json.Marshal(respPayload)
+	respBody, err := jsonCfg.Marshal(respPayload)
 	if err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
 		return
@@ -479,7 +479,7 @@ func (s *exampleServiceServer) serveVersionJSON(ctx context.Context, w http.Resp
 	respPayload := struct {
 		Ret0 *Version `json:"version"`
 	}{ret0}
-	respBody, err := json.Marshal(respPayload)
+	respBody, err := jsonCfg.Marshal(respPayload)
 	if err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
 		return
@@ -504,7 +504,7 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 		Arg0 map[string]string `json:"header"`
 		Arg1 uint64            `json:"userID"`
 	}{}
-	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
+	if err := jsonCfg.Unmarshal(reqBody, &reqPayload); err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
 		return
 	}
@@ -523,7 +523,7 @@ func (s *exampleServiceServer) serveGetUserJSON(ctx context.Context, w http.Resp
 	respPayload := struct {
 		Ret0 *User `json:"user"`
 	}{ret0}
-	respBody, err := json.Marshal(respPayload)
+	respBody, err := jsonCfg.Marshal(respPayload)
 	if err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
 		return
@@ -547,7 +547,7 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 	reqPayload := struct {
 		Arg0 *SearchFilter `json:"s"`
 	}{}
-	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
+	if err := jsonCfg.Unmarshal(reqBody, &reqPayload); err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
 		return
 	}
@@ -567,7 +567,7 @@ func (s *exampleServiceServer) serveFindUserJSON(ctx context.Context, w http.Res
 		Ret0 string `json:"name"`
 		Ret1 *User  `json:"user"`
 	}{ret0, ret1}
-	respBody, err := json.Marshal(respPayload)
+	respBody, err := jsonCfg.Marshal(respPayload)
 	if err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
 		return
@@ -591,7 +591,7 @@ func (s *exampleServiceServer) serveLogEventJSON(ctx context.Context, w http.Res
 	reqPayload := struct {
 		Arg0 string `json:"event"`
 	}{}
-	if err := json.Unmarshal(reqBody, &reqPayload); err != nil {
+	if err := jsonCfg.Unmarshal(reqBody, &reqPayload); err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
 		return
 	}
@@ -620,7 +620,7 @@ func (s *exampleServiceServer) sendErrorJSON(w http.ResponseWriter, r *http.Requ
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(rpcErr.HTTPStatus)
 
-	respBody, _ := json.Marshal(rpcErr)
+	respBody, _ := jsonCfg.Marshal(rpcErr)
 	w.Write(respBody)
 }
 
@@ -633,7 +633,7 @@ func RespondWithError(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(rpcErr.HTTPStatus)
 
-	respBody, _ := json.Marshal(rpcErr)
+	respBody, _ := jsonCfg.Marshal(rpcErr)
 	w.Write(respBody)
 }
 
@@ -808,7 +808,7 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 
 // doHTTPRequest is common code to make a request to the remote service.
 func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
-	reqBody, err := json.Marshal(in)
+	reqBody, err := jsonCfg.Marshal(in)
 	if err != nil {
 		return nil, ErrWebrpcRequestFailed.WithCausef("failed to marshal JSON body: %w", err)
 	}
@@ -833,7 +833,7 @@ func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out i
 		}
 
 		var rpcErr WebRPCError
-		if err := json.Unmarshal(respBody, &rpcErr); err != nil {
+		if err := jsonCfg.Unmarshal(respBody, &rpcErr); err != nil {
 			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal server error: %w", err)
 		}
 		if rpcErr.Cause != "" {
@@ -848,7 +848,7 @@ func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out i
 			return nil, ErrWebrpcBadResponse.WithCausef("failed to read response body: %w", err)
 		}
 
-		err = json.Unmarshal(respBody, &out)
+		err = jsonCfg.Unmarshal(respBody, &out)
 		if err != nil {
 			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal JSON response body: %w", err)
 		}
