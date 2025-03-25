@@ -299,6 +299,7 @@ type ExampleService interface {
 	// Get user endpoint
 	//
 	// gives you basic info about user
+	//
 	// Deprecated:
 	GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error)
 	FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
@@ -319,6 +320,7 @@ type ExampleServiceClient interface {
 	// Get user endpoint
 	//
 	// gives you basic info about user
+	//
 	// Deprecated:
 	GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error)
 	FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
