@@ -23,7 +23,7 @@ import (
 
 // Opinionated config for -json=sonic, see https://github.com/bytedance/sonic/blob/main/api.go.
 var jsonCfg = sonic.Config{
-	NoNullSliceOrMap: true, // Encode empty Array or Object as '[]' or '{}' instead of 'null'.
+	// NoNullSliceOrMap: true, // Encode empty Array or Object as '[]' or '{}' instead of 'null'.
 	CompactMarshaler: true,
 	CopyString:       true,
 	ValidateString:   true,
