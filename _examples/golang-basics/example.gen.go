@@ -21,12 +21,12 @@ import (
 	"github.com/google/uuid"
 )
 
-// Opinionated config for -json=sonic, see https://github.com/bytedance/sonic/blob/main/api.go.
+// Opinionated configuration for -json=sonic encoding.
+// Reference: https://github.com/bytedance/sonic/blob/main/api.go
 var jsonCfg = sonic.Config{
-	NoNullSliceOrMap: true, // Encode empty Array or Object as '[]' or '{}' instead of 'null'.
-	CompactMarshaler: true,
-	CopyString:       true,
-	ValidateString:   true,
+	NoNullSliceOrMap:        true, // Encode nil slices/maps as '[]'/'{}' instead of 'null' to prevent runtime issues in JavaScript.
+	NoValidateJSONMarshaler: true, // Skip validation of JSON output from types implementing json.Marshaler to enhance performance.
+	NoValidateJSONSkip:      true, // Bypass validation when skipping over JSON values during decoding, improving efficiency.
 }.Froze()
 
 const WebrpcHeader = "Webrpc"
