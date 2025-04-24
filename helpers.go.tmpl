@@ -6,9 +6,26 @@
 //
 
 type method struct  {
-	Name string
-	Service string
-	Annotations map[string]string
+	name string
+	service string
+	annotations map[string]string
+}
+
+func (m method)Name() string {
+    return m.name
+}
+
+func (m method)Service() string {
+    return m.service
+}
+
+func (m method)Annotations() map[string]string {
+    res := make(map[string]string, len(m.annotations))
+	for k, v := range m.annotations {
+		res[k] = v
+	}
+
+	return res
 }
 
 type contextKey struct {

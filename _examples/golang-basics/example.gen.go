@@ -234,34 +234,34 @@ type GenVersions struct {
 
 var methods = map[string]method{
 	"/rpc/ExampleService/Ping": {
-		Name:        "Ping",
-		Service:     "ExampleService",
-		Annotations: map[string]string{},
+		name:        "Ping",
+		service:     "ExampleService",
+		annotations: map[string]string{},
 	},
 	"/rpc/ExampleService/Status": {
-		Name:        "Status",
-		Service:     "ExampleService",
-		Annotations: map[string]string{"internal": ""},
+		name:        "Status",
+		service:     "ExampleService",
+		annotations: map[string]string{"internal": ""},
 	},
 	"/rpc/ExampleService/Version": {
-		Name:        "Version",
-		Service:     "ExampleService",
-		Annotations: map[string]string{},
+		name:        "Version",
+		service:     "ExampleService",
+		annotations: map[string]string{},
 	},
 	"/rpc/ExampleService/GetUser": {
-		Name:        "GetUser",
-		Service:     "ExampleService",
-		Annotations: map[string]string{"deprecated": ""},
+		name:        "GetUser",
+		service:     "ExampleService",
+		annotations: map[string]string{"deprecated": ""},
 	},
 	"/rpc/ExampleService/FindUser": {
-		Name:        "FindUser",
-		Service:     "ExampleService",
-		Annotations: map[string]string{},
+		name:        "FindUser",
+		service:     "ExampleService",
+		annotations: map[string]string{},
 	},
 	"/rpc/ExampleService/LogEvent": {
-		Name:        "LogEvent",
-		Service:     "ExampleService",
-		Annotations: map[string]string{},
+		name:        "LogEvent",
+		service:     "ExampleService",
+		annotations: map[string]string{},
 	},
 }
 
@@ -891,9 +891,26 @@ func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 //
 
 type method struct {
-	Name        string
-	Service     string
-	Annotations map[string]string
+	name        string
+	service     string
+	annotations map[string]string
+}
+
+func (m method) Name() string {
+	return m.name
+}
+
+func (m method) Service() string {
+	return m.service
+}
+
+func (m method) Annotations() map[string]string {
+	res := make(map[string]string, len(m.annotations))
+	for k, v := range m.annotations {
+		res[k] = v
+	}
+
+	return res
 }
 
 type contextKey struct {
