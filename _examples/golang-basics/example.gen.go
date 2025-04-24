@@ -668,7 +668,6 @@ func NewExampleServiceClient(addr string, client HTTPClient) ExampleServiceClien
 }
 
 func (c *exampleServiceClient) Ping(ctx context.Context) error {
-
 	resp, err := doHTTPRequest(ctx, c.client, c.urls[0], nil, nil)
 	if resp != nil {
 		cerr := resp.Body.Close()
@@ -717,6 +716,7 @@ func (c *exampleServiceClient) GetUser(ctx context.Context, header map[string]st
 		Arg0 map[string]string `json:"header"`
 		Arg1 uint64            `json:"userID"`
 	}{header, userID}
+
 	out := struct {
 		Ret0 *User `json:"user"`
 	}{}
@@ -736,6 +736,7 @@ func (c *exampleServiceClient) FindUser(ctx context.Context, s *SearchFilter) (s
 	in := struct {
 		Arg0 *SearchFilter `json:"s"`
 	}{s}
+
 	out := struct {
 		Ret0 string `json:"name"`
 		Ret1 *User  `json:"user"`

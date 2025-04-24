@@ -422,7 +422,6 @@ func NewExampleAPIClient(addr string, client HTTPClient) ExampleAPIClient {
 }
 
 func (c *exampleAPIClient) Ping(ctx context.Context) error {
-
 	resp, err := doHTTPRequest(ctx, c.client, c.urls[0], nil, nil)
 	if resp != nil {
 		cerr := resp.Body.Close()
