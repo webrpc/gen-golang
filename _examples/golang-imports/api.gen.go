@@ -141,19 +141,19 @@ func (x *Location) Is(values ...Location) bool {
 
 var methods = map[string]method{
 	"/rpc/ExampleAPI/Ping": {
-		Name: "Ping",
-		Service: "ExampleAPI",
-		Annotations: map[string]string{},
+		name: "Ping",
+		service: "ExampleAPI",
+		annotations: map[string]string{},
 	},
 	"/rpc/ExampleAPI/Status": {
-		Name: "Status",
-		Service: "ExampleAPI",
-		Annotations: map[string]string{},
+		name: "Status",
+		service: "ExampleAPI",
+		annotations: map[string]string{},
 	},
 	"/rpc/ExampleAPI/GetUsers": {
-		Name: "GetUsers",
-		Service: "ExampleAPI",
-		Annotations: map[string]string{},
+		name: "GetUsers",
+		service: "ExampleAPI",
+		annotations: map[string]string{},
 	},
 }
 
@@ -422,7 +422,6 @@ func NewExampleAPIClient(addr string, client HTTPClient) ExampleAPIClient {
 }
 
 func (c *exampleAPIClient) Ping(ctx context.Context) error {
-
 	resp, err := doHTTPRequest(ctx, c.client, c.urls[0], nil, nil)
 	if resp != nil {
 		cerr := resp.Body.Close()
@@ -590,9 +589,26 @@ func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 //
 
 type method struct  {
-	Name string
-	Service string
-	Annotations map[string]string
+	name string
+	service string
+	annotations map[string]string
+}
+
+func (m method)Name() string {
+    return m.name
+}
+
+func (m method)Service() string {
+    return m.service
+}
+
+func (m method)Annotations() map[string]string {
+    res := make(map[string]string, len(m.annotations))
+	for k, v := range m.annotations {
+		res[k] = v
+	}
+
+	return res
 }
 
 type contextKey struct {

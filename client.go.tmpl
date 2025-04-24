@@ -49,7 +49,7 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 	{{- range $i, $input := $method.Inputs}}
 		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
 	{{- end}}
-	}{ {{- range $i, $input := $method.Inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}
+	}{ {{- range $i, $input := $method.Inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}{{ "\n" }}
 	{{- end}}
 	{{- if $method.Outputs | len}}
 	{{- $outputVar = "&out"}}
@@ -57,9 +57,8 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 	{{- range $i, $output := $method.Outputs}}
 		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
 	{{- end}}
-	}{}
+	}{}{{ "\n" }}
 	{{- end }}
-
 	resp, err := doHTTPRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, {{$outputVar}})
 	if resp != nil {
 		cerr := resp.Body.Close()
@@ -81,9 +80,8 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 	{{- range $i, $input := $method.Inputs}}
 		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
 	{{- end}}
-	}{ {{- range $i, $input := $method.Inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}
+	}{ {{- range $i, $input := $method.Inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{end}}}{{ "\n" }}
 	{{- end}}
-
 	resp, err := doHTTPRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, nil)
 	if err != nil {
 		if resp != nil {
