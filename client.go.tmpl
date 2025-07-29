@@ -140,7 +140,7 @@ func (r *streamReader) read(v interface {}) error {
 		select {
 		case <-r.ctx.Done():
 			r.c.Close()
-			return ErrWebrpcClientDisconnected.WithCause(r.ctx.Err())
+			return ErrWebrpcClientAborted.WithCause(r.ctx.Err())
 		default:
 		}
 
@@ -170,7 +170,7 @@ func (r *streamReader) handleReadError(err error) error {
 		return ErrWebrpcStreamLost.WithCause(err)
 	}
 	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded){
-		return ErrWebrpcClientDisconnected.WithCause(err)
+		return ErrWebrpcClientAborted.WithCause(err)
 	}
 	return ErrWebrpcBadResponse.WithCausef("reading stream: %w", err)
 }
