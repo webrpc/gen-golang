@@ -150,22 +150,21 @@ func (w *streamWriter) keepAlive(ctx context.Context) {
 }
 
 func (w *streamWriter) ping() error {
-	defer w.f.Flush()
-
 	w.mu.Lock()
-	defer w.mu.Unlock()
-
 	_, err := w.w.Write([]byte("\n"))
+	w.f.Flush()
+	w.mu.Unlock()
+
 	return err
 }
 
 func (w *streamWriter) write(respPayload interface{}) error {
-	defer w.f.Flush()
-
 	w.mu.Lock()
-	defer w.mu.Unlock()
+	err := w.e.Encode(respPayload)
+	w.f.Flush()
+	w.mu.Unlock()
 
-	return w.e.Encode(respPayload)
+	return err
 }
 {{- end }}
 

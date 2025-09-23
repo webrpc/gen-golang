@@ -206,11 +206,15 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSONStream(ct
 
 	// Call service method implementation.
 	if err {{if or (eq (len $method.Inputs) 0) (gt (len $method.Outputs) 0)}}:{{end}}= s.{{$name}}.{{$method.Name}}(ctx{{range $i, $_ := $method.Inputs}}, reqPayload.Arg{{$i}}{{end}}, streamWriter); err != nil {
+		cancel()
 		rpcErr, ok := err.(WebRPCError)
 		if !ok {
 			rpcErr = ErrWebrpcEndpoint.WithCause(err)
 		}
+		streamWriter.mu.Lock()
 		streamWriter.sendError(w, r, rpcErr)
+		streamWriter.f.Flush()
+		streamWriter.mu.Unlock()
 		return
 	}
 }
