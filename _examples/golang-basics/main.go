@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -126,4 +127,19 @@ func (rpc *ExampleServiceRPC) GetArticle(ctx context.Context, req GetArticleRequ
 		Title:   fmt.Sprintf("Article %d", articleID),
 		Content: &content,
 	}, nil
+}
+
+func (rpc *ExampleServiceRPC) StreamNewArticles(ctx context.Context, stream StreamNewArticlesStreamWriter) error {
+	for i := 0; i < 4; i++ {
+		// content := fmt.Sprintf("This is the content of the article, %d", i)
+		stream.Write(&GetArticleResponse{
+			Title: fmt.Sprintf("Article %d", i),
+			// Content: &content,
+		})
+		stream.Write(nil)
+		time.Sleep(1 * time.Second)
+	}
+	return nil
+	// TODO: 1. do we not close the connection on return..? .. hmmpf.. review..
+	// TODO: 2. remove the nested type when using succinct mode for the writer and the reader (server/client)
 }

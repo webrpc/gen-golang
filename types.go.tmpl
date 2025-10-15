@@ -128,9 +128,13 @@ type streamWriter struct {
 	mu sync.Mutex // Guards concurrent writes to w.
 	w  http.ResponseWriter
 	f  http.Flusher
-	e  *json.Encoder
+	e  jsonEncoder
 
 	sendError func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
+}
+
+type jsonEncoder interface {
+	Encode(v any) error
 }
 
 const StreamKeepAliveInterval = 10*time.Second

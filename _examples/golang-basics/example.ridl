@@ -125,3 +125,6 @@ service Example
 
   # Article endpoint
   - GetArticle(GetArticleRequest) => (GetArticleResponse)
+
+  # Streaming article endpoint
+  - StreamNewArticles() => stream (GetArticleResponse)
