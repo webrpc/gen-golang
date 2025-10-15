@@ -81,9 +81,9 @@ type {{$service.Name}}Server interface {
 	// Deprecated: {{ $deprecated.Value }}
 	{{- end }}
 	{{ if eq $method.StreamOutput true -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}, stream {{$method.Name}}StreamWriter) error
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}, stream {{$method.Name}}StreamWriter) error
 	{{- else -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
 	{{- end -}}
 
 	{{- end}}
@@ -189,9 +189,9 @@ type {{$service.Name}}Client interface {
 	// Deprecated: {{ $deprecated.Value }}
 	{{- end }}
 	{{ if eq $method.StreamOutput true -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) ({{$method.Name}}StreamReader, error)
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) ({{$method.Name}}StreamReader, error)
 	{{- else -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
 	{{- end -}}
 
 	{{- end}}

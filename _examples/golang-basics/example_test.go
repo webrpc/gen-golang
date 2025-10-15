@@ -92,4 +92,14 @@ func TestGetUser(t *testing.T) {
 		assert.Equal(t, &User{ID: 123, Username: "joe", Nicknames: []Nickname{}}, user)
 		assert.NoError(t, err)
 	}
+
+	{
+		articleResp, err := client.GetArticle(context.Background(), GetArticleRequest{ArticleID: 42})
+		assert.NoError(t, err)
+		expectedContent := "This is the content of the article."
+		assert.Equal(t, &GetArticleResponse{
+			Title:   "Article 42",
+			Content: &expectedContent,
+		}, articleResp)
+	}
 }

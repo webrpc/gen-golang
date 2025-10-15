@@ -89,6 +89,15 @@ struct GenVersions
   - TmplVersion: string
   - SchemaVersion: string
 
+struct GetArticleRequest
+  - articleId: uint64
+    + go.field.name = ArticleID
+
+struct GetArticleResponse
+  - title: string
+  - content?: string
+    + go.tag.json = content,omitempty
+
 error 500100 MissingArgument "missing argument"
 error 500101 InvalidUsername "invalid username"
 error 400100 MemoryFull      "system memory is full"
@@ -113,3 +122,6 @@ service Example
   - GetUser(header: map<string,string>, userID: uint64) => (user: User)
   - FindUser(s: SearchFilter) => (name: string, user: User)
   - LogEvent(event: string)
+
+  # Article endpoint
+  - GetArticle(GetArticleRequest) => (GetArticleResponse)
