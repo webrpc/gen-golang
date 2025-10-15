@@ -95,14 +95,17 @@ error 400100 MemoryFull      "system memory is full"
 error 400200 Unauthorized    "unauthorized" HTTP 401
 error 400300 UserNotFound    "user not found"
 
-service ExampleService
+service Example
   - Ping()
+
   # Status endpoint
   #
   # gives you current status of running application
   @internal
   - Status() => (status: bool)
+
   - Version() => (version: Version)
+
   # Get user endpoint
   #
   # gives you basic info about user

@@ -66,7 +66,7 @@ var WebRPCServices = map[string][]string{
 
 {{ range $_, $service := $services -}}
 {{ if $opts.types -}}
-type {{$service.Name}} interface {
+type {{$service.Name}}Server interface {
 	{{- range $_, $method := $service.Methods}}
 	{{- $deprecated := index $method.Annotations "deprecated" -}}
 	{{- if gt (len $method.Comments) 0 -}}

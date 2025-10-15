@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	client ExampleServiceClient
+	client ExampleClient
 )
 
 // func TestMain()
@@ -20,7 +20,7 @@ func init() {
 		startServer()
 	}()
 
-	client = NewExampleServiceClient("http://0.0.0.0:4242", &http.Client{
+	client = NewExampleClient("http://0.0.0.0:4242", &http.Client{
 		Timeout: time.Duration(2 * time.Second),
 	})
 	time.Sleep(time.Millisecond * 500)

@@ -29,7 +29,7 @@ func startServer() error {
 		w.Write([]byte("."))
 	})
 
-	webrpcHandler := NewExampleServiceServer(&ExampleServiceRPC{})
+	webrpcHandler := NewExampleServer(&ExampleServiceRPC{})
 	r.Handle("/*", webrpcHandler)
 
 	log.Printf("Listening on :4242")
