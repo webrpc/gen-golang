@@ -2,7 +2,7 @@ module golang-basics
 
 go 1.23.12
 
-replace github.com/webrpc/webrpc => /Users/peter/Dev/go/src/github.com/webrpc/webrpc
+// replace github.com/webrpc/webrpc => ../webrpc
 
 toolchain go1.24.0
 
@@ -58,7 +58,7 @@ require (
 	github.com/webrpc/gen-kotlin v0.1.0 // indirect
 	github.com/webrpc/gen-openapi v0.16.3 // indirect
 	github.com/webrpc/gen-typescript v0.19.0 // indirect
-	github.com/webrpc/webrpc v0.23.2 // indirect
+	github.com/webrpc/webrpc v0.28.2 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/arch v0.1.0 // indirect
 	golang.org/x/crypto v0.41.0 // indirect

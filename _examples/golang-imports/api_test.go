@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var client ExampleAPI
+var client ExampleAPIClient
 
 func TestMain(m *testing.M) {
 	go func() {
