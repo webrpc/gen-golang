@@ -66,7 +66,7 @@ var WebRPCServices = map[string][]string{
 
 {{ range $_, $service := $services -}}
 {{ if $opts.types -}}
-type {{$service.Name}} interface {
+type {{$service.Name}}Server interface {
 	{{- range $_, $method := $service.Methods}}
 	{{- $deprecated := index $method.Annotations "deprecated" -}}
 	{{- if gt (len $method.Comments) 0 -}}
@@ -81,9 +81,9 @@ type {{$service.Name}} interface {
 	// Deprecated: {{ $deprecated.Value }}
 	{{- end }}
 	{{ if eq $method.StreamOutput true -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}, stream {{$method.Name}}StreamWriter) error
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}, stream {{$method.Name}}StreamWriter) error
 	{{- else -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
 	{{- end -}}
 
 	{{- end}}
@@ -107,7 +107,11 @@ type {{firstLetterToLower $method.Name}}StreamWriter struct {
 func (w *{{firstLetterToLower $method.Name}}StreamWriter) Write({{range $i, $output := $method.Outputs}}{{if gt $i 0}}, {{end}}{{$output.Name}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{end}}) error {
 	out := struct {
 	{{- range $i, $output := $method.Outputs}}
+		{{- if $method.Succinct -}}
+		Ret0 {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" false}} `json:"response"`
+		{{- else -}}
 		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
+		{{- end -}}
 	{{- end}}
 	}{
 	{{- range $i, $output := $method.Outputs}}
@@ -128,9 +132,13 @@ type streamWriter struct {
 	mu sync.Mutex // Guards concurrent writes to w.
 	w  http.ResponseWriter
 	f  http.Flusher
-	e  *json.Encoder
+	e  jsonEncoder
 
 	sendError func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
+}
+
+type jsonEncoder interface {
+	Encode(v any) error
 }
 
 const StreamKeepAliveInterval = 10*time.Second
@@ -189,9 +197,9 @@ type {{$service.Name}}Client interface {
 	// Deprecated: {{ $deprecated.Value }}
 	{{- end }}
 	{{ if eq $method.StreamOutput true -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) ({{$method.Name}}StreamReader, error)
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) ({{$method.Name}}StreamReader, error)
 	{{- else -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
 	{{- end -}}
 
 	{{- end}}

@@ -2,15 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
-	client ExampleServiceClient
+	client ExampleClient
 )
 
 // func TestMain()
@@ -20,8 +22,8 @@ func init() {
 		startServer()
 	}()
 
-	client = NewExampleServiceClient("http://0.0.0.0:4242", &http.Client{
-		Timeout: time.Duration(2 * time.Second),
+	client = NewExampleClient("http://0.0.0.0:4242", &http.Client{
+		Timeout: time.Duration(10 * time.Second),
 	})
 	time.Sleep(time.Millisecond * 500)
 
@@ -91,5 +93,35 @@ func TestGetUser(t *testing.T) {
 		assert.Equal(t, "joe", name)
 		assert.Equal(t, &User{ID: 123, Username: "joe", Nicknames: []Nickname{}}, user)
 		assert.NoError(t, err)
+	}
+
+	{
+		articleResp, err := client.GetArticle(context.Background(), GetArticleRequest{ArticleID: 42})
+		assert.NoError(t, err)
+		expectedContent := "This is the content of the article."
+		assert.Equal(t, &GetArticleResponse{
+			Title:   "Article 42",
+			Content: &expectedContent,
+		}, articleResp)
+	}
+
+	{ // streaming
+		stream, err := client.StreamNewArticles(context.Background())
+		assert.NoError(t, err)
+
+		var articles []*GetArticleResponse
+		for {
+			article, err := stream.Read()
+			if err != nil {
+				if errors.Is(err, ErrWebrpcStreamFinished) {
+					break
+				} else {
+					t.Fatal(err)
+				}
+			}
+			articles = append(articles, article)
+		}
+		require.Len(t, articles, 4)
+		require.True(t, articles[0].Title == "Article 0")
 	}
 }

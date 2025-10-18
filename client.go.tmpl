@@ -40,10 +40,13 @@ func New{{$ServiceNameClient}}(addr string, client HTTPClient) {{$ServiceNameCli
 
 {{ if eq $method.StreamOutput false }}
 
-func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta}}{{end}}) {{if len $method.Outputs}}({{end}}{{range $i, $output := $method.Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}} {
+func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len $method.Outputs}}({{end}}{{range $i, $output := $method.Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}} {
 	{{- $inputVar := "nil" -}}
 	{{- $outputVar := "nil" -}}
-	{{- if $method.Inputs | len}}
+	{{- if $method.Succinct }}
+	{{- $inputVar = (index $method.Inputs 0).Name -}}
+	{{- end -}}
+	{{- if and ($method.Inputs | len) (eq $method.Succinct false)}}
 	{{- $inputVar = "in"}}
 	in := struct {
 	{{- range $i, $input := $method.Inputs}}
@@ -53,9 +56,12 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 	{{- end}}
 	{{- if $method.Outputs | len}}
 	{{- $outputVar = "&out"}}
+	{{- if $method.Succinct }}
+	{{- $outputVar = "&out.Ret0" -}}
+	{{- end -}}
 	out := struct {
 	{{- range $i, $output := $method.Outputs}}
-		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
+		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" (not $method.Succinct)}}
 	{{- end}}
 	}{}{{ "\n" }}
 	{{- end }}
@@ -72,7 +78,7 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 
 {{- else }}
 
-func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta}}{{end}}) ({{$method.Name}}StreamReader, error) {
+func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) ({{$method.Name}}StreamReader, error) {
 	{{- $inputVar := "nil" -}}
 	{{- if $method.Inputs | len}}
 	{{- $inputVar = "in"}}
@@ -104,7 +110,11 @@ func (r *{{firstLetterToLower $method.Name}}StreamReader) Read() ({{range $i, $o
 	{{- $outputVar = "&out"}}
 	out := struct {
 	{{- range $i, $output := $method.Outputs}}
+	{{- if $method.Succinct -}}
+		Ret0 {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" false}} `json:"response"`
+	{{- else -}}
 		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
+	{{- end -}}
 	{{- end}}
 		WebRPCError *WebRPCError `json:"webrpcError"`
 	}{}

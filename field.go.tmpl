@@ -10,6 +10,7 @@
 {{- $printName := .PrintName -}}
 {{- $includeJsonTags := .JsonTags -}}
 {{- $includeStructTags := .StructTags -}}
+{{- $succinct := or .Succinct false -}}
 
 {{- $customType := "" -}}
 {{- $jsonTag := printf "json:%q" $name }}
@@ -54,7 +55,11 @@
     {{- if isEnumType $type -}}
         {{if $optional}}*{{end}}{{$typePrefix}}{{$type}}
     {{- else -}}
-        *{{$typePrefix}}{{$type}}
+        {{- if $succinct -}}
+            {{$typePrefix}}{{$type}}
+        {{- else -}}
+            *{{$typePrefix}}{{$type}}
+        {{- end -}}
     {{- end -}}
 {{- end -}}
 

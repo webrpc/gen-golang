@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -29,7 +30,7 @@ func startServer() error {
 		w.Write([]byte("."))
 	})
 
-	webrpcHandler := NewExampleServiceServer(&ExampleServiceRPC{})
+	webrpcHandler := NewExampleServer(&ExampleServiceRPC{})
 	r.Handle("/*", webrpcHandler)
 
 	log.Printf("Listening on :4242")
@@ -108,5 +109,34 @@ func (rpc *ExampleServiceRPC) FindUser(ctx context.Context, s *SearchFilter) (st
 }
 
 func (rpc *ExampleServiceRPC) LogEvent(ctx context.Context, event string) error {
+	return nil
+}
+
+func (rpc *ExampleServiceRPC) GetArticle(ctx context.Context, req GetArticleRequest) (*GetArticleResponse, error) {
+	articleID := req.ArticleID
+	if articleID == 0 {
+		return nil, ErrMissingArgument.WithCausef("articleId is required")
+	}
+	if articleID == 404 {
+		return nil, ErrUserNotFound.WithCausef("article not found")
+	}
+
+	content := "This is the content of the article."
+
+	return &GetArticleResponse{
+		Title:   fmt.Sprintf("Article %d", articleID),
+		Content: &content,
+	}, nil
+}
+
+func (rpc *ExampleServiceRPC) StreamNewArticles(ctx context.Context, stream StreamNewArticlesStreamWriter) error {
+	for i := 0; i < 4; i++ {
+		// content := fmt.Sprintf("This is the content of the article, %d", i)
+		stream.Write(&GetArticleResponse{
+			Title: fmt.Sprintf("Article %d", i),
+			// Content: &content,
+		})
+		time.Sleep(1 * time.Second)
+	}
 	return nil
 }

@@ -89,20 +89,32 @@ struct GenVersions
   - TmplVersion: string
   - SchemaVersion: string
 
+struct GetArticleRequest
+  - articleId: uint64
+    + go.field.name = ArticleID
+
+struct GetArticleResponse
+  - title: string
+  - content?: string
+    + go.tag.json = content,omitempty
+
 error 500100 MissingArgument "missing argument"
 error 500101 InvalidUsername "invalid username"
 error 400100 MemoryFull      "system memory is full"
 error 400200 Unauthorized    "unauthorized" HTTP 401
 error 400300 UserNotFound    "user not found"
 
-service ExampleService
+service Example
   - Ping()
+
   # Status endpoint
   #
   # gives you current status of running application
   @internal
   - Status() => (status: bool)
+
   - Version() => (version: Version)
+
   # Get user endpoint
   #
   # gives you basic info about user
@@ -110,3 +122,9 @@ service ExampleService
   - GetUser(header: map<string,string>, userID: uint64) => (user: User)
   - FindUser(s: SearchFilter) => (name: string, user: User)
   - LogEvent(event: string)
+
+  # Article endpoint
+  - GetArticle(GetArticleRequest) => (GetArticleResponse)
+
+  # Streaming article endpoint
+  - StreamNewArticles() => stream (GetArticleResponse)
