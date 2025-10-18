@@ -343,7 +343,7 @@ type streamNewArticlesStreamWriter struct {
 
 func (w *streamNewArticlesStreamWriter) Write(getArticleResponse *GetArticleResponse) error {
 	out := struct {
-		Ret0 *GetArticleResponse `json:"getArticleResponse"`
+		Ret0 *GetArticleResponse `json:"response"`
 	}{
 		Ret0: getArticleResponse,
 	}
@@ -995,7 +995,7 @@ type streamNewArticlesStreamReader struct {
 
 func (r *streamNewArticlesStreamReader) Read() (*GetArticleResponse, error) {
 	out := struct {
-		Ret0        *GetArticleResponse `json:"getArticleResponse"`
+		Ret0        *GetArticleResponse `json:"response"`
 		WebRPCError *WebRPCError        `json:"webrpcError"`
 	}{}
 

@@ -136,10 +136,7 @@ func (rpc *ExampleServiceRPC) StreamNewArticles(ctx context.Context, stream Stre
 			Title: fmt.Sprintf("Article %d", i),
 			// Content: &content,
 		})
-		stream.Write(nil)
 		time.Sleep(1 * time.Second)
 	}
 	return nil
-	// TODO: 1. do we not close the connection on return..? .. hmmpf.. review..
-	// TODO: 2. remove the nested type when using succinct mode for the writer and the reader (server/client)
 }

@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 var (
@@ -21,7 +23,7 @@ func init() {
 	}()
 
 	client = NewExampleClient("http://0.0.0.0:4242", &http.Client{
-		Timeout: time.Duration(2 * time.Second),
+		Timeout: time.Duration(10 * time.Second),
 	})
 	time.Sleep(time.Millisecond * 500)
 
@@ -101,5 +103,25 @@ func TestGetUser(t *testing.T) {
 			Title:   "Article 42",
 			Content: &expectedContent,
 		}, articleResp)
+	}
+
+	{ // streaming
+		stream, err := client.StreamNewArticles(context.Background())
+		assert.NoError(t, err)
+
+		var articles []*GetArticleResponse
+		for {
+			article, err := stream.Read()
+			if err != nil {
+				if errors.Is(err, ErrWebrpcStreamFinished) {
+					break
+				} else {
+					t.Fatal(err)
+				}
+			}
+			articles = append(articles, article)
+		}
+		require.Len(t, articles, 4)
+		require.True(t, articles[0].Title == "Article 0")
 	}
 }

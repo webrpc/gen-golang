@@ -110,7 +110,11 @@ func (r *{{firstLetterToLower $method.Name}}StreamReader) Read() ({{range $i, $o
 	{{- $outputVar = "&out"}}
 	out := struct {
 	{{- range $i, $output := $method.Outputs}}
+	{{- if $method.Succinct -}}
+		Ret0 {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" false}} `json:"response"`
+	{{- else -}}
 		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
+	{{- end -}}
 	{{- end}}
 		WebRPCError *WebRPCError `json:"webrpcError"`
 	}{}
