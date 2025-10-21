@@ -224,8 +224,8 @@ github.com/twitchyliquid64/golang-asm v0.15.1 h1:SU5vSMR7hnwNxj24w34ZyCi/FmDZTkS
 github.com/twitchyliquid64/golang-asm v0.15.1/go.mod h1:a1lVb/DtPvCB8fslRZhAngC2+aY1QWCk3Cedj/Gdt08=
 github.com/webrpc/gen-dart v0.1.1 h1:PZh5oNNdA84Qxu8ixKDf1cT8Iv6t0g7x6q9aeX1bti4=
 github.com/webrpc/gen-dart v0.1.1/go.mod h1:yq0ThW3ANNulJLyR50jx1aZMEVBDp19VUHucK65ayPs=
-github.com/webrpc/gen-golang v0.22.1 h1:qWOdXH/3X9A+ElVPBcdDrjzWxpf8LdoI2nnjxJSax2E=
-github.com/webrpc/gen-golang v0.22.1/go.mod h1:t8tIVL/AQhaMteA31xNbzWUrumiMXc7OcKmnNALpnAM=
+github.com/webrpc/gen-golang v0.22.2 h1:nqQlA/HisFpQyLq9TYG1DTM9w0++dwcO0SAFSgaI6qM=
+github.com/webrpc/gen-golang v0.22.2/go.mod h1:t8tIVL/AQhaMteA31xNbzWUrumiMXc7OcKmnNALpnAM=
 github.com/webrpc/gen-javascript v0.13.0 h1:tw7U1xueUjZz3cQAAA4/DZ90BHydkQKiJC4VXd/j2hg=
 github.com/webrpc/gen-javascript v0.13.0/go.mod h1:5EhapSJgzbiWrIGlqzZN9Lg9mE9209wwX+Du2dgn4EU=
 github.com/webrpc/gen-kotlin v0.1.0 h1:tnlinqbDgowEoSy8E3VovTdP2OjyOIbgACCbahRjNcc=
@@ -234,6 +234,8 @@ github.com/webrpc/gen-openapi v0.16.3 h1:Gwj1Wxdqu+jLsVd+JeUuvf92JyLTZ/nMNcSwVpd
 github.com/webrpc/gen-openapi v0.16.3/go.mod h1:fwY3ylZmdiCr+WXjR8Ek8wm08CFRr2/GaXI7Zd/Ou4Y=
 github.com/webrpc/gen-typescript v0.20.2 h1:FUoraPOQWLL70gSQGYFkuelxUhVSqI7LmmA45CaAbDE=
 github.com/webrpc/gen-typescript v0.20.2/go.mod h1:XDW2lL0Ft7Mdf12wcj8STdvuV24k2L/vGY49Ag2M4Lw=
+github.com/webrpc/webrpc v0.29.0 h1:BEbiVt9+D8fuO+pazDATxAI/Xv8DPU+gATGlVOQufpg=
+github.com/webrpc/webrpc v0.29.0/go.mod h1:CbakUGryLYf/xqLP59wjkP4TleMOjyCNlPJYmVzIhUY=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
 github.com/xanzy/ssh-agent v0.3.3/go.mod h1:6dzNDKs0J9rVPHPhaGCukekBHKqfl+L3KghI1Bc68Uw=
 github.com/yuin/goldmark v1.2.1/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
