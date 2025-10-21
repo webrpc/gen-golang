@@ -1117,7 +1117,7 @@ func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 }
 
 //
-// Helpers
+// Webrpc helpers
 //
 
 type method struct {
