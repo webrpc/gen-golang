@@ -2,7 +2,7 @@
 {{ $opts := .Opts -}}
 
 //
-// Helpers
+// Webrpc helpers
 //
 
 type method struct  {
@@ -38,17 +38,15 @@ func (k *contextKey) String() string {
 
 var (
 {{- if $opts.client}}
-	HTTPClientRequestHeadersCtxKey = &contextKey{"HTTPClientRequestHeaders"}
+	HTTPClientRequestHeadersCtxKey = &contextKey{"HTTPClientRequestHeaders"} // client
 {{- end}}
 
 {{- if $opts.server}}
-	HTTPResponseWriterCtxKey = &contextKey{"HTTPResponseWriter"}
-{{ end}}
-	HTTPRequestCtxKey = &contextKey{"HTTPRequest"}
-
-	ServiceNameCtxKey = &contextKey{"ServiceName"}
-
-	MethodNameCtxKey = &contextKey{"MethodName"}
+	HTTPResponseWriterCtxKey = &contextKey{"HTTPResponseWriter"} // server
+{{- end }}
+	HTTPRequestCtxKey = &contextKey{"HTTPRequest"} // server
+	ServiceNameCtxKey = &contextKey{"ServiceName"} // server
+	MethodNameCtxKey  = &contextKey{"MethodName"}  // server
 )
 
 func ServiceNameFromContext(ctx context.Context) string {
