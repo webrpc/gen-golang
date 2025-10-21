@@ -16,7 +16,7 @@ type WebRPCServer interface {
 
 {{- range $_, $service := $services}}
 {{- $name := $service.Name -}}
-{{ $serviceName := (printf "%sService" (firstLetterToLower $service.Name)) }}
+{{ $serviceName := (printf "%sService" (firstWordToLower $service.Name)) }}
 
 type {{$serviceName}} struct {
 	{{$typePrefix}}{{$service.Name}}Server

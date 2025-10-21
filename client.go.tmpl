@@ -16,7 +16,7 @@ const {{.Name}}PathPrefix = "/rpc/{{.Name}}/"
 
 {{- range $_, $service := $services -}}
 
-{{- $serviceNameClient := (printf "%sClient" ($service.Name | firstLetterToLower)) }}
+{{- $serviceNameClient := (printf "%sClient" ($service.Name | firstWordToLower)) }}
 {{- $ServiceNameClient := (printf "%sClient" ($service.Name | firstLetterToUpper)) }}
 type {{$serviceNameClient}} struct {
 	client HTTPClient

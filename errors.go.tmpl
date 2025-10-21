@@ -64,6 +64,11 @@ func (e WebRPCError) WithCausef(format string, args ...interface{}) WebRPCError 
 	return err
 }
 
+// Deprecated: Use .WithCause() method on WebRPCError.
+func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
+	return rpcErr.WithCause(cause)
+}
+
 {{- if $opts.errorStackTrace }}
 
 func (e WebRPCError) StackFrames() []uintptr {
