@@ -23,18 +23,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Opinionated configuration for -json=sonic encoding.
-// Reference: https://github.com/bytedance/sonic/blob/main/api.go
-var jsonCfg = sonic.Config{
-	NoNullSliceOrMap:        true, // Encode nil slices/maps as '[]'/'{}' instead of 'null' to prevent runtime issues in JavaScript.
-	NoValidateJSONMarshaler: true, // Skip validation of JSON output from types implementing json.Marshaler to enhance performance.
-	NoValidateJSONSkip:      true, // Bypass validation when skipping over JSON values during decoding, improving efficiency.
-}.Froze()
-
-const WebrpcHeader = "Webrpc"
-
-const WebrpcHeaderValue = "webrpc@v0.28.2;gen-golang@unknown;example@v0.0.1"
-
 // WebRPC description and code-gen version
 func WebRPCVersion() string {
 	return "v1"
@@ -50,59 +38,58 @@ func WebRPCSchemaHash() string {
 	return "c5f58675921dda6182edeb5a0526e5f7eb264aaf"
 }
 
-type WebrpcGenVersions struct {
-	WebrpcGenVersion string
-	CodeGenName      string
-	CodeGenVersion   string
-	SchemaName       string
-	SchemaVersion    string
-}
+//
+// Client interface
+//
 
-func VersionFromHeader(h http.Header) (*WebrpcGenVersions, error) {
-	if h.Get(WebrpcHeader) == "" {
-		return nil, fmt.Errorf("header is empty or missing")
-	}
-
-	versions, err := parseWebrpcGenVersions(h.Get(WebrpcHeader))
-	if err != nil {
-		return nil, fmt.Errorf("webrpc header is invalid: %w", err)
-	}
-
-	return versions, nil
-}
-
-func parseWebrpcGenVersions(header string) (*WebrpcGenVersions, error) {
-	versions := strings.Split(header, ";")
-	if len(versions) < 3 {
-		return nil, fmt.Errorf("expected at least 3 parts while parsing webrpc header: %v", header)
-	}
-
-	_, webrpcGenVersion, ok := strings.Cut(versions[0], "@")
-	if !ok {
-		return nil, fmt.Errorf("webrpc gen version could not be parsed from: %s", versions[0])
-	}
-
-	tmplTarget, tmplVersion, ok := strings.Cut(versions[1], "@")
-	if !ok {
-		return nil, fmt.Errorf("tmplTarget and tmplVersion could not be parsed from: %s", versions[1])
-	}
-
-	schemaName, schemaVersion, ok := strings.Cut(versions[2], "@")
-	if !ok {
-		return nil, fmt.Errorf("schema name and schema version could not be parsed from: %s", versions[2])
-	}
-
-	return &WebrpcGenVersions{
-		WebrpcGenVersion: webrpcGenVersion,
-		CodeGenName:      tmplTarget,
-		CodeGenVersion:   tmplVersion,
-		SchemaName:       schemaName,
-		SchemaVersion:    schemaVersion,
-	}, nil
+type ExampleClient interface {
+	Ping(ctx context.Context) error
+	// Status endpoint
+	//
+	// gives you current status of running application
+	Status(ctx context.Context) (bool, error)
+	Version(ctx context.Context) (*Version, error)
+	// Get user endpoint
+	//
+	// gives you basic info about user
+	//
+	// Deprecated:
+	GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error)
+	FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
+	LogEvent(ctx context.Context, event string) error
+	// Article endpoint
+	GetArticle(ctx context.Context, getArticleRequest GetArticleRequest) (*GetArticleResponse, error)
+	// Streaming article endpoint
+	StreamNewArticles(ctx context.Context) (StreamNewArticlesStreamReader, error)
 }
 
 //
-// Common types
+// Server interface
+//
+
+type ExampleServer interface {
+	Ping(ctx context.Context) error
+	// Status endpoint
+	//
+	// gives you current status of running application
+	Status(ctx context.Context) (bool, error)
+	Version(ctx context.Context) (*Version, error)
+	// Get user endpoint
+	//
+	// gives you basic info about user
+	//
+	// Deprecated:
+	GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error)
+	FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
+	LogEvent(ctx context.Context, event string) error
+	// Article endpoint
+	GetArticle(ctx context.Context, getArticleRequest GetArticleRequest) (*GetArticleResponse, error)
+	// Streaming article endpoint
+	StreamNewArticles(ctx context.Context, stream StreamNewArticlesStreamWriter) error
+}
+
+//
+// Schema types
 //
 
 type Kind uint32
@@ -243,95 +230,17 @@ type GetArticleResponse struct {
 	Content *string `json:"content,omitempty"`
 }
 
-var methods = map[string]method{
-	"/rpc/Example/Ping": {
-		name:        "Ping",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/Status": {
-		name:        "Status",
-		service:     "Example",
-		annotations: map[string]string{"internal": ""},
-	},
-	"/rpc/Example/Version": {
-		name:        "Version",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/GetUser": {
-		name:        "GetUser",
-		service:     "Example",
-		annotations: map[string]string{"deprecated": ""},
-	},
-	"/rpc/Example/FindUser": {
-		name:        "FindUser",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/LogEvent": {
-		name:        "LogEvent",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/GetArticle": {
-		name:        "GetArticle",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/StreamNewArticles": {
-		name:        "StreamNewArticles",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-}
+//
+// Streaming client types
+//
 
-func WebrpcMethods() map[string]method {
-	res := make(map[string]method, len(methods))
-	for k, v := range methods {
-		res[k] = v
-	}
-
-	return res
-}
-
-var WebRPCServices = map[string][]string{
-	"Example": {
-		"Ping",
-		"Status",
-		"Version",
-		"GetUser",
-		"FindUser",
-		"LogEvent",
-		"GetArticle",
-		"StreamNewArticles",
-	},
+type StreamNewArticlesStreamReader interface {
+	Read() (getArticleResponse *GetArticleResponse, err error)
 }
 
 //
-// Server types
+// Streaming server types
 //
-
-type ExampleServer interface {
-	Ping(ctx context.Context) error
-	// Status endpoint
-	//
-	// gives you current status of running application
-	Status(ctx context.Context) (bool, error)
-	Version(ctx context.Context) (*Version, error)
-	// Get user endpoint
-	//
-	// gives you basic info about user
-	//
-	// Deprecated:
-	GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error)
-	FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
-	LogEvent(ctx context.Context, event string) error
-	// Article endpoint
-	GetArticle(ctx context.Context, getArticleRequest GetArticleRequest) (*GetArticleResponse, error)
-	// Streaming article endpoint
-	StreamNewArticles(ctx context.Context, stream StreamNewArticlesStreamWriter) error
-}
 
 type StreamNewArticlesStreamWriter interface {
 	Write(getArticleResponse *GetArticleResponse) error
@@ -399,37 +308,408 @@ func (w *streamWriter) write(respPayload interface{}) error {
 }
 
 //
-// Client types
+// Client
 //
 
-type ExampleClient interface {
-	Ping(ctx context.Context) error
-	// Status endpoint
-	//
-	// gives you current status of running application
-	Status(ctx context.Context) (bool, error)
-	Version(ctx context.Context) (*Version, error)
-	// Get user endpoint
-	//
-	// gives you basic info about user
-	//
-	// Deprecated:
-	GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error)
-	FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
-	LogEvent(ctx context.Context, event string) error
-	// Article endpoint
-	GetArticle(ctx context.Context, getArticleRequest GetArticleRequest) (*GetArticleResponse, error)
-	// Streaming article endpoint
-	StreamNewArticles(ctx context.Context) (StreamNewArticlesStreamReader, error)
+const ExamplePathPrefix = "/rpc/Example/"
+
+type exampleClient struct {
+	client HTTPClient
+	urls   [8]string
 }
 
-type StreamNewArticlesStreamReader interface {
-	Read() (getArticleResponse *GetArticleResponse, err error)
+func NewExampleClient(addr string, client HTTPClient) ExampleClient {
+	prefix := urlBase(addr) + ExamplePathPrefix
+	urls := [8]string{
+		prefix + "Ping",
+		prefix + "Status",
+		prefix + "Version",
+		prefix + "GetUser",
+		prefix + "FindUser",
+		prefix + "LogEvent",
+		prefix + "GetArticle",
+		prefix + "StreamNewArticles",
+	}
+	return &exampleClient{
+		client: client,
+		urls:   urls,
+	}
+}
+
+func (c *exampleClient) Ping(ctx context.Context) error {
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[0], nil, nil)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+
+	return err
+}
+
+func (c *exampleClient) Status(ctx context.Context) (bool, error) {
+	out := struct {
+		Ret0 bool `json:"status"`
+	}{}
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[1], nil, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+
+	return out.Ret0, err
+}
+
+func (c *exampleClient) Version(ctx context.Context) (*Version, error) {
+	out := struct {
+		Ret0 *Version `json:"version"`
+	}{}
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[2], nil, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+
+	return out.Ret0, err
+}
+
+func (c *exampleClient) GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error) {
+	in := struct {
+		Arg0 map[string]string `json:"header"`
+		Arg1 uint64            `json:"userID"`
+	}{header, userID}
+	out := struct {
+		Ret0 *User `json:"user"`
+	}{}
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[3], in, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+
+	return out.Ret0, err
+}
+
+func (c *exampleClient) FindUser(ctx context.Context, s *SearchFilter) (string, *User, error) {
+	in := struct {
+		Arg0 *SearchFilter `json:"s"`
+	}{s}
+	out := struct {
+		Ret0 string `json:"name"`
+		Ret1 *User  `json:"user"`
+	}{}
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[4], in, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+
+	return out.Ret0, out.Ret1, err
+}
+
+func (c *exampleClient) LogEvent(ctx context.Context, event string) error {
+	in := struct {
+		Arg0 string `json:"event"`
+	}{event}
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[5], in, nil)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+
+	return err
+}
+
+func (c *exampleClient) GetArticle(ctx context.Context, getArticleRequest GetArticleRequest) (*GetArticleResponse, error) {
+	out := struct {
+		Ret0 *GetArticleResponse
+	}{}
+
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[6], getArticleRequest, &out.Ret0)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+
+	return out.Ret0, err
+}
+
+func (c *exampleClient) StreamNewArticles(ctx context.Context) (StreamNewArticlesStreamReader, error) {
+	resp, err := doHTTPRequest(ctx, c.client, c.urls[7], nil, nil)
+	if err != nil {
+		if resp != nil {
+			resp.Body.Close()
+		}
+		return nil, err
+	}
+
+	buf := bufio.NewReader(resp.Body)
+	return &streamNewArticlesStreamReader{streamReader{ctx: ctx, c: resp.Body, r: buf}}, nil
+}
+
+type streamNewArticlesStreamReader struct {
+	streamReader
+}
+
+func (r *streamNewArticlesStreamReader) Read() (*GetArticleResponse, error) {
+	out := struct {
+		Ret0        *GetArticleResponse `json:"response"`
+		WebRPCError *WebRPCError        `json:"webrpcError"`
+	}{}
+
+	err := r.streamReader.read(&out)
+	if err != nil {
+		return out.Ret0, err
+	}
+
+	if out.WebRPCError != nil {
+		return out.Ret0, out.WebRPCError
+	}
+
+	return out.Ret0, nil
+}
+
+type streamReader struct {
+	ctx context.Context
+	c   io.Closer
+	r   *bufio.Reader
+}
+
+func (r *streamReader) read(v interface{}) error {
+	for {
+		select {
+		case <-r.ctx.Done():
+			r.c.Close()
+			return ErrWebrpcClientAborted.WithCause(r.ctx.Err())
+		default:
+		}
+
+		line, err := r.r.ReadBytes('\n')
+		if err != nil {
+			return r.handleReadError(err)
+		}
+
+		// Eat newlines (keep-alive pings).
+		if len(line) == 1 && line[0] == '\n' {
+			continue
+		}
+
+		if err := jsonCfg.Unmarshal(line, &v); err != nil {
+			return r.handleReadError(err)
+		}
+		return nil
+	}
+}
+
+func (r *streamReader) handleReadError(err error) error {
+	defer r.c.Close()
+	if errors.Is(err, io.EOF) {
+		return ErrWebrpcStreamFinished.WithCause(err)
+	}
+	if errors.Is(err, io.ErrUnexpectedEOF) {
+		return ErrWebrpcStreamLost.WithCause(err)
+	}
+	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+		return ErrWebrpcClientAborted.WithCause(err)
+	}
+	return ErrWebrpcBadResponse.WithCausef("reading stream: %w", err)
+}
+
+//
+// Client helpers
+//
+
+// HTTPClient is the interface used by generated clients to send HTTP requests.
+// It is fulfilled by *(net/http).Client, which is sufficient for most users.
+// Users can provide their own implementation for special retry policies.
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// urlBase helps ensure that addr specifies a scheme. If it is unparsable
+// as a URL, it returns addr unchanged.
+func urlBase(addr string) string {
+	// If the addr specifies a scheme, use it. If not, default to
+	// http. If url.Parse fails on it, return it unchanged.
+	url, err := url.Parse(addr)
+	if err != nil {
+		return addr
+	}
+	if url.Scheme == "" {
+		url.Scheme = "http"
+	}
+	return url.String()
+}
+
+// newRequest makes an http.Request from a client, adding common headers.
+func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType string) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", contentType)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set(WebrpcHeader, WebrpcHeaderValue)
+	if headers, ok := HTTPRequestHeaders(ctx); ok {
+		for k := range headers {
+			for _, v := range headers[k] {
+				req.Header.Add(k, v)
+			}
+		}
+	}
+	return req, nil
+}
+
+// doHTTPRequest is common code to make a request to the remote service.
+func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
+	reqBody, err := jsonCfg.Marshal(in)
+	if err != nil {
+		return nil, ErrWebrpcRequestFailed.WithCausef("failed to marshal JSON body: %w", err)
+	}
+	if err = ctx.Err(); err != nil {
+		return nil, ErrWebrpcRequestFailed.WithCausef("aborted because context was done: %w", err)
+	}
+
+	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
+	if err != nil {
+		return nil, ErrWebrpcRequestFailed.WithCausef("could not build request: %w", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, ErrWebrpcRequestFailed.WithCause(err)
+	}
+
+	if resp.StatusCode != 200 {
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, ErrWebrpcBadResponse.WithCausef("failed to read server error response body: %w", err)
+		}
+
+		var rpcErr WebRPCError
+		if err := jsonCfg.Unmarshal(respBody, &rpcErr); err != nil {
+			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal server error: %w", err)
+		}
+		if rpcErr.Cause != "" {
+			rpcErr.cause = errors.New(rpcErr.Cause)
+		}
+		return nil, rpcErr
+	}
+
+	if out != nil {
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, ErrWebrpcBadResponse.WithCausef("failed to read response body: %w", err)
+		}
+
+		err = jsonCfg.Unmarshal(respBody, &out)
+		if err != nil {
+			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal JSON response body: %w", err)
+		}
+	}
+
+	return resp, nil
+}
+
+func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {
+	if _, ok := h["Accept"]; ok {
+		return nil, errors.New("provided header cannot set Accept")
+	}
+	if _, ok := h["Content-Type"]; ok {
+		return nil, errors.New("provided header cannot set Content-Type")
+	}
+
+	copied := make(http.Header, len(h))
+	for k, vv := range h {
+		if vv == nil {
+			copied[k] = nil
+			continue
+		}
+		copied[k] = make([]string, len(vv))
+		copy(copied[k], vv)
+	}
+
+	return context.WithValue(ctx, HTTPClientRequestHeadersCtxKey, copied), nil
+}
+
+func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
+	h, ok := ctx.Value(HTTPClientRequestHeadersCtxKey).(http.Header)
+	return h, ok
 }
 
 //
 // Server
 //
+
+func WebrpcMethods() map[string]method {
+	res := make(map[string]method, len(methods))
+	for k, v := range methods {
+		res[k] = v
+	}
+
+	return res
+}
+
+var methods = map[string]method{
+	"/rpc/Example/Ping": {
+		name:        "Ping",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/Status": {
+		name:        "Status",
+		service:     "Example",
+		annotations: map[string]string{"internal": ""},
+	},
+	"/rpc/Example/Version": {
+		name:        "Version",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/GetUser": {
+		name:        "GetUser",
+		service:     "Example",
+		annotations: map[string]string{"deprecated": ""},
+	},
+	"/rpc/Example/FindUser": {
+		name:        "FindUser",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/LogEvent": {
+		name:        "LogEvent",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/GetArticle": {
+		name:        "GetArticle",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/StreamNewArticles": {
+		name:        "StreamNewArticles",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+}
 
 type WebRPCServer interface {
 	http.Handler
@@ -832,351 +1112,7 @@ func RespondWithError(w http.ResponseWriter, err error) {
 }
 
 //
-// Client
-//
-
-const ExamplePathPrefix = "/rpc/Example/"
-
-type exampleClient struct {
-	client HTTPClient
-	urls   [8]string
-}
-
-func NewExampleClient(addr string, client HTTPClient) ExampleClient {
-	prefix := urlBase(addr) + ExamplePathPrefix
-	urls := [8]string{
-		prefix + "Ping",
-		prefix + "Status",
-		prefix + "Version",
-		prefix + "GetUser",
-		prefix + "FindUser",
-		prefix + "LogEvent",
-		prefix + "GetArticle",
-		prefix + "StreamNewArticles",
-	}
-	return &exampleClient{
-		client: client,
-		urls:   urls,
-	}
-}
-
-func (c *exampleClient) Ping(ctx context.Context) error {
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[0], nil, nil)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return err
-}
-
-func (c *exampleClient) Status(ctx context.Context) (bool, error) {
-	out := struct {
-		Ret0 bool `json:"status"`
-	}{}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[1], nil, &out)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return out.Ret0, err
-}
-
-func (c *exampleClient) Version(ctx context.Context) (*Version, error) {
-	out := struct {
-		Ret0 *Version `json:"version"`
-	}{}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[2], nil, &out)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return out.Ret0, err
-}
-
-func (c *exampleClient) GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error) {
-	in := struct {
-		Arg0 map[string]string `json:"header"`
-		Arg1 uint64            `json:"userID"`
-	}{header, userID}
-	out := struct {
-		Ret0 *User `json:"user"`
-	}{}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[3], in, &out)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return out.Ret0, err
-}
-
-func (c *exampleClient) FindUser(ctx context.Context, s *SearchFilter) (string, *User, error) {
-	in := struct {
-		Arg0 *SearchFilter `json:"s"`
-	}{s}
-	out := struct {
-		Ret0 string `json:"name"`
-		Ret1 *User  `json:"user"`
-	}{}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[4], in, &out)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return out.Ret0, out.Ret1, err
-}
-
-func (c *exampleClient) LogEvent(ctx context.Context, event string) error {
-	in := struct {
-		Arg0 string `json:"event"`
-	}{event}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[5], in, nil)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return err
-}
-
-func (c *exampleClient) GetArticle(ctx context.Context, getArticleRequest GetArticleRequest) (*GetArticleResponse, error) {
-	out := struct {
-		Ret0 *GetArticleResponse
-	}{}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[6], getArticleRequest, &out.Ret0)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return out.Ret0, err
-}
-
-func (c *exampleClient) StreamNewArticles(ctx context.Context) (StreamNewArticlesStreamReader, error) {
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[7], nil, nil)
-	if err != nil {
-		if resp != nil {
-			resp.Body.Close()
-		}
-		return nil, err
-	}
-
-	buf := bufio.NewReader(resp.Body)
-	return &streamNewArticlesStreamReader{streamReader{ctx: ctx, c: resp.Body, r: buf}}, nil
-}
-
-type streamNewArticlesStreamReader struct {
-	streamReader
-}
-
-func (r *streamNewArticlesStreamReader) Read() (*GetArticleResponse, error) {
-	out := struct {
-		Ret0        *GetArticleResponse `json:"response"`
-		WebRPCError *WebRPCError        `json:"webrpcError"`
-	}{}
-
-	err := r.streamReader.read(&out)
-	if err != nil {
-		return out.Ret0, err
-	}
-
-	if out.WebRPCError != nil {
-		return out.Ret0, out.WebRPCError
-	}
-
-	return out.Ret0, nil
-}
-
-type streamReader struct {
-	ctx context.Context
-	c   io.Closer
-	r   *bufio.Reader
-}
-
-func (r *streamReader) read(v interface{}) error {
-	for {
-		select {
-		case <-r.ctx.Done():
-			r.c.Close()
-			return ErrWebrpcClientAborted.WithCause(r.ctx.Err())
-		default:
-		}
-
-		line, err := r.r.ReadBytes('\n')
-		if err != nil {
-			return r.handleReadError(err)
-		}
-
-		// Eat newlines (keep-alive pings).
-		if len(line) == 1 && line[0] == '\n' {
-			continue
-		}
-
-		if err := jsonCfg.Unmarshal(line, &v); err != nil {
-			return r.handleReadError(err)
-		}
-		return nil
-	}
-}
-
-func (r *streamReader) handleReadError(err error) error {
-	defer r.c.Close()
-	if errors.Is(err, io.EOF) {
-		return ErrWebrpcStreamFinished.WithCause(err)
-	}
-	if errors.Is(err, io.ErrUnexpectedEOF) {
-		return ErrWebrpcStreamLost.WithCause(err)
-	}
-	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		return ErrWebrpcClientAborted.WithCause(err)
-	}
-	return ErrWebrpcBadResponse.WithCausef("reading stream: %w", err)
-}
-
-// HTTPClient is the interface used by generated clients to send HTTP requests.
-// It is fulfilled by *(net/http).Client, which is sufficient for most users.
-// Users can provide their own implementation for special retry policies.
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-// urlBase helps ensure that addr specifies a scheme. If it is unparsable
-// as a URL, it returns addr unchanged.
-func urlBase(addr string) string {
-	// If the addr specifies a scheme, use it. If not, default to
-	// http. If url.Parse fails on it, return it unchanged.
-	url, err := url.Parse(addr)
-	if err != nil {
-		return addr
-	}
-	if url.Scheme == "" {
-		url.Scheme = "http"
-	}
-	return url.String()
-}
-
-// newRequest makes an http.Request from a client, adding common headers.
-func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType string) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, "POST", url, reqBody)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", contentType)
-	req.Header.Set("Content-Type", contentType)
-	req.Header.Set(WebrpcHeader, WebrpcHeaderValue)
-	if headers, ok := HTTPRequestHeaders(ctx); ok {
-		for k := range headers {
-			for _, v := range headers[k] {
-				req.Header.Add(k, v)
-			}
-		}
-	}
-	return req, nil
-}
-
-// doHTTPRequest is common code to make a request to the remote service.
-func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
-	reqBody, err := jsonCfg.Marshal(in)
-	if err != nil {
-		return nil, ErrWebrpcRequestFailed.WithCausef("failed to marshal JSON body: %w", err)
-	}
-	if err = ctx.Err(); err != nil {
-		return nil, ErrWebrpcRequestFailed.WithCausef("aborted because context was done: %w", err)
-	}
-
-	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
-	if err != nil {
-		return nil, ErrWebrpcRequestFailed.WithCausef("could not build request: %w", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, ErrWebrpcRequestFailed.WithCause(err)
-	}
-
-	if resp.StatusCode != 200 {
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, ErrWebrpcBadResponse.WithCausef("failed to read server error response body: %w", err)
-		}
-
-		var rpcErr WebRPCError
-		if err := jsonCfg.Unmarshal(respBody, &rpcErr); err != nil {
-			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal server error: %w", err)
-		}
-		if rpcErr.Cause != "" {
-			rpcErr.cause = errors.New(rpcErr.Cause)
-		}
-		return nil, rpcErr
-	}
-
-	if out != nil {
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, ErrWebrpcBadResponse.WithCausef("failed to read response body: %w", err)
-		}
-
-		err = jsonCfg.Unmarshal(respBody, &out)
-		if err != nil {
-			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal JSON response body: %w", err)
-		}
-	}
-
-	return resp, nil
-}
-
-func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {
-	if _, ok := h["Accept"]; ok {
-		return nil, errors.New("provided header cannot set Accept")
-	}
-	if _, ok := h["Content-Type"]; ok {
-		return nil, errors.New("provided header cannot set Content-Type")
-	}
-
-	copied := make(http.Header, len(h))
-	for k, vv := range h {
-		if vv == nil {
-			copied[k] = nil
-			continue
-		}
-		copied[k] = make([]string, len(vv))
-		copy(copied[k], vv)
-	}
-
-	return context.WithValue(ctx, HTTPClientRequestHeadersCtxKey, copied), nil
-}
-
-func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
-	h, ok := ctx.Value(HTTPClientRequestHeadersCtxKey).(http.Header)
-	return h, ok
-}
-
-//
-// Helpers
+// Webrpc helpers
 //
 
 type method struct {
@@ -1211,14 +1147,11 @@ func (k *contextKey) String() string {
 }
 
 var (
-	HTTPClientRequestHeadersCtxKey = &contextKey{"HTTPClientRequestHeaders"}
-	HTTPResponseWriterCtxKey       = &contextKey{"HTTPResponseWriter"}
-
-	HTTPRequestCtxKey = &contextKey{"HTTPRequest"}
-
-	ServiceNameCtxKey = &contextKey{"ServiceName"}
-
-	MethodNameCtxKey = &contextKey{"MethodName"}
+	HTTPClientRequestHeadersCtxKey = &contextKey{"HTTPClientRequestHeaders"} // client
+	HTTPResponseWriterCtxKey       = &contextKey{"HTTPResponseWriter"}       // server
+	HTTPRequestCtxKey              = &contextKey{"HTTPRequest"}              // server
+	ServiceNameCtxKey              = &contextKey{"ServiceName"}              // server
+	MethodNameCtxKey               = &contextKey{"MethodName"}               // server
 )
 
 func ServiceNameFromContext(ctx context.Context) string {
@@ -1334,3 +1267,83 @@ var (
 	ErrUnauthorized    = WebRPCError{Code: 400200, Name: "Unauthorized", Message: "unauthorized", HTTPStatus: 401}
 	ErrUserNotFound    = WebRPCError{Code: 400300, Name: "UserNotFound", Message: "user not found", HTTPStatus: 400}
 )
+
+//
+// Webrpc
+//
+
+const WebrpcHeader = "Webrpc"
+
+const WebrpcHeaderValue = "webrpc@v0.28.2;gen-golang@unknown;example@v0.0.1"
+
+type WebrpcGenVersions struct {
+	WebrpcGenVersion string
+	CodeGenName      string
+	CodeGenVersion   string
+	SchemaName       string
+	SchemaVersion    string
+}
+
+func VersionFromHeader(h http.Header) (*WebrpcGenVersions, error) {
+	if h.Get(WebrpcHeader) == "" {
+		return nil, fmt.Errorf("header is empty or missing")
+	}
+
+	versions, err := parseWebrpcGenVersions(h.Get(WebrpcHeader))
+	if err != nil {
+		return nil, fmt.Errorf("webrpc header is invalid: %w", err)
+	}
+
+	return versions, nil
+}
+
+func parseWebrpcGenVersions(header string) (*WebrpcGenVersions, error) {
+	versions := strings.Split(header, ";")
+	if len(versions) < 3 {
+		return nil, fmt.Errorf("expected at least 3 parts while parsing webrpc header: %v", header)
+	}
+
+	_, webrpcGenVersion, ok := strings.Cut(versions[0], "@")
+	if !ok {
+		return nil, fmt.Errorf("webrpc gen version could not be parsed from: %s", versions[0])
+	}
+
+	tmplTarget, tmplVersion, ok := strings.Cut(versions[1], "@")
+	if !ok {
+		return nil, fmt.Errorf("tmplTarget and tmplVersion could not be parsed from: %s", versions[1])
+	}
+
+	schemaName, schemaVersion, ok := strings.Cut(versions[2], "@")
+	if !ok {
+		return nil, fmt.Errorf("schema name and schema version could not be parsed from: %s", versions[2])
+	}
+
+	return &WebrpcGenVersions{
+		WebrpcGenVersion: webrpcGenVersion,
+		CodeGenName:      tmplTarget,
+		CodeGenVersion:   tmplVersion,
+		SchemaName:       schemaName,
+		SchemaVersion:    schemaVersion,
+	}, nil
+}
+
+var WebRPCServices = map[string][]string{
+	"Example": {
+		"Ping",
+		"Status",
+		"Version",
+		"GetUser",
+		"FindUser",
+		"LogEvent",
+		"GetArticle",
+		"StreamNewArticles",
+	},
+}
+
+// Opinionated configuration for -json=sonic encoding.
+// Reference: https://github.com/bytedance/sonic/blob/main/api.go
+var jsonCfg = sonic.Config{
+	NoNullSliceOrMap:        true, // Encode nil slices/maps as '[]'/'{}' instead of 'null' to prevent runtime issues in JavaScript.
+	NoValidateJSONMarshaler: true, // Skip validation of JSON output from types implementing json.Marshaler to enhance performance.
+	NoValidateJSONSkip:      true, // Bypass validation when skipping over JSON values during decoding, improving efficiency.
+}.Froze()

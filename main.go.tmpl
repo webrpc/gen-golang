@@ -175,4 +175,10 @@ func parseWebrpcGenVersions(header string) (*WebrpcGenVersions, error) {
 
 {{ template "errors" dict "WebrpcErrors" .WebrpcErrors "SchemaErrors" .Errors "Opts" $opts "TypePrefix" $typePrefix }}
 
+//
+// Webrpc
+//
+
+{{ template "jsonEncoders" dict "Opts" $opts }}
+
 {{- end }}
