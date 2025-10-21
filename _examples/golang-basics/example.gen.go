@@ -63,6 +63,10 @@ type ExampleClient interface {
 	StreamNewArticles(ctx context.Context) (StreamNewArticlesStreamReader, error)
 }
 
+type StreamNewArticlesStreamReader interface {
+	Read() (getArticleResponse *GetArticleResponse, err error)
+}
+
 //
 // Server interface
 //
@@ -86,6 +90,71 @@ type ExampleServer interface {
 	GetArticle(ctx context.Context, getArticleRequest GetArticleRequest) (*GetArticleResponse, error)
 	// Streaming article endpoint
 	StreamNewArticles(ctx context.Context, stream StreamNewArticlesStreamWriter) error
+}
+
+type StreamNewArticlesStreamWriter interface {
+	Write(getArticleResponse *GetArticleResponse) error
+}
+
+type streamNewArticlesStreamWriter struct {
+	streamWriter
+}
+
+func (w *streamNewArticlesStreamWriter) Write(getArticleResponse *GetArticleResponse) error {
+	out := struct {
+		Ret0 *GetArticleResponse `json:"response"`
+	}{
+		Ret0: getArticleResponse,
+	}
+
+	return w.streamWriter.write(out)
+}
+
+type streamWriter struct {
+	mu sync.Mutex // Guards concurrent writes to w.
+	w  http.ResponseWriter
+	f  http.Flusher
+	e  jsonEncoder
+
+	sendError func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
+}
+
+type jsonEncoder interface {
+	Encode(v any) error
+}
+
+const StreamKeepAliveInterval = 10 * time.Second
+
+func (w *streamWriter) keepAlive(ctx context.Context) {
+	for {
+		select {
+		case <-time.After(StreamKeepAliveInterval):
+			err := w.ping()
+			if err != nil {
+				return
+			}
+		case <-ctx.Done():
+			return
+		}
+	}
+}
+
+func (w *streamWriter) ping() error {
+	w.mu.Lock()
+	_, err := w.w.Write([]byte("\n"))
+	w.f.Flush()
+	w.mu.Unlock()
+
+	return err
+}
+
+func (w *streamWriter) write(respPayload interface{}) error {
+	w.mu.Lock()
+	err := w.e.Encode(respPayload)
+	w.f.Flush()
+	w.mu.Unlock()
+
+	return err
 }
 
 //
@@ -230,81 +299,69 @@ type GetArticleResponse struct {
 	Content *string `json:"content,omitempty"`
 }
 
-//
-// Streaming client types
-//
-
-type StreamNewArticlesStreamReader interface {
-	Read() (getArticleResponse *GetArticleResponse, err error)
+var methods = map[string]method{
+	"/rpc/Example/Ping": {
+		name:        "Ping",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/Status": {
+		name:        "Status",
+		service:     "Example",
+		annotations: map[string]string{"internal": ""},
+	},
+	"/rpc/Example/Version": {
+		name:        "Version",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/GetUser": {
+		name:        "GetUser",
+		service:     "Example",
+		annotations: map[string]string{"deprecated": ""},
+	},
+	"/rpc/Example/FindUser": {
+		name:        "FindUser",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/LogEvent": {
+		name:        "LogEvent",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/GetArticle": {
+		name:        "GetArticle",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/StreamNewArticles": {
+		name:        "StreamNewArticles",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
 }
 
-//
-// Streaming server types
-//
-
-type StreamNewArticlesStreamWriter interface {
-	Write(getArticleResponse *GetArticleResponse) error
-}
-
-type streamNewArticlesStreamWriter struct {
-	streamWriter
-}
-
-func (w *streamNewArticlesStreamWriter) Write(getArticleResponse *GetArticleResponse) error {
-	out := struct {
-		Ret0 *GetArticleResponse `json:"response"`
-	}{
-		Ret0: getArticleResponse,
+func WebrpcMethods() map[string]method {
+	res := make(map[string]method, len(methods))
+	for k, v := range methods {
+		res[k] = v
 	}
 
-	return w.streamWriter.write(out)
+	return res
 }
 
-type streamWriter struct {
-	mu sync.Mutex // Guards concurrent writes to w.
-	w  http.ResponseWriter
-	f  http.Flusher
-	e  jsonEncoder
-
-	sendError func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
-}
-
-type jsonEncoder interface {
-	Encode(v any) error
-}
-
-const StreamKeepAliveInterval = 10 * time.Second
-
-func (w *streamWriter) keepAlive(ctx context.Context) {
-	for {
-		select {
-		case <-time.After(StreamKeepAliveInterval):
-			err := w.ping()
-			if err != nil {
-				return
-			}
-		case <-ctx.Done():
-			return
-		}
-	}
-}
-
-func (w *streamWriter) ping() error {
-	w.mu.Lock()
-	_, err := w.w.Write([]byte("\n"))
-	w.f.Flush()
-	w.mu.Unlock()
-
-	return err
-}
-
-func (w *streamWriter) write(respPayload interface{}) error {
-	w.mu.Lock()
-	err := w.e.Encode(respPayload)
-	w.f.Flush()
-	w.mu.Unlock()
-
-	return err
+var WebRPCServices = map[string][]string{
+	"Example": {
+		"Ping",
+		"Status",
+		"Version",
+		"GetUser",
+		"FindUser",
+		"LogEvent",
+		"GetArticle",
+		"StreamNewArticles",
+	},
 }
 
 //
@@ -534,182 +591,8 @@ func (r *streamReader) handleReadError(err error) error {
 }
 
 //
-// Client helpers
-//
-
-// HTTPClient is the interface used by generated clients to send HTTP requests.
-// It is fulfilled by *(net/http).Client, which is sufficient for most users.
-// Users can provide their own implementation for special retry policies.
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
-
-// urlBase helps ensure that addr specifies a scheme. If it is unparsable
-// as a URL, it returns addr unchanged.
-func urlBase(addr string) string {
-	// If the addr specifies a scheme, use it. If not, default to
-	// http. If url.Parse fails on it, return it unchanged.
-	url, err := url.Parse(addr)
-	if err != nil {
-		return addr
-	}
-	if url.Scheme == "" {
-		url.Scheme = "http"
-	}
-	return url.String()
-}
-
-// newRequest makes an http.Request from a client, adding common headers.
-func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType string) (*http.Request, error) {
-	req, err := http.NewRequestWithContext(ctx, "POST", url, reqBody)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", contentType)
-	req.Header.Set("Content-Type", contentType)
-	req.Header.Set(WebrpcHeader, WebrpcHeaderValue)
-	if headers, ok := HTTPRequestHeaders(ctx); ok {
-		for k := range headers {
-			for _, v := range headers[k] {
-				req.Header.Add(k, v)
-			}
-		}
-	}
-	return req, nil
-}
-
-// doHTTPRequest is common code to make a request to the remote service.
-func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
-	reqBody, err := jsonCfg.Marshal(in)
-	if err != nil {
-		return nil, ErrWebrpcRequestFailed.WithCausef("failed to marshal JSON body: %w", err)
-	}
-	if err = ctx.Err(); err != nil {
-		return nil, ErrWebrpcRequestFailed.WithCausef("aborted because context was done: %w", err)
-	}
-
-	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
-	if err != nil {
-		return nil, ErrWebrpcRequestFailed.WithCausef("could not build request: %w", err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, ErrWebrpcRequestFailed.WithCause(err)
-	}
-
-	if resp.StatusCode != 200 {
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, ErrWebrpcBadResponse.WithCausef("failed to read server error response body: %w", err)
-		}
-
-		var rpcErr WebRPCError
-		if err := jsonCfg.Unmarshal(respBody, &rpcErr); err != nil {
-			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal server error: %w", err)
-		}
-		if rpcErr.Cause != "" {
-			rpcErr.cause = errors.New(rpcErr.Cause)
-		}
-		return nil, rpcErr
-	}
-
-	if out != nil {
-		respBody, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, ErrWebrpcBadResponse.WithCausef("failed to read response body: %w", err)
-		}
-
-		err = jsonCfg.Unmarshal(respBody, &out)
-		if err != nil {
-			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal JSON response body: %w", err)
-		}
-	}
-
-	return resp, nil
-}
-
-func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {
-	if _, ok := h["Accept"]; ok {
-		return nil, errors.New("provided header cannot set Accept")
-	}
-	if _, ok := h["Content-Type"]; ok {
-		return nil, errors.New("provided header cannot set Content-Type")
-	}
-
-	copied := make(http.Header, len(h))
-	for k, vv := range h {
-		if vv == nil {
-			copied[k] = nil
-			continue
-		}
-		copied[k] = make([]string, len(vv))
-		copy(copied[k], vv)
-	}
-
-	return context.WithValue(ctx, HTTPClientRequestHeadersCtxKey, copied), nil
-}
-
-func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
-	h, ok := ctx.Value(HTTPClientRequestHeadersCtxKey).(http.Header)
-	return h, ok
-}
-
-//
 // Server
 //
-
-func WebrpcMethods() map[string]method {
-	res := make(map[string]method, len(methods))
-	for k, v := range methods {
-		res[k] = v
-	}
-
-	return res
-}
-
-var methods = map[string]method{
-	"/rpc/Example/Ping": {
-		name:        "Ping",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/Status": {
-		name:        "Status",
-		service:     "Example",
-		annotations: map[string]string{"internal": ""},
-	},
-	"/rpc/Example/Version": {
-		name:        "Version",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/GetUser": {
-		name:        "GetUser",
-		service:     "Example",
-		annotations: map[string]string{"deprecated": ""},
-	},
-	"/rpc/Example/FindUser": {
-		name:        "FindUser",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/LogEvent": {
-		name:        "LogEvent",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/GetArticle": {
-		name:        "GetArticle",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/StreamNewArticles": {
-		name:        "StreamNewArticles",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-}
 
 type WebRPCServer interface {
 	http.Handler
@@ -1112,7 +995,129 @@ func RespondWithError(w http.ResponseWriter, err error) {
 }
 
 //
-// Webrpc helpers
+// Client helpers
+//
+
+// HTTPClient is the interface used by generated clients to send HTTP requests.
+// It is fulfilled by *(net/http).Client, which is sufficient for most users.
+// Users can provide their own implementation for special retry policies.
+type HTTPClient interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// urlBase helps ensure that addr specifies a scheme. If it is unparsable
+// as a URL, it returns addr unchanged.
+func urlBase(addr string) string {
+	// If the addr specifies a scheme, use it. If not, default to
+	// http. If url.Parse fails on it, return it unchanged.
+	url, err := url.Parse(addr)
+	if err != nil {
+		return addr
+	}
+	if url.Scheme == "" {
+		url.Scheme = "http"
+	}
+	return url.String()
+}
+
+// newRequest makes an http.Request from a client, adding common headers.
+func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType string) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, "POST", url, reqBody)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", contentType)
+	req.Header.Set("Content-Type", contentType)
+	req.Header.Set(WebrpcHeader, WebrpcHeaderValue)
+	if headers, ok := HTTPRequestHeaders(ctx); ok {
+		for k := range headers {
+			for _, v := range headers[k] {
+				req.Header.Add(k, v)
+			}
+		}
+	}
+	return req, nil
+}
+
+// doHTTPRequest is common code to make a request to the remote service.
+func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
+	reqBody, err := jsonCfg.Marshal(in)
+	if err != nil {
+		return nil, ErrWebrpcRequestFailed.WithCausef("failed to marshal JSON body: %w", err)
+	}
+	if err = ctx.Err(); err != nil {
+		return nil, ErrWebrpcRequestFailed.WithCausef("aborted because context was done: %w", err)
+	}
+
+	req, err := newRequest(ctx, url, bytes.NewBuffer(reqBody), "application/json")
+	if err != nil {
+		return nil, ErrWebrpcRequestFailed.WithCausef("could not build request: %w", err)
+	}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, ErrWebrpcRequestFailed.WithCause(err)
+	}
+
+	if resp.StatusCode != 200 {
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, ErrWebrpcBadResponse.WithCausef("failed to read server error response body: %w", err)
+		}
+
+		var rpcErr WebRPCError
+		if err := jsonCfg.Unmarshal(respBody, &rpcErr); err != nil {
+			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal server error: %w", err)
+		}
+		if rpcErr.Cause != "" {
+			rpcErr.cause = errors.New(rpcErr.Cause)
+		}
+		return nil, rpcErr
+	}
+
+	if out != nil {
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, ErrWebrpcBadResponse.WithCausef("failed to read response body: %w", err)
+		}
+
+		err = jsonCfg.Unmarshal(respBody, &out)
+		if err != nil {
+			return nil, ErrWebrpcBadResponse.WithCausef("failed to unmarshal JSON response body: %w", err)
+		}
+	}
+
+	return resp, nil
+}
+
+func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context, error) {
+	if _, ok := h["Accept"]; ok {
+		return nil, errors.New("provided header cannot set Accept")
+	}
+	if _, ok := h["Content-Type"]; ok {
+		return nil, errors.New("provided header cannot set Content-Type")
+	}
+
+	copied := make(http.Header, len(h))
+	for k, vv := range h {
+		if vv == nil {
+			copied[k] = nil
+			continue
+		}
+		copied[k] = make([]string, len(vv))
+		copy(copied[k], vv)
+	}
+
+	return context.WithValue(ctx, HTTPClientRequestHeadersCtxKey, copied), nil
+}
+
+func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
+	h, ok := ctx.Value(HTTPClientRequestHeadersCtxKey).(http.Header)
+	return h, ok
+}
+
+//
+// Helpers
 //
 
 type method struct {
@@ -1239,11 +1244,6 @@ func (e WebRPCError) WithCausef(format string, args ...interface{}) WebRPCError 
 	return err
 }
 
-// Deprecated: Use .WithCause() method on WebRPCError.
-func ErrorWithCause(rpcErr WebRPCError, cause error) WebRPCError {
-	return rpcErr.WithCause(cause)
-}
-
 // Webrpc errors
 var (
 	ErrWebrpcEndpoint       = WebRPCError{Code: 0, Name: "WebrpcEndpoint", Message: "endpoint error", HTTPStatus: 400}
@@ -1325,19 +1325,6 @@ func parseWebrpcGenVersions(header string) (*WebrpcGenVersions, error) {
 		SchemaName:       schemaName,
 		SchemaVersion:    schemaVersion,
 	}, nil
-}
-
-var WebRPCServices = map[string][]string{
-	"Example": {
-		"Ping",
-		"Status",
-		"Version",
-		"GetUser",
-		"FindUser",
-		"LogEvent",
-		"GetArticle",
-		"StreamNewArticles",
-	},
 }
 
 // Opinionated configuration for -json=sonic encoding.
