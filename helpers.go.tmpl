@@ -78,6 +78,9 @@ func MethodCtx(ctx context.Context) (method, bool) {
 	return m, true
 }
 
+// PtrTo is a useful helper when constructing values for optional fields.
+func PtrTo[T any](v T) *T { return &v }
+
 {{ if $opts.server}}
 func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
 	w, _ := ctx.Value(HTTPResponseWriterCtxKey).(http.ResponseWriter)

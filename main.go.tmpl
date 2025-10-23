@@ -48,6 +48,7 @@
 {{- set $typeMap "uint16" "uint16" -}}
 {{- set $typeMap "uint32" "uint32" -}}
 {{- set $typeMap "uint64" "uint64" -}}
+{{- set $typeMap "bigint" "BigInt" -}}
 {{- set $typeMap "int" "int" -}}
 {{- set $typeMap "int8" "int8" -}}
 {{- set $typeMap "int16" "int16" -}}
@@ -57,6 +58,8 @@
 {{- set $typeMap "float64" "float64" -}}
 {{- set $typeMap "string" "string" -}}
 {{- set $typeMap "timestamp" "time.Time" -}}
+
+{{- $usesBigInts := SchemaBigIntFieldsByType .WebRPCSchema -}}
 
 {{/* INIT */}}
 {{- $typePrefix := (last (split "/" $opts.importTypesFrom)) -}}
@@ -148,6 +151,10 @@ func WebRPCSchemaHash() string {
 
 
 {{ template "helpers" dict "Opts" $opts }}
+
+{{- if $usesBigInts}}
+{{ template "bigintHelpers" dict "Schema" .WebRPCSchema "Services" .Services "Opts" $opts }}
+{{ end -}}
 
 {{/* Errors */}}
 {{ template "errors" dict "WebrpcErrors" .WebrpcErrors "SchemaErrors" .Errors "Opts" $opts "TypePrefix" $typePrefix }}
