@@ -59,6 +59,8 @@
 {{- set $typeMap "string" "string" -}}
 {{- set $typeMap "timestamp" "time.Time" -}}
 
+{{- $usesBigInts := SchemaBigIntFieldsByType .WebRPCSchema -}}
+
 {{/* INIT */}}
 {{- $typePrefix := (last (split "/" $opts.importTypesFrom)) -}}
 {{- if ne $typePrefix "" -}}
@@ -150,8 +152,9 @@ func WebRPCSchemaHash() string {
 
 {{ template "helpers" dict "Opts" $opts }}
 
+{{- if $usesBigInts}}
 {{ template "bigintHelpers" dict "Schema" .WebRPCSchema "Services" .Services "Opts" $opts }}
-
+{{ end -}}
 
 {{/* Errors */}}
 {{ template "errors" dict "WebrpcErrors" .WebrpcErrors "SchemaErrors" .Errors "Opts" $opts "TypePrefix" $typePrefix }}
