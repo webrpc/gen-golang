@@ -1,6 +1,29 @@
 {{define "webrpcMethods"}}
 {{- $services := .Services -}}
 
+type method struct  {
+	name string
+	service string
+	annotations map[string]string
+}
+
+func (m method) Name() string {
+    return m.name
+}
+
+func (m method) Service() string {
+    return m.service
+}
+
+func (m method) Annotations() map[string]string {
+    res := make(map[string]string, len(m.annotations))
+	for k, v := range m.annotations {
+		res[k] = v
+	}
+
+	return res
+}
+
 var methods = map[string]method{
 	{{- range $_, $service := $services -}}
 	{{- range $_, $method := $service.Methods }}
@@ -11,6 +34,20 @@ var methods = map[string]method{
 	},
 	{{- end -}}
     {{ end }}
+}
+
+func MethodCtx(ctx context.Context) (method, bool) {
+	req := RequestFromContext(ctx)
+	if req == nil {
+		return method{}, false
+	}
+
+	m, ok := methods[req.URL.Path]
+	if !ok {
+		return method{}, false
+	}
+
+	return m, true
 }
 
 func WebrpcMethods() map[string]method {
