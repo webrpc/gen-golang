@@ -103,41 +103,6 @@ func (x *Location) Is(values ...Location) bool {
 	return false
 }
 
-var methods = map[string]method{
-	"/rpc/ExampleAPI/Ping": {
-		name:        "Ping",
-		service:     "ExampleAPI",
-		annotations: map[string]string{},
-	},
-	"/rpc/ExampleAPI/Status": {
-		name:        "Status",
-		service:     "ExampleAPI",
-		annotations: map[string]string{},
-	},
-	"/rpc/ExampleAPI/GetUsers": {
-		name:        "GetUsers",
-		service:     "ExampleAPI",
-		annotations: map[string]string{},
-	},
-}
-
-func WebrpcMethods() map[string]method {
-	res := make(map[string]method, len(methods))
-	for k, v := range methods {
-		res[k] = v
-	}
-
-	return res
-}
-
-var WebRPCServices = map[string][]string{
-	"ExampleAPI": {
-		"Ping",
-		"Status",
-		"GetUsers",
-	},
-}
-
 //
 // Client
 //
@@ -391,6 +356,41 @@ func RespondWithError(w http.ResponseWriter, err error) {
 
 	respBody, _ := json.Marshal(rpcErr)
 	w.Write(respBody)
+}
+
+var methods = map[string]method{
+	"/rpc/ExampleAPI/Ping": {
+		name:        "Ping",
+		service:     "ExampleAPI",
+		annotations: map[string]string{},
+	},
+	"/rpc/ExampleAPI/Status": {
+		name:        "Status",
+		service:     "ExampleAPI",
+		annotations: map[string]string{},
+	},
+	"/rpc/ExampleAPI/GetUsers": {
+		name:        "GetUsers",
+		service:     "ExampleAPI",
+		annotations: map[string]string{},
+	},
+}
+
+func WebrpcMethods() map[string]method {
+	res := make(map[string]method, len(methods))
+	for k, v := range methods {
+		res[k] = v
+	}
+
+	return res
+}
+
+var WebRPCServices = map[string][]string{
+	"ExampleAPI": {
+		"Ping",
+		"Status",
+		"GetUsers",
+	},
 }
 
 //
@@ -665,10 +665,6 @@ var (
 	ErrWebrpcStreamLost     = WebRPCError{Code: -9, Name: "WebrpcStreamLost", Message: "stream lost", HTTPStatus: 400}
 	ErrWebrpcStreamFinished = WebRPCError{Code: -10, Name: "WebrpcStreamFinished", Message: "stream finished", HTTPStatus: 200}
 )
-
-//
-// Webrpc
-//
 
 const WebrpcHeader = "Webrpc"
 

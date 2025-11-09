@@ -29,35 +29,4 @@
 
 {{- end }}
 
-var methods = map[string]method{
-	{{- range $_, $service := $services -}}
-	{{- range $_, $method := $service.Methods }}
-	"/rpc/{{$service.Name}}/{{$method.Name}}": {
-		name: "{{$method.Name}}",
-		service: "{{$service.Name}}",
-		annotations: map[string]string{ {{- range $_, $annotation := $method.Annotations -}}"{{$annotation.AnnotationType}}": "{{$annotation.Value}}", {{- end -}} },
-	},
-	{{- end -}}
-    {{ end }}
-}
-
-func WebrpcMethods() map[string]method {
-	res := make(map[string]method, len(methods))
-	for k, v := range methods {
-		res[k] = v
-	}
-
-	return res
-}
-
-var WebRPCServices = map[string][]string{
-{{- range $_, $service := $services}}
-	"{{$service.Name}}": {
-		{{- range $_, $method := $service.Methods}}
-		"{{$method.Name}}",
-		{{- end}}
-	},
-{{- end}}
-}
-
 {{- end -}}

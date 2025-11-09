@@ -299,71 +299,6 @@ type GetArticleResponse struct {
 	Content *string `json:"content,omitempty"`
 }
 
-var methods = map[string]method{
-	"/rpc/Example/Ping": {
-		name:        "Ping",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/Status": {
-		name:        "Status",
-		service:     "Example",
-		annotations: map[string]string{"internal": ""},
-	},
-	"/rpc/Example/Version": {
-		name:        "Version",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/GetUser": {
-		name:        "GetUser",
-		service:     "Example",
-		annotations: map[string]string{"deprecated": ""},
-	},
-	"/rpc/Example/FindUser": {
-		name:        "FindUser",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/LogEvent": {
-		name:        "LogEvent",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/GetArticle": {
-		name:        "GetArticle",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-	"/rpc/Example/StreamNewArticles": {
-		name:        "StreamNewArticles",
-		service:     "Example",
-		annotations: map[string]string{},
-	},
-}
-
-func WebrpcMethods() map[string]method {
-	res := make(map[string]method, len(methods))
-	for k, v := range methods {
-		res[k] = v
-	}
-
-	return res
-}
-
-var WebRPCServices = map[string][]string{
-	"Example": {
-		"Ping",
-		"Status",
-		"Version",
-		"GetUser",
-		"FindUser",
-		"LogEvent",
-		"GetArticle",
-		"StreamNewArticles",
-	},
-}
-
 //
 // Client
 //
@@ -994,6 +929,71 @@ func RespondWithError(w http.ResponseWriter, err error) {
 	w.Write(respBody)
 }
 
+var methods = map[string]method{
+	"/rpc/Example/Ping": {
+		name:        "Ping",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/Status": {
+		name:        "Status",
+		service:     "Example",
+		annotations: map[string]string{"internal": ""},
+	},
+	"/rpc/Example/Version": {
+		name:        "Version",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/GetUser": {
+		name:        "GetUser",
+		service:     "Example",
+		annotations: map[string]string{"deprecated": ""},
+	},
+	"/rpc/Example/FindUser": {
+		name:        "FindUser",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/LogEvent": {
+		name:        "LogEvent",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/GetArticle": {
+		name:        "GetArticle",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+	"/rpc/Example/StreamNewArticles": {
+		name:        "StreamNewArticles",
+		service:     "Example",
+		annotations: map[string]string{},
+	},
+}
+
+func WebrpcMethods() map[string]method {
+	res := make(map[string]method, len(methods))
+	for k, v := range methods {
+		res[k] = v
+	}
+
+	return res
+}
+
+var WebRPCServices = map[string][]string{
+	"Example": {
+		"Ping",
+		"Status",
+		"Version",
+		"GetUser",
+		"FindUser",
+		"LogEvent",
+		"GetArticle",
+		"StreamNewArticles",
+	},
+}
+
 //
 // Client helpers
 //
@@ -1275,10 +1275,6 @@ var (
 	ErrUnauthorized    = WebRPCError{Code: 400200, Name: "Unauthorized", Message: "unauthorized", HTTPStatus: 401}
 	ErrUserNotFound    = WebRPCError{Code: 400300, Name: "UserNotFound", Message: "user not found", HTTPStatus: 400}
 )
-
-//
-// Webrpc
-//
 
 const WebrpcHeader = "Webrpc"
 
