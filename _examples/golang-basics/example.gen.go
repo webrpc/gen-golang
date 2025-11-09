@@ -935,24 +935,11 @@ type method struct {
 	annotations map[string]string
 }
 
-func (m method) Name() string {
-	return m.name
-}
+func (m *method) Name() string                   { return m.name }
+func (m *method) Service() string                { return m.service }
+func (m *method) Annotations() map[string]string { return m.annotations }
 
-func (m method) Service() string {
-	return m.service
-}
-
-func (m method) Annotations() map[string]string {
-	res := make(map[string]string, len(m.annotations))
-	for k, v := range m.annotations {
-		res[k] = v
-	}
-
-	return res
-}
-
-var methods = map[string]method{
+var methods = map[string]*method{
 	"/rpc/Example/Ping": {
 		name:        "Ping",
 		service:     "Example",
@@ -995,27 +982,18 @@ var methods = map[string]method{
 	},
 }
 
-func MethodCtx(ctx context.Context) (method, bool) {
+func MethodCtx(ctx context.Context) (*method, bool) {
 	req := RequestFromContext(ctx)
 	if req == nil {
-		return method{}, false
+		return nil, false
 	}
 
 	m, ok := methods[req.URL.Path]
-	if !ok {
-		return method{}, false
-	}
-
-	return m, true
+	return m, ok
 }
 
-func WebrpcMethods() map[string]method {
-	res := make(map[string]method, len(methods))
-	for k, v := range methods {
-		res[k] = v
-	}
-
-	return res
+func WebrpcMethods() map[string]*method {
+	return methods
 }
 
 var WebRPCServices = map[string][]string{
