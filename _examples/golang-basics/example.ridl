@@ -98,6 +98,12 @@ struct GetArticleResponse
   - content?: string
     + go.tag.json = content,omitempty
 
+struct DeleteArticleRequest
+  - articleId: uint64
+    + go.field.name = ArticleID
+
+struct DeleteArticleResponse
+
 error 500100 MissingArgument "missing argument"
 error 500101 InvalidUsername "invalid username"
 error 400100 MemoryFull      "system memory is full"
@@ -123,8 +129,9 @@ service Example
   - FindUser(s: SearchFilter) => (name: string, user: User)
   - LogEvent(event: string)
 
-  # Article endpoint
+  # Article endpoints
   - GetArticle(GetArticleRequest) => (GetArticleResponse)
+  - DeleteArticle(DeleteArticleRequest) => (DeleteResponseResponse)
 
   # Streaming article endpoint
   - StreamNewArticles() => stream (GetArticleResponse)
