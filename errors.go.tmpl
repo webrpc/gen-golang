@@ -93,4 +93,28 @@ var (
 )
 {{ end -}}
 
+// Error mapping
+var (
+	ErrorsByName = map[string]*WebRPCError{
+{{- range $_, $error := $webrpcErrors}}
+		{{ printf "%q: &Err%s," $error.Name $error.Name }}
+{{- end}}
+{{- if len $schemaErrors }}
+{{- range $_, $error := $schemaErrors}}
+		{{ printf "%q: &Err%s," $error.Name $error.Name }}
+{{- end}}
+{{- end}}
+	}
+	ErrorsByCode = map[int]*WebRPCError{
+{{- range $_, $error := $webrpcErrors}}
+		{{ printf "%d: &Err%s," $error.Code $error.Name }}
+{{- end}}
+{{- if len $schemaErrors }}
+{{- range $_, $error := $schemaErrors}}
+		{{ printf "%d: &Err%s," $error.Code $error.Name }}
+{{- end}}
+{{- end}}
+	}
+)
+
 {{- end -}}

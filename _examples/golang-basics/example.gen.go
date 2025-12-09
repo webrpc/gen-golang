@@ -1257,6 +1257,46 @@ var (
 	ErrUserNotFound    = WebRPCError{Code: 400300, Name: "UserNotFound", Message: "user not found", HTTPStatus: 400}
 )
 
+// Error mapping
+var (
+	ErrorsByName = map[string]*WebRPCError{
+		"WebrpcEndpoint":       &ErrWebrpcEndpoint,
+		"WebrpcRequestFailed":  &ErrWebrpcRequestFailed,
+		"WebrpcBadRoute":       &ErrWebrpcBadRoute,
+		"WebrpcBadMethod":      &ErrWebrpcBadMethod,
+		"WebrpcBadRequest":     &ErrWebrpcBadRequest,
+		"WebrpcBadResponse":    &ErrWebrpcBadResponse,
+		"WebrpcServerPanic":    &ErrWebrpcServerPanic,
+		"WebrpcInternalError":  &ErrWebrpcInternalError,
+		"WebrpcClientAborted":  &ErrWebrpcClientAborted,
+		"WebrpcStreamLost":     &ErrWebrpcStreamLost,
+		"WebrpcStreamFinished": &ErrWebrpcStreamFinished,
+		"MissingArgument":      &ErrMissingArgument,
+		"InvalidUsername":      &ErrInvalidUsername,
+		"MemoryFull":           &ErrMemoryFull,
+		"Unauthorized":         &ErrUnauthorized,
+		"UserNotFound":         &ErrUserNotFound,
+	}
+	ErrorsByCode = map[int]*WebRPCError{
+		0:      &ErrWebrpcEndpoint,
+		-1:     &ErrWebrpcRequestFailed,
+		-2:     &ErrWebrpcBadRoute,
+		-3:     &ErrWebrpcBadMethod,
+		-4:     &ErrWebrpcBadRequest,
+		-5:     &ErrWebrpcBadResponse,
+		-6:     &ErrWebrpcServerPanic,
+		-7:     &ErrWebrpcInternalError,
+		-8:     &ErrWebrpcClientAborted,
+		-9:     &ErrWebrpcStreamLost,
+		-10:    &ErrWebrpcStreamFinished,
+		500100: &ErrMissingArgument,
+		500101: &ErrInvalidUsername,
+		400100: &ErrMemoryFull,
+		400200: &ErrUnauthorized,
+		400300: &ErrUserNotFound,
+	}
+)
+
 const WebrpcHeader = "Webrpc"
 
 const WebrpcHeaderValue = "webrpc@v0.29.1-0.20251023011239-8943a04291e3;gen-golang@unknown;example@v0.0.1"

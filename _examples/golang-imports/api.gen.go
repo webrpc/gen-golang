@@ -645,6 +645,34 @@ var (
 	ErrWebrpcClientAborted  = WebRPCError{Code: -8, Name: "WebrpcClientAborted", Message: "request aborted by client", HTTPStatus: 400}
 	ErrWebrpcStreamLost     = WebRPCError{Code: -9, Name: "WebrpcStreamLost", Message: "stream lost", HTTPStatus: 400}
 	ErrWebrpcStreamFinished = WebRPCError{Code: -10, Name: "WebrpcStreamFinished", Message: "stream finished", HTTPStatus: 200}
+) // Error mapping
+var (
+	ErrorsByName = map[string]*WebRPCError{
+		"WebrpcEndpoint":       &ErrWebrpcEndpoint,
+		"WebrpcRequestFailed":  &ErrWebrpcRequestFailed,
+		"WebrpcBadRoute":       &ErrWebrpcBadRoute,
+		"WebrpcBadMethod":      &ErrWebrpcBadMethod,
+		"WebrpcBadRequest":     &ErrWebrpcBadRequest,
+		"WebrpcBadResponse":    &ErrWebrpcBadResponse,
+		"WebrpcServerPanic":    &ErrWebrpcServerPanic,
+		"WebrpcInternalError":  &ErrWebrpcInternalError,
+		"WebrpcClientAborted":  &ErrWebrpcClientAborted,
+		"WebrpcStreamLost":     &ErrWebrpcStreamLost,
+		"WebrpcStreamFinished": &ErrWebrpcStreamFinished,
+	}
+	ErrorsByCode = map[int]*WebRPCError{
+		0:   &ErrWebrpcEndpoint,
+		-1:  &ErrWebrpcRequestFailed,
+		-2:  &ErrWebrpcBadRoute,
+		-3:  &ErrWebrpcBadMethod,
+		-4:  &ErrWebrpcBadRequest,
+		-5:  &ErrWebrpcBadResponse,
+		-6:  &ErrWebrpcServerPanic,
+		-7:  &ErrWebrpcInternalError,
+		-8:  &ErrWebrpcClientAborted,
+		-9:  &ErrWebrpcStreamLost,
+		-10: &ErrWebrpcStreamFinished,
+	}
 )
 
 const WebrpcHeader = "Webrpc"
