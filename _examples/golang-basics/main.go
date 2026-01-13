@@ -80,7 +80,7 @@ func (rpc *ExampleServiceRPC) Version(ctx context.Context) (*Version, error) {
 	}, nil
 }
 
-func (s *ExampleServiceRPC) GetUser(ctx context.Context, header map[string]string, userID uint64) (*User, error) {
+func (s *ExampleServiceRPC) GetUser(ctx context.Context, header map[string]string, _type string, userID uint64) (*User, error) {
 	if userID == 911 {
 		return nil, ErrUserNotFound.WithCausef("unknown user id %d", userID)
 	}

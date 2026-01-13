@@ -51,13 +51,13 @@ func TestVersion(t *testing.T) {
 func TestGetUser(t *testing.T) {
 	{
 		arg1 := map[string]string{"a": "1"}
-		user, err := client.GetUser(context.Background(), arg1, 12)
+		user, err := client.GetUser(context.Background(), arg1, "a", 12)
 		assert.Equal(t, &User{ID: 12, Username: "hihi", Nicknames: []Nickname{}}, user)
 		assert.NoError(t, err)
 	}
 
 	{ // userID == 911, expect not found err
-		user, err := client.GetUser(context.Background(), nil, 911)
+		user, err := client.GetUser(context.Background(), nil, "a", 911)
 		assert.Nil(t, user)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, ErrUserNotFound)
@@ -70,14 +70,14 @@ func TestGetUser(t *testing.T) {
 	}
 
 	{ // userID == 31337, expect unauthorized
-		user, err := client.GetUser(context.Background(), nil, 31337)
+		user, err := client.GetUser(context.Background(), nil, "a", 31337)
 		assert.Nil(t, user)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, ErrUnauthorized)
 	}
 
 	{ // userID == 666, expect panic
-		user, err := client.GetUser(context.Background(), nil, 666)
+		user, err := client.GetUser(context.Background(), nil, "a", 666)
 		assert.Nil(t, user)
 		assert.Error(t, err)
 		assert.ErrorIs(t, err, ErrWebrpcServerPanic)
