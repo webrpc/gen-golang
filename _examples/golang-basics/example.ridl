@@ -119,7 +119,7 @@ service Example
   #
   # gives you basic info about user
   @deprecated
-  - GetUser(header: map<string,string>, userID: uint64) => (user: User)
+  - GetUser(header: map<string,string>, type: string, userID: uint64) => (user: User)
   - FindUser(s: SearchFilter) => (name: string, user: User)
   - LogEvent(event: string)
 
