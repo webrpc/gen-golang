@@ -1,5 +1,6 @@
 {{- define "serverInterface"}}
 {{- $services := .Services -}}
+{{- $keywordMap := .KeywordMap -}}
 {{- $typeMap := .TypeMap -}}
 {{- $typePrefix := .TypePrefix -}}
 {{- $json := .Json -}}
@@ -27,9 +28,9 @@ type {{$service.Name}}Server interface {
 	// Deprecated: {{ $deprecated.Value }}
 	{{- end }}
 	{{ if eq $method.StreamOutput true -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}, stream {{$method.Name}}StreamWriter) error
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}, stream {{$method.Name}}StreamWriter) error
 	{{- else -}}
-	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
+	{{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}} {{template "field" dict "Name" $input.Name "Type" $input.Type "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Optional" $input.Optional "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len .Outputs}}({{end}}{{range $i, $output := .Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Optional" $output.Optional "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}}
 	{{- end -}}
 
 	{{- end}}
@@ -39,7 +40,7 @@ type {{$service.Name}}Server interface {
 {{- range $_, $method := $service.Methods }}
 {{ if eq $method.StreamOutput true -}}
 type {{$method.Name}}StreamWriter interface {
-	Write({{range $i, $output := $method.Outputs}}{{if gt $i 0}}, {{end}}{{$output.Name}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{end}}) error
+	Write({{range $i, $output := $method.Outputs}}{{if gt $i 0}}, {{end}}{{$output.Name}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{end}}) error
 }
 {{ end }}
 {{- end }}
@@ -50,13 +51,13 @@ type {{firstLetterToLower $method.Name}}StreamWriter struct {
 	streamWriter
 }
 
-func (w *{{firstLetterToLower $method.Name}}StreamWriter) Write({{range $i, $output := $method.Outputs}}{{if gt $i 0}}, {{end}}{{$output.Name}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{end}}) error {
+func (w *{{firstLetterToLower $method.Name}}StreamWriter) Write({{range $i, $output := $method.Outputs}}{{if gt $i 0}}, {{end}}{{$output.Name}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{end}}) error {
 	out := struct {
 	{{- range $i, $output := $method.Outputs}}
 		{{- if $method.Succinct -}}
-		Ret0 {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" false}} `json:"response"`
+		Ret0 {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" false}} `json:"response"`
 		{{- else -}}
-		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
+		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
 		{{- end -}}
 	{{- end}}
 	}{

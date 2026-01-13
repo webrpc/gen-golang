@@ -3,6 +3,7 @@
 {{- $type := .Type -}}
 {{- $name := (coalesce .Name "") -}}
 {{- $fieldName := $name | firstLetterToUpper -}}
+{{- $keywordMap := .KeywordMap -}}
 {{- $typePrefix := .TypePrefix -}}
 {{- $typeMeta := .TypeMeta -}}
 {{- $typeMap := .TypeMap -}}
@@ -42,11 +43,11 @@
 
 {{- else if isMapType $type -}}
 
-    map[{{mapKeyType $type}}]{{template "field" dict "Name" $name "Type" (mapValueType $type) "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $typeMeta}}
+    map[{{mapKeyType $type}}]{{template "field" dict "Name" $name "Type" (mapValueType $type) "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $typeMeta}}
 
 {{- else if isListType $type -}}
 
-    []{{template "field" dict "Name" $name "Type" (listElemType $type) "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $typeMeta}}
+    []{{template "field" dict "Name" $name "Type" (listElemType $type) "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $typeMeta}}
 
 {{- else if isCoreType $type -}}
     {{if $optional}}*{{end}}{{ get $typeMap $type }}

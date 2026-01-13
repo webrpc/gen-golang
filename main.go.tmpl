@@ -37,6 +37,34 @@
   {{- exit 1 -}}
 {{- end -}}
 
+{{- /* Maps Go keywords. */ -}}
+{{- $keywordMap := dict -}}
+{{- set $keywordMap "type" true -}}
+{{- set $keywordMap "case" true -}}
+{{- set $keywordMap "chan" true -}}
+{{- set $keywordMap "const" true -}}
+{{- set $keywordMap "continue" true -}}
+{{- set $keywordMap "default" true -}}
+{{- set $keywordMap "defer" true -}}
+{{- set $keywordMap "else" true -}}
+{{- set $keywordMap "fallthrough" true -}}
+{{- set $keywordMap "for" true -}}
+{{- set $keywordMap "func" true -}}
+{{- set $keywordMap "go" true -}}
+{{- set $keywordMap "goto" true -}}
+{{- set $keywordMap "if" true -}}
+{{- set $keywordMap "import" true -}}
+{{- set $keywordMap "interface" true -}}
+{{- set $keywordMap "map" true -}}
+{{- set $keywordMap "package" true -}}
+{{- set $keywordMap "range" true -}}
+{{- set $keywordMap "return" true -}}
+{{- set $keywordMap "select" true -}}
+{{- set $keywordMap "struct" true -}}
+{{- set $keywordMap "switch" true -}}
+{{- set $keywordMap "type" true -}}
+{{- set $keywordMap "var" true -}}
+
 {{- /* Map webrpc core types to Go. */ -}}
 {{- $typeMap := dict -}}
 {{- set $typeMap "null" "struct{}" -}}
@@ -58,6 +86,8 @@
 {{- set $typeMap "float64" "float64" -}}
 {{- set $typeMap "string" "string" -}}
 {{- set $typeMap "timestamp" "time.Time" -}}
+
+{{- /* Determine if BigInt helpers are needed. */ -}}
 
 {{- $usesBigInts := SchemaBigIntFieldsByType .WebRPCSchema -}}
 
@@ -116,35 +146,35 @@ func WebRPCSchemaHash() string {
 
 {{/* Client interface */}}
 {{ if $opts.client }}
-{{ template "clientInterface" dict "Services" .Services "TypeMap" $typeMap "Json" $json "Opts" $opts "TypePrefix" $typePrefix }}
+{{ template "clientInterface" dict "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "Json" $json "Opts" $opts "TypePrefix" $typePrefix }}
 {{ end -}}
 
 {{- "\n" -}}
 
 {{/* Server interface */}}
 {{- if $opts.server }}
-{{ template "serverInterface" dict "Services" .Services "TypeMap" $typeMap "TypePrefix" $typePrefix "Json" $json "Opts" $opts }}
+{{ template "serverInterface" dict "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Json" $json "Opts" $opts }}
 {{ end -}}
 
 {{- "\n" -}}
 
 {{/* Schema types */}}
 {{- if eq $opts.importTypesFrom "" }}
-{{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "TypePrefix" $typePrefix "Opts" $opts }}
+{{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Opts" $opts }}
 {{ end -}}
 
 {{- "\n" -}}
 
 {{/* Client */}}
 {{- if $opts.client }}
-{{ template "client" dict "Services" .Services "TypeMap" $typeMap "Json" $json "Opts" $opts "TypePrefix" $typePrefix }}
+{{ template "client" dict "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "Json" $json "Opts" $opts "TypePrefix" $typePrefix }}
 {{ end -}}
 
 {{- "\n" -}}
 
 {{/* Server */}}
 {{- if $opts.server }}
-{{ template "server" dict "Services" .Services "TypeMap" $typeMap "TypePrefix" $typePrefix "Json" $json "Opts" $opts }}
+{{ template "server" dict "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Json" $json "Opts" $opts }}
 {{ template "webrpcMethods" dict "Services" .Services }}
 {{ end -}}
 
