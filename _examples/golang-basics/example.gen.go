@@ -54,7 +54,7 @@ type ExampleClient interface {
 	// gives you basic info about user
 	//
 	// Deprecated:
-	GetUser(ctx context.Context, header map[string]string, _type string, userID uint64) (*User, error)
+	GetUser(ctx context.Context, header map[string]string, type_ string, userID uint64) (*User, error)
 	FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
 	LogEvent(ctx context.Context, event string) error
 	// Article endpoint
@@ -83,7 +83,7 @@ type ExampleServer interface {
 	// gives you basic info about user
 	//
 	// Deprecated:
-	GetUser(ctx context.Context, header map[string]string, _type string, userID uint64) (*User, error)
+	GetUser(ctx context.Context, header map[string]string, type_ string, userID uint64) (*User, error)
 	FindUser(ctx context.Context, s *SearchFilter) (string, *User, error)
 	LogEvent(ctx context.Context, event string) error
 	// Article endpoint
@@ -372,12 +372,12 @@ func (c *exampleClient) Version(ctx context.Context) (*Version, error) {
 	return out.Ret0, err
 }
 
-func (c *exampleClient) GetUser(ctx context.Context, header map[string]string, _type string, userID uint64) (*User, error) {
+func (c *exampleClient) GetUser(ctx context.Context, header map[string]string, type_ string, userID uint64) (*User, error) {
 	in := struct {
 		Arg0 map[string]string `json:"header"`
 		Arg1 string            `json:"type"`
 		Arg2 uint64            `json:"userID"`
-	}{header, _type, userID}
+	}{header, type_, userID}
 	out := struct {
 		Ret0 *User `json:"user"`
 	}{}

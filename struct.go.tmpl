@@ -2,6 +2,7 @@
 
 {{- $name := .Name -}}
 {{- $fields := .Fields -}}
+{{- $keywordMap := .KeywordMap -}}
 {{- $typeMap := .TypeMap -}}
 {{- $typePrefix := .TypePrefix -}}
 
@@ -12,7 +13,7 @@ type {{$name}} struct {
 			// {{ replaceAll $comment "\"" "'" }}
 		{{- end }}
 	{{- end }}
-	{{template "field" dict "Name" $field.Name "PrintName" true "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "JsonTags" true "StructTags" true }}
+	{{template "field" dict "Name" $field.Name "PrintName" true "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "JsonTags" true "StructTags" true }}
 {{- end }}
 }
 {{- end }}
