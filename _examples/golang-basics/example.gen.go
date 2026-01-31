@@ -93,21 +93,19 @@ type ExampleServer interface {
 }
 
 type StreamNewArticlesStreamWriter interface {
-	Write(getArticleResponse *GetArticleResponse) error
+	Write(getArticleResponse ...*GetArticleResponse) error
 }
 
 type streamNewArticlesStreamWriter struct {
 	streamWriter
 }
 
-func (w *streamNewArticlesStreamWriter) Write(getArticleResponse *GetArticleResponse) error {
-	out := struct {
-		Ret0 *GetArticleResponse `json:"response"`
-	}{
-		Ret0: getArticleResponse,
+func (w *streamNewArticlesStreamWriter) Write(getArticleResponse ...*GetArticleResponse) error {
+	out := make([]interface{}, len(getArticleResponse))
+	for i, _ := range getArticleResponse {
+		out[i] = getArticleResponse[i]
 	}
-
-	return w.streamWriter.write(out)
+	return w.streamWriter.write(out...)
 }
 
 type streamWriter struct {
@@ -148,9 +146,15 @@ func (w *streamWriter) ping() error {
 	return err
 }
 
-func (w *streamWriter) write(respPayload interface{}) error {
+func (w *streamWriter) write(respPayload ...interface{}) error {
+	var err error
 	w.mu.Lock()
-	err := w.e.Encode(respPayload)
+	for _, respPayload := range respPayload {
+		err = w.e.Encode(respPayload)
+		if err != nil {
+			break
+		}
+	}
 	w.f.Flush()
 	w.mu.Unlock()
 
@@ -464,20 +468,20 @@ type streamNewArticlesStreamReader struct {
 
 func (r *streamNewArticlesStreamReader) Read() (*GetArticleResponse, error) {
 	out := struct {
-		Ret0        *GetArticleResponse `json:"response"`
-		WebRPCError *WebRPCError        `json:"webrpcError"`
+		*GetArticleResponse
+		WebRPCError *WebRPCError `json:"webrpcError"`
 	}{}
 
 	err := r.streamReader.read(&out)
 	if err != nil {
-		return out.Ret0, err
+		return nil, err
 	}
 
 	if out.WebRPCError != nil {
-		return out.Ret0, out.WebRPCError
+		return nil, out.WebRPCError
 	}
 
-	return out.Ret0, nil
+	return out.GetArticleResponse, nil
 }
 
 type streamReader struct {
@@ -872,7 +876,9 @@ func (s *exampleService) serveStreamNewArticlesJSONStream(ctx context.Context, w
 	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusOK)
 
-	streamWriter := &streamNewArticlesStreamWriter{streamWriter{w: w, f: f, e: jsonCfg.NewEncoder(w), sendError: s.sendErrorJSON}}
+	e := jsonCfg.NewEncoder(w)
+	e.SetIndent("", "")
+	streamWriter := &streamNewArticlesStreamWriter{streamWriter{w: w, f: f, e: e, sendError: s.sendErrorJSON}}
 	if err := streamWriter.ping(); err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcStreamLost.WithCausef("failed to establish SSE stream: %w", err))
 		return
