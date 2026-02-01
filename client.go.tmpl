@@ -81,13 +81,17 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 
 func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) ({{$method.Name}}StreamReader, error) {
 	{{- $inputVar := "nil" -}}
-	{{- if $method.Inputs | len}}
+	{{- if $method.Inputs | len }}
+	{{- if $method.Succinct }}
+	{{- $inputVar = (index $method.Inputs 0).Name -}}
+	{{- else }}
 	{{- $inputVar = "in"}}
 	in := struct {
 	{{- range $i, $input := $method.Inputs}}
 		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
 	{{- end}}
 	}{ {{- range $i, $input := $method.Inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}}{{end}}}{{ "\n" }}
+	{{- end}}
 	{{- end}}
 	resp, err := doHTTPRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, nil)
 	if err != nil {
@@ -105,18 +109,31 @@ type {{firstLetterToLower $method.Name}}StreamReader struct {
 	streamReader
 }
 
-func (r *{{firstLetterToLower $method.Name}}StreamReader) Read() ({{range $i, $output := $method.Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}{{end}}, {{end}}error) {
-	{{- $outputVar := "nil" -}}
-	{{- if $method.Outputs | len}}
-	{{- $outputVar = "&out"}}
+{{ if $method.Succinct }}
+{{- $output := (index $method.Outputs 0) }}
+func (r *{{firstLetterToLower $method.Name}}StreamReader) Read() ({{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}, error) {
+	out := struct {
+		{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" false}}
+		WebRPCError *WebRPCError `json:"webrpcError"`
+	}{}
+
+	err := r.streamReader.read(&out)
+	if err != nil {
+		return nil, err
+	}
+
+	if out.WebRPCError != nil {
+		return nil, out.WebRPCError
+	}
+
+	return out.{{$output.Type}}, nil
+}
+{{ else }}
+func (r *{{firstLetterToLower $method.Name}}StreamReader) Read() ({{range $i, $output := $method.Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}{{end}}, {{end}}error) {
 	out := struct {
 	{{- range $i, $output := $method.Outputs}}
-	{{- if $method.Succinct -}}
-		Ret0 {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" false}} `json:"response"`
-	{{- else -}}
-		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
-	{{- end -}}
-	{{- end}}
+		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
+	{{- end }}
 		WebRPCError *WebRPCError `json:"webrpcError"`
 	}{}
 
@@ -131,7 +148,6 @@ func (r *{{firstLetterToLower $method.Name}}StreamReader) Read() ({{range $i, $o
 
 	return {{range $i, $output := $method.Outputs}}out.Ret{{$i}}, {{end}}nil
 }
-
 {{- end -}}
 {{- end -}}
 
