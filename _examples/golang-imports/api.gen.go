@@ -180,16 +180,26 @@ type WebRPCServer interface {
 	http.Handler
 }
 
+type Options struct {
+	OnError   func(r *http.Request, rpcErr *WebRPCError)
+	OnRequest func(w http.ResponseWriter, r *http.Request) error
+}
+
 type exampleAPIService struct {
 	ExampleAPIServer
 	OnError   func(r *http.Request, rpcErr *WebRPCError)
 	OnRequest func(w http.ResponseWriter, r *http.Request) error
 }
 
-func NewExampleAPIServer(svc ExampleAPIServer) *exampleAPIService {
-	return &exampleAPIService{
+func NewExampleAPIServer(svc ExampleAPIServer, options *Options) *exampleAPIService {
+	server := &exampleAPIService{
 		ExampleAPIServer: svc,
 	}
+	if options != nil {
+		server.OnError = options.OnError
+		server.OnRequest = options.OnRequest
+	}
+	return server
 }
 
 func (s *exampleAPIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
