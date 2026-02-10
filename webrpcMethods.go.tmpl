@@ -1,5 +1,6 @@
 {{define "webrpcMethods"}}
 {{- $services := .Services -}}
+{{- $basepath := .BasePath -}}
 
 type method struct  {
 	name string
@@ -14,7 +15,7 @@ func (m *method) Annotations() map[string]string { return m.annotations }
 var methods = map[string]*method{
 	{{- range $_, $service := $services -}}
 	{{- range $_, $method := $service.Methods }}
-	"/rpc/{{$service.Name}}/{{$method.Name}}": {
+	"{{$basepath}}{{$service.Name}}/{{$method.Name}}": {
 		name: "{{$method.Name}}",
 		service: "{{$service.Name}}",
 		annotations: map[string]string{ {{- range $_, $annotation := $method.Annotations -}}"{{$annotation.AnnotationType}}": "{{$annotation.Value}}", {{- end -}} },

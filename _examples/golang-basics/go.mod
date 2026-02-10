@@ -10,7 +10,7 @@ require (
 	github.com/bytedance/sonic v1.14.1
 	github.com/go-chi/chi/v5 v5.2.1
 	github.com/google/uuid v1.6.0
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.11.1
 )
 
 require (
@@ -24,12 +24,12 @@ require (
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/cyphar/filepath-securejoin v0.4.1 // indirect
+	github.com/cyphar/filepath-securejoin v0.6.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.6.2 // indirect
-	github.com/go-git/go-git/v5 v5.16.2 // indirect
+	github.com/go-git/go-git/v5 v5.16.3 // indirect
 	github.com/golang-cz/textcase v1.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/go-github v17.0.0+incompatible // indirect
@@ -53,12 +53,12 @@ require (
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/webrpc/gen-dart v0.1.1 // indirect
-	github.com/webrpc/gen-golang v0.22.2 // indirect
+	github.com/webrpc/gen-golang v0.24.0 // indirect
 	github.com/webrpc/gen-javascript v0.13.0 // indirect
 	github.com/webrpc/gen-kotlin v0.1.0 // indirect
-	github.com/webrpc/gen-openapi v0.16.3 // indirect
-	github.com/webrpc/gen-typescript v0.20.2 // indirect
-	github.com/webrpc/webrpc v0.29.1-0.20251023011239-8943a04291e3 // indirect
+	github.com/webrpc/gen-openapi v0.17.1 // indirect
+	github.com/webrpc/gen-typescript v0.23.1 // indirect
+	github.com/webrpc/webrpc v0.32.3-0.20260210160745-70233bc06d55 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/arch v0.1.0 // indirect
 	golang.org/x/crypto v0.41.0 // indirect

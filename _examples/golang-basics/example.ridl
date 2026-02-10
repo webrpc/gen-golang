@@ -2,6 +2,7 @@ webrpc = v1             # version of webrpc schema format (ridl or json)
 
 name = example          # name of your backend app
 version = v0.0.1        # version of your schema
+basepath = /v1          # base path of the API routes
 
 # user role
 # which defines which type of operations user can do

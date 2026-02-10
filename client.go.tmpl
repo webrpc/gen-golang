@@ -3,6 +3,7 @@
 {{- $typeMap := .TypeMap -}}
 {{- $typePrefix := .TypePrefix -}}
 {{- $services := .Services -}}
+{{- $basepath := .BasePath -}}
 {{- $json := .Json -}}
 {{- $opts := .Opts }}
 
@@ -12,7 +13,7 @@
 //
 
 {{range $services -}}
-const {{.Name}}PathPrefix = "/rpc/{{.Name}}/"
+const {{.Name}}PathPrefix = "{{$basepath}}{{.Name}}/"
 {{end}}
 
 {{- range $_, $service := $services -}}
