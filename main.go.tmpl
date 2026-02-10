@@ -146,7 +146,7 @@ func WebRPCSchemaHash() string {
 
 {{/* Client interface */}}
 {{ if $opts.client }}
-{{ template "clientInterface" dict "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "Json" $json "Opts" $opts "TypePrefix" $typePrefix }}
+{{ template "clientInterface" dict "BasePath" .BasePath "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "Json" $json "Opts" $opts "TypePrefix" $typePrefix }}
 {{ end -}}
 
 {{- "\n" -}}
@@ -167,15 +167,15 @@ func WebRPCSchemaHash() string {
 
 {{/* Client */}}
 {{- if $opts.client }}
-{{ template "client" dict "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "Json" $json "Opts" $opts "TypePrefix" $typePrefix }}
+{{ template "client" dict "BasePath" .BasePath "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "Json" $json "Opts" $opts "TypePrefix" $typePrefix }}
 {{ end -}}
 
 {{- "\n" -}}
 
 {{/* Server */}}
 {{- if $opts.server }}
-{{ template "server" dict "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Json" $json "Opts" $opts }}
-{{ template "webrpcMethods" dict "Services" .Services }}
+{{ template "server" dict "BasePath" .BasePath "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Json" $json "Opts" $opts }}
+{{ template "webrpcMethods" dict "BasePath" .BasePath "Services" .Services }}
 {{ end -}}
 
 {{- "\n" -}}
