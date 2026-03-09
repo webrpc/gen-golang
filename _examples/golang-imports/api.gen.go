@@ -68,22 +68,22 @@ const (
 	Location_NEW_YORK Location = 1
 )
 
-var Location_name = map[uint32]string{
-	0: "TORONTO",
-	1: "NEW_YORK",
+var Location_name = map[Location]string{
+	Location_TORONTO:  "TORONTO",
+	Location_NEW_YORK: "NEW_YORK",
 }
 
-var Location_value = map[string]uint32{
-	"TORONTO":  0,
-	"NEW_YORK": 1,
+var Location_value = map[string]Location{
+	"TORONTO":  Location_TORONTO,
+	"NEW_YORK": Location_NEW_YORK,
 }
 
 func (x Location) String() string {
-	return Location_name[uint32(x)]
+	return Location_name[x]
 }
 
 func (x Location) MarshalText() ([]byte, error) {
-	return []byte(Location_name[uint32(x)]), nil
+	return []byte(Location_name[x]), nil
 }
 
 func (x *Location) UnmarshalText(b []byte) error {

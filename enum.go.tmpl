@@ -20,24 +20,24 @@ const (
 {{- end}}
 )
 
-var {{$name}}_name = map[{{$type}}]string{
+var {{$name}}_name = map[{{$name}}]string{
 {{- range $fields}}
-	{{.Value}}: "{{.Name}}",
+	{{$name}}_{{.Name}}: "{{.Name}}",
 {{- end}}
 }
 
-var {{$name}}_value = map[string]{{$type}}{
+var {{$name}}_value = map[string]{{$name}}{
 {{- range $fields}}
-	"{{.Name}}": {{.Value}},
+	"{{.Name}}": {{$name}}_{{.Name}},
 {{- end}}
 }
 
 func (x {{$name}}) String() string {
-	return {{$name}}_name[{{$type}}(x)]
+	return {{$name}}_name[x]
 }
 
 func (x {{$name}}) MarshalText() ([]byte, error) {
-	return []byte({{$name}}_name[{{$type}}(x)]), nil
+	return []byte({{$name}}_name[x]), nil
 }
 
 func (x *{{$name}}) UnmarshalText(b []byte) error {
