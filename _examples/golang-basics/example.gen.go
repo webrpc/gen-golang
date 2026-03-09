@@ -538,16 +538,26 @@ type WebRPCServer interface {
 	http.Handler
 }
 
+type Options struct {
+	OnError   func(r *http.Request, rpcErr *WebRPCError)
+	OnRequest func(w http.ResponseWriter, r *http.Request) error
+}
+
 type exampleService struct {
 	ExampleServer
 	OnError   func(r *http.Request, rpcErr *WebRPCError)
 	OnRequest func(w http.ResponseWriter, r *http.Request) error
 }
 
-func NewExampleServer(svc ExampleServer) *exampleService {
-	return &exampleService{
+func NewExampleServer(svc ExampleServer, options *Options) *exampleService {
+	server := &exampleService{
 		ExampleServer: svc,
 	}
+	if options != nil {
+		server.OnError = options.OnError
+		server.OnRequest = options.OnRequest
+	}
+	return server
 }
 
 func (s *exampleService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
