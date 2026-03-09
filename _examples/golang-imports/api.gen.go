@@ -69,13 +69,13 @@ const (
 )
 
 var Location_name = map[Location]string{
-	0: "TORONTO",
-	1: "NEW_YORK",
+	Location_TORONTO:  "TORONTO",
+	Location_NEW_YORK: "NEW_YORK",
 }
 
 var Location_value = map[string]Location{
-	"TORONTO":  0,
-	"NEW_YORK": 1,
+	"TORONTO":  Location_TORONTO,
+	"NEW_YORK": Location_NEW_YORK,
 }
 
 func (x Location) String() string {

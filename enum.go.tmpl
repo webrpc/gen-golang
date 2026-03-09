@@ -22,13 +22,13 @@ const (
 
 var {{$name}}_name = map[{{$name}}]string{
 {{- range $fields}}
-	{{.Value}}: "{{.Name}}",
+	{{$name}}_{{.Name}}: "{{.Name}}",
 {{- end}}
 }
 
 var {{$name}}_value = map[string]{{$name}}{
 {{- range $fields}}
-	"{{.Name}}": {{.Value}},
+	"{{.Name}}": {{$name}}_{{.Name}},
 {{- end}}
 }
 

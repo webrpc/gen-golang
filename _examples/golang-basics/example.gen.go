@@ -178,13 +178,13 @@ const (
 )
 
 var Kind_name = map[Kind]string{
-	0: "USER",
-	1: "ADMIN",
+	Kind_USER:  "USER",
+	Kind_ADMIN: "ADMIN",
 }
 
 var Kind_value = map[string]Kind{
-	"USER":  0,
-	"ADMIN": 1,
+	"USER":  Kind_USER,
+	"ADMIN": Kind_ADMIN,
 }
 
 func (x Kind) String() string {
