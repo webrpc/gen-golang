@@ -177,22 +177,22 @@ const (
 	Kind_ADMIN Kind = 1
 )
 
-var Kind_name = map[uint32]string{
+var Kind_name = map[Kind]string{
 	0: "USER",
 	1: "ADMIN",
 }
 
-var Kind_value = map[string]uint32{
+var Kind_value = map[string]Kind{
 	"USER":  0,
 	"ADMIN": 1,
 }
 
 func (x Kind) String() string {
-	return Kind_name[uint32(x)]
+	return Kind_name[x]
 }
 
 func (x Kind) MarshalText() ([]byte, error) {
-	return []byte(Kind_name[uint32(x)]), nil
+	return []byte(Kind_name[x]), nil
 }
 
 func (x *Kind) UnmarshalText(b []byte) error {
