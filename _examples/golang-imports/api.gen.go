@@ -191,13 +191,13 @@ type exampleAPIService struct {
 	OnRequest func(w http.ResponseWriter, r *http.Request) error
 }
 
-func NewExampleAPIServer(svc ExampleAPIServer, options *Options) *exampleAPIService {
+func NewExampleAPIServer(svc ExampleAPIServer, options ...*Options) *exampleAPIService {
 	server := &exampleAPIService{
 		ExampleAPIServer: svc,
 	}
-	if options != nil {
-		server.OnError = options.OnError
-		server.OnRequest = options.OnRequest
+	if len(options) > 0 && options[0] != nil {
+		server.OnError = options[0].OnError
+		server.OnRequest = options[0].OnRequest
 	}
 	return server
 }

@@ -34,13 +34,13 @@ type {{$serviceName}} struct {
 	OnRequest func(w http.ResponseWriter, r *http.Request) error
 }
 
-func New{{firstLetterToUpper $service.Name}}Server(svc {{$typePrefix}}{{.Name}}Server, options *Options) *{{$serviceName}} {
+func New{{firstLetterToUpper $service.Name}}Server(svc {{$typePrefix}}{{.Name}}Server, options ...*Options) *{{$serviceName}} {
 	server := &{{$serviceName}}{
 		{{.Name}}Server: svc,
 	}
-	if options != nil {
-		server.OnError = options.OnError
-		server.OnRequest = options.OnRequest
+	if len(options) > 0 && options[0] != nil {
+		server.OnError = options[0].OnError
+		server.OnRequest = options[0].OnRequest
 	}
 	return server
 }

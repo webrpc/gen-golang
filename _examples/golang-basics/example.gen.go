@@ -549,13 +549,13 @@ type exampleService struct {
 	OnRequest func(w http.ResponseWriter, r *http.Request) error
 }
 
-func NewExampleServer(svc ExampleServer, options *Options) *exampleService {
+func NewExampleServer(svc ExampleServer, options ...*Options) *exampleService {
 	server := &exampleService{
 		ExampleServer: svc,
 	}
-	if options != nil {
-		server.OnError = options.OnError
-		server.OnRequest = options.OnRequest
+	if len(options) > 0 && options[0] != nil {
+		server.OnError = options[0].OnError
+		server.OnRequest = options[0].OnRequest
 	}
 	return server
 }
