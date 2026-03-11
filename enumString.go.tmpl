@@ -10,7 +10,7 @@
 
     const (
     {{- range $fields}}
-        {{$name}}_{{.Name}} {{$name}} = "{{.Name}}"
+        {{$name}}_{{.Name}} {{$name}} = "{{.Value}}"
     {{- end}}
     )
 
