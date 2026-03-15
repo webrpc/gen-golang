@@ -1,4 +1,4 @@
-module golang-basics
+module golang-header
 
 go 1.23.12
 
@@ -6,12 +6,7 @@ go 1.23.12
 
 toolchain go1.24.0
 
-require (
-	github.com/bytedance/sonic v1.15.0
-	github.com/go-chi/chi/v5 v5.2.1
-	github.com/google/uuid v1.6.0
-	github.com/stretchr/testify v1.11.1
-)
+require github.com/stretchr/testify v1.11.1
 
 require (
 	dario.cat/mergo v1.0.2 // indirect
@@ -20,10 +15,7 @@ require (
 	github.com/Masterminds/sprig/v3 v3.3.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.3.0 // indirect
-	github.com/bytedance/gopkg v0.1.3 // indirect
-	github.com/bytedance/sonic/loader v0.5.0 // indirect
 	github.com/cloudflare/circl v1.6.3 // indirect
-	github.com/cloudwego/base64x v0.1.6 // indirect
 	github.com/cyphar/filepath-securejoin v0.6.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
@@ -34,6 +26,7 @@ require (
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.4.0 // indirect
@@ -51,7 +44,6 @@ require (
 	github.com/shurcooL/httpfs v0.0.0-20230704072500-f1e31cf0ba5c // indirect
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
-	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/webrpc/gen-dart v0.2.0 // indirect
 	github.com/webrpc/gen-golang v0.27.0 // indirect
 	github.com/webrpc/gen-javascript v0.14.0 // indirect
@@ -60,7 +52,6 @@ require (
 	github.com/webrpc/gen-typescript v0.25.0 // indirect
 	github.com/webrpc/webrpc v0.36.2-0.20260314203630-93ac3466eb41 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
-	golang.org/x/arch v0.1.0 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/mod v0.27.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
