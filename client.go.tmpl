@@ -42,19 +42,51 @@ func New{{$ServiceNameClient}}(addr string, client HTTPClient) {{$ServiceNameCli
 
 {{ if eq $method.StreamOutput false }}
 
+{{- /* Check for header/body inputs */ -}}
+{{- $hasHeaderInputs := false -}}
+{{- $hasBodyInputs := false -}}
+{{- range $_, $input := $method.Inputs -}}
+	{{- if eq $input.Location "header" -}}
+		{{- $hasHeaderInputs = true -}}
+	{{- else -}}
+		{{- $hasBodyInputs = true -}}
+	{{- end -}}
+{{- end }}
+
 func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len $method.Outputs}}({{end}}{{range $i, $output := $method.Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}} {
+	{{- if $hasHeaderInputs }}
+	{
+		_headers := http.Header{}
+		{{- range $_, $input := $method.Inputs}}
+		{{- if eq $input.Location "header" }}
+		_headers.Set("{{$input.Name}}", fmt.Sprint({{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}}))
+		{{- end}}
+		{{- end}}
+		if _existingHeaders, ok := HTTPRequestHeaders(ctx); ok {
+			for k := range _existingHeaders {
+				for _, v := range _existingHeaders[k] {
+					_headers.Add(k, v)
+				}
+			}
+		}
+		ctx = context.WithValue(ctx, HTTPClientRequestHeadersCtxKey, _headers)
+	}
+	{{- end }}
 	{{- $inputVar := "nil" -}}
 	{{- $outputVar := "nil" -}}
-	{{- if $method.Succinct }}
+	{{- if $method.Succinct -}}
+	{{- if ne (index $method.Inputs 0).Location "header" }}
 	{{- $inputVar = (index $method.Inputs 0).Name -}}
 	{{- end -}}
-	{{- if and ($method.Inputs | len) (eq $method.Succinct false)}}
+	{{- else if and ($method.Inputs | len) $hasBodyInputs}}
 	{{- $inputVar = "in"}}
 	in := struct {
 	{{- range $i, $input := $method.Inputs}}
+	{{- if ne $input.Location "header" }}
 		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
 	{{- end}}
-	}{ {{- range $i, $input := $method.Inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}}{{end}}}{{ "\n" }}
+	{{- end}}
+	}{ {{- $first := true -}}{{- range $i, $input := $method.Inputs}}{{- if ne $input.Location "header" }}{{if not $first}}, {{end}}{{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}}{{- $first = false -}}{{end}}{{- end}}}{{ "\n" }}
 	{{- end}}
 	{{- if $method.Outputs | len}}
 	{{- $outputVar = "&out"}}
@@ -80,18 +112,51 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 
 {{- else }}
 
+{{- /* Check for header/body inputs */ -}}
+{{- $hasHeaderInputs := false -}}
+{{- $hasBodyInputs := false -}}
+{{- range $_, $input := $method.Inputs -}}
+	{{- if eq $input.Location "header" -}}
+		{{- $hasHeaderInputs = true -}}
+	{{- else -}}
+		{{- $hasBodyInputs = true -}}
+	{{- end -}}
+{{- end }}
+
 func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) ({{$method.Name}}StreamReader, error) {
+	{{- if $hasHeaderInputs }}
+	{
+		_headers := http.Header{}
+		{{- range $_, $input := $method.Inputs}}
+		{{- if eq $input.Location "header" }}
+		_headers.Set("{{$input.Name}}", fmt.Sprint({{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}}))
+		{{- end}}
+		{{- end}}
+		if _existingHeaders, ok := HTTPRequestHeaders(ctx); ok {
+			for k := range _existingHeaders {
+				for _, v := range _existingHeaders[k] {
+					_headers.Add(k, v)
+				}
+			}
+		}
+		ctx = context.WithValue(ctx, HTTPClientRequestHeadersCtxKey, _headers)
+	}
+	{{- end }}
 	{{- $inputVar := "nil" -}}
 	{{- if $method.Inputs | len }}
-	{{- if $method.Succinct }}
+	{{- if $method.Succinct -}}
+	{{- if ne (index $method.Inputs 0).Location "header" }}
 	{{- $inputVar = (index $method.Inputs 0).Name -}}
-	{{- else }}
+	{{- end -}}
+	{{- else if $hasBodyInputs }}
 	{{- $inputVar = "in"}}
 	in := struct {
 	{{- range $i, $input := $method.Inputs}}
+	{{- if ne $input.Location "header" }}
 		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
 	{{- end}}
-	}{ {{- range $i, $input := $method.Inputs}}{{if gt $i 0}}, {{end}}{{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}}{{end}}}{{ "\n" }}
+	{{- end}}
+	}{ {{- $first := true -}}{{- range $i, $input := $method.Inputs}}{{- if ne $input.Location "header" }}{{if not $first}}, {{end}}{{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}}{{- $first = false -}}{{end}}{{- end}}}{{ "\n" }}
 	{{- end}}
 	{{- end}}
 	resp, err := doHTTPRequest(ctx, c.client, c.urls[{{$i}}], {{$inputVar}}, nil)

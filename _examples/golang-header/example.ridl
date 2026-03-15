@@ -1,0 +1,27 @@
+webrpc = v1
+
+name = header-example
+version = v0.0.1
+
+struct User
+  - id: uint64
+  - username: string
+
+error 400100 Unauthorized  "unauthorized" HTTP 401
+error 400200 UserNotFound  "user not found"
+
+service ExampleService
+  # Simple method, no headers
+  - Ping()
+
+  # Single header param (string)
+  @header:authToken
+  - GetUser(authToken: string, userID: uint64) => (user: User)
+
+  # Multiple header params (comma-separated, quoted)
+  @header:"authToken,role"
+  - CreateUser(authToken: string, role: string, username: string) => (user: User)
+
+  # All params as headers
+  @header:"authToken,userID"
+  - DeleteUser(authToken: string, userID: uint64)

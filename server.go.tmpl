@@ -109,10 +109,38 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 {{range $_, $method := $service.Methods}}
 {{- if eq $method.StreamOutput false }}
+{{- /* Check for header/body inputs */ -}}
+{{- $hasHeaderInputs := false -}}
+{{- $hasBodyInputs := false -}}
+{{- range $_, $input := $method.Inputs -}}
+	{{- if eq $input.Location "header" -}}
+		{{- $hasHeaderInputs = true -}}
+	{{- else -}}
+		{{- $hasBodyInputs = true -}}
+	{{- end -}}
+{{- end }}
 func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{$method.Name}}")
 
-	{{ if gt (len $method.Inputs) 0 -}}
+	{{- /* Read header params */ -}}
+	{{- range $i, $input := $method.Inputs}}
+	{{- if eq $input.Location "header" }}
+	{{- if and (isCoreType $input.Type) (eq (get $typeMap $input.Type) "string") }}
+	headerArg{{$i}} := r.Header.Get("{{$input.Name}}")
+	{{- else }}
+	var headerArg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta}}
+	if _v := r.Header.Get("{{$input.Name}}"); _v != "" {
+		if _, _err := fmt.Sscan(_v, &headerArg{{$i}}); _err != nil {
+			s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("invalid header param '{{$input.Name}}': %w", _err))
+			return
+		}
+	}
+	{{- end }}
+	{{- end }}
+	{{- end }}
+
+	{{ if and (gt (len $method.Inputs) 0) (or $hasBodyInputs $method.Succinct) -}}
+	{{- if and $method.Succinct (ne (index $method.Inputs 0).Location "header") }}
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to read request data: %w", err))
@@ -120,27 +148,43 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx cont
 	}
 	defer r.Body.Close()
 
-	{{ if $method.Succinct }}
-	{{- $input := index $method.Inputs 0 -}}
+	{{ $input := index $method.Inputs 0 -}}
 	var reqPayload {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Succinct" $method.Succinct}}
-	{{- else -}}
-	reqPayload := struct {
-	{{- range $i, $input := $method.Inputs}}
-		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
-	{{- end}}
-	}{}
-	{{- end}}
 	if err := {{$json}}.Unmarshal(reqBody, &reqPayload); err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
 		return
 	}
+	{{- else if and (not $method.Succinct) $hasBodyInputs }}
+	reqBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to read request data: %w", err))
+		return
+	}
+	defer r.Body.Close()
+
+	reqPayload := struct {
+	{{- range $i, $input := $method.Inputs}}
+	{{- if ne $input.Location "header" }}
+		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
+	{{- end}}
+	{{- end}}
+	}{}
+	if err := {{$json}}.Unmarshal(reqBody, &reqPayload); err != nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
+		return
+	}
+	{{- end}}
 	{{- end }}
 
 	// Call service method implementation.
 	{{ if $method.Succinct -}}
-	respPayload, err := s.{{$name}}Server.{{$method.Name}}(ctx, reqPayload)
+	{{- if eq (index $method.Inputs 0).Location "header" -}}
+	respPayload, err := s.{{$name}}Server.{{$method.Name}}(ctx, headerArg0)
 	{{- else -}}
-	{{range $i, $output := $method.Outputs}}ret{{$i}}, {{end}}err {{if or (eq (len $method.Inputs) 0) (gt (len $method.Outputs) 0)}}:{{end}}= s.{{$name}}Server.{{$method.Name}}(ctx{{range $i, $_ := $method.Inputs}}, reqPayload.Arg{{$i}}{{end}})
+	respPayload, err := s.{{$name}}Server.{{$method.Name}}(ctx, reqPayload)
+	{{- end -}}
+	{{- else -}}
+	{{range $i, $output := $method.Outputs}}ret{{$i}}, {{end}}err {{if or (eq (len $method.Inputs) 0) (gt (len $method.Outputs) 0) (not $hasBodyInputs)}}:{{end}}= s.{{$name}}Server.{{$method.Name}}(ctx{{range $i, $input := $method.Inputs}}, {{if eq $input.Location "header"}}headerArg{{$i}}{{else}}reqPayload.Arg{{$i}}{{end}}{{end}})
 	{{- end}}
 	if err != nil {
 		rpcErr, ok := err.(WebRPCError)
@@ -185,10 +229,38 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx cont
 	{{- end}}
 }
 {{ else }}
+{{- /* Check for header/body inputs */ -}}
+{{- $hasHeaderInputs := false -}}
+{{- $hasBodyInputs := false -}}
+{{- range $_, $input := $method.Inputs -}}
+	{{- if eq $input.Location "header" -}}
+		{{- $hasHeaderInputs = true -}}
+	{{- else -}}
+		{{- $hasBodyInputs = true -}}
+	{{- end -}}
+{{- end }}
 func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSONStream(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{$method.Name}}")
 
-	{{ if gt (len $method.Inputs) 0 -}}
+	{{- /* Read header params */ -}}
+	{{- range $i, $input := $method.Inputs}}
+	{{- if eq $input.Location "header" }}
+	{{- if and (isCoreType $input.Type) (eq (get $typeMap $input.Type) "string") }}
+	headerArg{{$i}} := r.Header.Get("{{$input.Name}}")
+	{{- else }}
+	var headerArg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta}}
+	if _v := r.Header.Get("{{$input.Name}}"); _v != "" {
+		if _, _err := fmt.Sscan(_v, &headerArg{{$i}}); _err != nil {
+			s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("invalid header param '{{$input.Name}}': %w", _err))
+			return
+		}
+	}
+	{{- end }}
+	{{- end }}
+	{{- end }}
+
+	{{ if and (gt (len $method.Inputs) 0) (or $hasBodyInputs $method.Succinct) -}}
+	{{- if and $method.Succinct (ne (index $method.Inputs 0).Location "header") }}
 	reqBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to read request data: %w", err))
@@ -196,20 +268,32 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSONStream(ct
 	}
 	defer r.Body.Close()
 
-	{{ if $method.Succinct }}
 	{{- $input := index $method.Inputs 0 -}}
 	reqPayload := {{$input.Type}}{}
-	{{- else }}
-	reqPayload := struct {
-	{{- range $i, $input := $method.Inputs}}
-		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
-	{{- end}}
-	}{}
-	{{ end }}
 	if err := {{$json}}.Unmarshal(reqBody, &reqPayload); err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
 		return
 	}
+	{{- else if and (not $method.Succinct) $hasBodyInputs }}
+	reqBody, err := io.ReadAll(r.Body)
+	if err != nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to read request data: %w", err))
+		return
+	}
+	defer r.Body.Close()
+
+	reqPayload := struct {
+	{{- range $i, $input := $method.Inputs}}
+	{{- if ne $input.Location "header" }}
+		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
+	{{- end}}
+	{{- end}}
+	}{}
+	if err := {{$json}}.Unmarshal(reqBody, &reqPayload); err != nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
+		return
+	}
+	{{- end}}
 	{{- end }}
 
 	f, ok := w.(http.Flusher)
@@ -238,7 +322,7 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSONStream(ct
 	go streamWriter.keepAlive(ctx)
 
 	// Call service method implementation.
-	if err {{if or (eq (len $method.Inputs) 0) (gt (len $method.Outputs) 0)}}:{{end}}= s.{{$name}}Server.{{$method.Name}}(ctx{{range $i, $_ := $method.Inputs}}, {{ if $method.Succinct }}reqPayload{{ else }}reqPayload.Arg{{$i}}{{ end }}{{end}}, streamWriter); err != nil {
+	if err {{if or (eq (len $method.Inputs) 0) (gt (len $method.Outputs) 0) (not $hasBodyInputs)}}:{{end}}= s.{{$name}}Server.{{$method.Name}}(ctx{{range $i, $input := $method.Inputs}}, {{ if eq $input.Location "header" }}headerArg{{$i}}{{ else if $method.Succinct }}reqPayload{{ else }}reqPayload.Arg{{$i}}{{ end }}{{end}}, streamWriter); err != nil {
 		cancel()
 		rpcErr, ok := err.(WebRPCError)
 		if !ok {
