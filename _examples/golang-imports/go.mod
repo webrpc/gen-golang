@@ -2,6 +2,8 @@ module golang-imports
 
 go 1.23.12
 
+// replace github.com/webrpc/webrpc => ../../../webrpc
+
 toolchain go1.24.0
 
 require (
@@ -46,12 +48,12 @@ require (
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
 	github.com/webrpc/gen-dart v0.2.0 // indirect
-	github.com/webrpc/gen-golang v0.26.1 // indirect
+	github.com/webrpc/gen-golang v0.27.0 // indirect
 	github.com/webrpc/gen-javascript v0.14.0 // indirect
 	github.com/webrpc/gen-kotlin v0.2.0 // indirect
 	github.com/webrpc/gen-openapi v0.18.0 // indirect
-	github.com/webrpc/gen-typescript v0.24.0 // indirect
-	github.com/webrpc/webrpc v0.35.1-0.20260311191635-23041e844c6b // indirect
+	github.com/webrpc/gen-typescript v0.25.0 // indirect
+	github.com/webrpc/webrpc v0.36.2-0.20260314203630-93ac3466eb41 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	golang.org/x/crypto v0.41.0 // indirect
 	golang.org/x/mod v0.27.0 // indirect

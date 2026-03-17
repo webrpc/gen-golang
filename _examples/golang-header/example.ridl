@@ -1,0 +1,48 @@
+webrpc = v1
+
+name = header-example
+version = v0.0.1
+
+struct User
+  - id: uint64
+  - username: string
+
+error 400100 Unauthorized  "unauthorized" HTTP 401
+error 400200 UserNotFound  "user not found"
+
+struct GetUserRequest
+  - authToken: string
+    + location = header
+  - userID: uint64
+
+struct GetUserResponse
+  - user: User
+
+struct CreateUserRequest
+  - authToken: string
+    + location = header
+  - role: string
+    + location = header
+  - username: string
+
+struct CreateUserResponse
+  - user: User
+
+struct DeleteUserRequest
+  - authToken: string
+    + location = header
+  - userID: uint64
+    + location = header
+
+service ExampleService
+  # Simple method, no headers
+  - Ping()
+
+  # Single header field (authToken sent as HTTP header, userID in body)
+  - GetUser(GetUserRequest) => (GetUserResponse)
+
+  # Multiple header fields (authToken and role as headers, username in body)
+  - CreateUser(CreateUserRequest) => (CreateUserResponse)
+
+  # All fields as headers (no body)
+  - DeleteUser(DeleteUserRequest)

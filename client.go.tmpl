@@ -42,13 +42,67 @@ func New{{$ServiceNameClient}}(addr string, client HTTPClient) {{$ServiceNameCli
 
 {{ if eq $method.StreamOutput false }}
 
+{{- $hasHeaderInputs := false -}}
+{{- if $method.HeaderFields -}}
+	{{- $hasHeaderInputs = true -}}
+{{- end }}
+
 func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len $method.Outputs}}({{end}}{{range $i, $output := $method.Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}} {
+	{{- if $hasHeaderInputs }}
+	{
+		_headers := http.Header{}
+		{{- $reqVar := (index $method.Inputs 0).Name }}
+		{{- range $_, $hf := $method.HeaderFields }}
+		{{- $goFieldName := firstLetterToUpper $hf.Name -}}
+		{{- range $meta := $hf.Meta -}}
+			{{- if exists $meta "go.field.name" -}}
+				{{- $goFieldName = get $meta "go.field.name" -}}
+			{{- end -}}
+		{{- end }}
+		_headers.Set(Header_{{ firstLetterToUpper $hf.Name }}, fmt.Sprint({{$reqVar}}.{{$goFieldName}}))
+		{{- end }}
+		if _existingHeaders, ok := HTTPRequestHeaders(ctx); ok {
+			for k := range _existingHeaders {
+				for _, v := range _existingHeaders[k] {
+					_headers.Add(k, v)
+				}
+			}
+		}
+		ctx = context.WithValue(ctx, HTTPClientRequestHeadersCtxKey, _headers)
+	}
+	{{ end }}
 	{{- $inputVar := "nil" -}}
 	{{- $outputVar := "nil" -}}
-	{{- if $method.Succinct }}
+	{{- if and $method.Succinct $hasHeaderInputs -}}
+	{{- /* Succinct with header fields: build body struct excluding header fields */ -}}
+	{{- if $method.BodyFields -}}
+	{{- $inputVar = "&_body" -}}
+	{{- $reqVar := (index $method.Inputs 0).Name }}
+	_body := struct {
+	{{- range $_, $bf := $method.BodyFields}}
+		{{- $goFieldName := firstLetterToUpper $bf.Name -}}
+		{{- range $meta := $bf.Meta -}}
+			{{- if exists $meta "go.field.name" -}}
+				{{- $goFieldName = get $meta "go.field.name" -}}
+			{{- end -}}
+		{{- end }}
+		{{ $goFieldName }} {{template "field" dict "Name" $bf.Name "Type" $bf.Type "Optional" $bf.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $bf.Meta "JsonTags" true}}
+	{{- end }}
+	}{
+	{{- range $j, $bf := $method.BodyFields}}
+		{{- $goFieldName := firstLetterToUpper $bf.Name -}}
+		{{- range $meta := $bf.Meta -}}
+			{{- if exists $meta "go.field.name" -}}
+				{{- $goFieldName = get $meta "go.field.name" -}}
+			{{- end -}}
+		{{- end }}
+		{{- if $j}},{{end}} {{$reqVar}}.{{$goFieldName}}
+	{{- end }},
+	}
+	{{ end -}}
+	{{- else if $method.Succinct -}}
 	{{- $inputVar = (index $method.Inputs 0).Name -}}
-	{{- end -}}
-	{{- if and ($method.Inputs | len) (eq $method.Succinct false)}}
+	{{- else if $method.Inputs | len}}
 	{{- $inputVar = "in"}}
 	in := struct {
 	{{- range $i, $input := $method.Inputs}}
@@ -80,12 +134,71 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 
 {{- else }}
 
+{{- $hasHeaderInputs := false -}}
+{{- $hasBodyInputs := true -}}
+{{- if $method.HeaderFields -}}
+	{{- $hasHeaderInputs = true -}}
+	{{- if not $method.BodyFields -}}
+		{{- $hasBodyInputs = false -}}
+	{{- end -}}
+{{- end }}
+
 func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) ({{$method.Name}}StreamReader, error) {
+	{{- if $hasHeaderInputs }}
+	{
+		_headers := http.Header{}
+		{{- $reqVar := (index $method.Inputs 0).Name }}
+		{{- range $_, $hf := $method.HeaderFields }}
+		{{- $goFieldName := firstLetterToUpper $hf.Name -}}
+		{{- range $meta := $hf.Meta -}}
+			{{- if exists $meta "go.field.name" -}}
+				{{- $goFieldName = get $meta "go.field.name" -}}
+			{{- end -}}
+		{{- end }}
+		_headers.Set(Header_{{ firstLetterToUpper $hf.Name }}, fmt.Sprint({{$reqVar}}.{{$goFieldName}}))
+		{{- end }}
+		if _existingHeaders, ok := HTTPRequestHeaders(ctx); ok {
+			for k := range _existingHeaders {
+				for _, v := range _existingHeaders[k] {
+					_headers.Add(k, v)
+				}
+			}
+		}
+		ctx = context.WithValue(ctx, HTTPClientRequestHeadersCtxKey, _headers)
+	}
+	{{ end }}
 	{{- $inputVar := "nil" -}}
 	{{- if $method.Inputs | len }}
-	{{- if $method.Succinct }}
+	{{- if and $method.Succinct $hasHeaderInputs -}}
+	{{- /* Succinct with header fields: build body struct excluding header fields */ -}}
+	{{- if $method.BodyFields -}}
+	{{- $inputVar = "&_body" -}}
+	{{- $reqVar := (index $method.Inputs 0).Name }}
+	_body := struct {
+	{{- range $_, $bf := $method.BodyFields}}
+		{{- $goFieldName := firstLetterToUpper $bf.Name -}}
+		{{- range $meta := $bf.Meta -}}
+			{{- if exists $meta "go.field.name" -}}
+				{{- $goFieldName = get $meta "go.field.name" -}}
+			{{- end -}}
+		{{- end }}
+		{{ $goFieldName }} {{template "field" dict "Name" $bf.Name "Type" $bf.Type "Optional" $bf.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $bf.Meta "JsonTags" true}}
+	{{- end }}
+	}{
+	{{- range $j, $bf := $method.BodyFields}}
+		{{- $goFieldName := firstLetterToUpper $bf.Name -}}
+		{{- range $meta := $bf.Meta -}}
+			{{- if exists $meta "go.field.name" -}}
+				{{- $goFieldName = get $meta "go.field.name" -}}
+			{{- end -}}
+		{{- end }}
+		{{- if $j}},{{end}} {{$reqVar}}.{{$goFieldName}}
+	{{- end }},
+	}
+	{{ end -}}
+	{{- else if $method.Succinct -}}
 	{{- $inputVar = (index $method.Inputs 0).Name -}}
-	{{- else }}
+	{{- else if $hasBodyInputs }}
 	{{- $inputVar = "in"}}
 	in := struct {
 	{{- range $i, $input := $method.Inputs}}

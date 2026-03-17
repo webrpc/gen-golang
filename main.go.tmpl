@@ -142,6 +142,25 @@ func WebRPCSchemaHash() string {
 
 {{- "\n" -}}
 
+{{- /* Collect unique header parameter names across all services. */ -}}
+{{- $headersSeen := dict -}}
+{{- range $_, $service := .Services -}}
+  {{- range $_, $method := $service.Methods -}}
+    {{- range $_, $hf := $method.HeaderFields -}}
+      {{- if not (exists $headersSeen $hf.Name) -}}
+        {{- set $headersSeen $hf.Name true -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if $headersSeen }}
+const (
+{{- range $_, $name := (keys $headersSeen | sortAlpha) }}
+	Header_{{ firstLetterToUpper $name }} = "{{ $name }}"
+{{- end }}
+)
+{{- end }}
+
 {{end}}
 
 {{/* Client interface */}}
