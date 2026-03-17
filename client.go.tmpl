@@ -59,7 +59,13 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 				{{- $goFieldName = get $meta "go.field.name" -}}
 			{{- end -}}
 		{{- end }}
+		{{- if $hf.OmitEmpty }}
+		if {{$reqVar}}.{{$goFieldName}} != {{if and (isCoreType $hf.Type) (eq (get $typeMap $hf.Type) "string")}}""{{else if and (isCoreType $hf.Type) (eq (get $typeMap $hf.Type) "bool")}}false{{else}}0{{end}} {
+			_headers.Set(Header_{{ firstLetterToUpper $hf.Name }}, fmt.Sprint({{$reqVar}}.{{$goFieldName}}))
+		}
+		{{- else }}
 		_headers.Set(Header_{{ firstLetterToUpper $hf.Name }}, fmt.Sprint({{$reqVar}}.{{$goFieldName}}))
+		{{- end }}
 		{{- end }}
 		if _existingHeaders, ok := HTTPRequestHeaders(ctx); ok {
 			for k := range _existingHeaders {
@@ -155,7 +161,13 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_,
 				{{- $goFieldName = get $meta "go.field.name" -}}
 			{{- end -}}
 		{{- end }}
+		{{- if $hf.OmitEmpty }}
+		if {{$reqVar}}.{{$goFieldName}} != {{if and (isCoreType $hf.Type) (eq (get $typeMap $hf.Type) "string")}}""{{else if and (isCoreType $hf.Type) (eq (get $typeMap $hf.Type) "bool")}}false{{else}}0{{end}} {
+			_headers.Set(Header_{{ firstLetterToUpper $hf.Name }}, fmt.Sprint({{$reqVar}}.{{$goFieldName}}))
+		}
+		{{- else }}
 		_headers.Set(Header_{{ firstLetterToUpper $hf.Name }}, fmt.Sprint({{$reqVar}}.{{$goFieldName}}))
+		{{- end }}
 		{{- end }}
 		if _existingHeaders, ok := HTTPRequestHeaders(ctx); ok {
 			for k := range _existingHeaders {

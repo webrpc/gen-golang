@@ -22,7 +22,7 @@ struct CreateUserRequest
   - authToken: string
     + location = header
   - role: string
-    + location = header
+    + location = header,omitempty
   - username: string
 
 struct CreateUserResponse
