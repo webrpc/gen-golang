@@ -947,6 +947,12 @@ func RespondWithError(w http.ResponseWriter, err error) {
 	w.Write(respBody)
 }
 
+type Method interface {
+	Name() string
+	Service() string
+	Annotations() map[string]string
+}
+
 type method struct {
 	name        string
 	service     string
@@ -957,60 +963,62 @@ func (m *method) Name() string                   { return m.name }
 func (m *method) Service() string                { return m.service }
 func (m *method) Annotations() map[string]string { return m.annotations }
 
-var methods = map[string]*method{
-	"/v1/Example/Ping": {
+var methods = map[string]Method{
+	"/v1/Example/Ping": &method{
 		name:        "Ping",
 		service:     "Example",
 		annotations: map[string]string{},
 	},
-	"/v1/Example/Status": {
+	"/v1/Example/Status": &method{
 		name:        "Status",
 		service:     "Example",
 		annotations: map[string]string{"internal": ""},
 	},
-	"/v1/Example/Version": {
+	"/v1/Example/Version": &method{
 		name:        "Version",
 		service:     "Example",
 		annotations: map[string]string{},
 	},
-	"/v1/Example/GetUser": {
+	"/v1/Example/GetUser": &method{
 		name:        "GetUser",
 		service:     "Example",
 		annotations: map[string]string{"deprecated": ""},
 	},
-	"/v1/Example/FindUser": {
+	"/v1/Example/FindUser": &method{
 		name:        "FindUser",
 		service:     "Example",
 		annotations: map[string]string{},
 	},
-	"/v1/Example/LogEvent": {
+	"/v1/Example/LogEvent": &method{
 		name:        "LogEvent",
 		service:     "Example",
 		annotations: map[string]string{},
 	},
-	"/v1/Example/GetArticle": {
+	"/v1/Example/GetArticle": &method{
 		name:        "GetArticle",
 		service:     "Example",
 		annotations: map[string]string{},
 	},
-	"/v1/Example/StreamNewArticles": {
+	"/v1/Example/StreamNewArticles": &method{
 		name:        "StreamNewArticles",
 		service:     "Example",
 		annotations: map[string]string{},
 	},
 }
 
-func MethodCtx(ctx context.Context) (*method, bool) {
-	req := RequestFromContext(ctx)
-	if req == nil {
+func MethodFromRequest(req *http.Request) (Method, bool) {
+	m, ok := methods[req.URL.Path]
+	if !ok {
 		return nil, false
 	}
-
-	m, ok := methods[req.URL.Path]
-	return m, ok
+	return m, true
 }
 
-func WebrpcMethods() map[string]*method {
+func MethodCtx(ctx context.Context) (Method, bool) {
+	return MethodFromRequest(RequestFromContext(ctx))
+}
+
+func WebrpcMethods() map[string]Method {
 	return methods
 }
 

@@ -368,6 +368,12 @@ func RespondWithError(w http.ResponseWriter, err error) {
 	w.Write(respBody)
 }
 
+type Method interface {
+	Name() string
+	Service() string
+	Annotations() map[string]string
+}
+
 type method struct {
 	name        string
 	service     string
@@ -378,35 +384,37 @@ func (m *method) Name() string                   { return m.name }
 func (m *method) Service() string                { return m.service }
 func (m *method) Annotations() map[string]string { return m.annotations }
 
-var methods = map[string]*method{
-	"/rpc/ExampleAPI/Ping": {
+var methods = map[string]Method{
+	"/rpc/ExampleAPI/Ping": &method{
 		name:        "Ping",
 		service:     "ExampleAPI",
 		annotations: map[string]string{},
 	},
-	"/rpc/ExampleAPI/Status": {
+	"/rpc/ExampleAPI/Status": &method{
 		name:        "Status",
 		service:     "ExampleAPI",
 		annotations: map[string]string{},
 	},
-	"/rpc/ExampleAPI/GetUsers": {
+	"/rpc/ExampleAPI/GetUsers": &method{
 		name:        "GetUsers",
 		service:     "ExampleAPI",
 		annotations: map[string]string{},
 	},
 }
 
-func MethodCtx(ctx context.Context) (*method, bool) {
-	req := RequestFromContext(ctx)
-	if req == nil {
+func MethodFromRequest(req *http.Request) (Method, bool) {
+	m, ok := methods[req.URL.Path]
+	if !ok {
 		return nil, false
 	}
-
-	m, ok := methods[req.URL.Path]
-	return m, ok
+	return m, true
 }
 
-func WebrpcMethods() map[string]*method {
+func MethodCtx(ctx context.Context) (Method, bool) {
+	return MethodFromRequest(RequestFromContext(ctx))
+}
+
+func WebrpcMethods() map[string]Method {
 	return methods
 }
 
