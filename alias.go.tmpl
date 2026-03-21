@@ -1,0 +1,20 @@
+{{- define "alias" -}}
+
+{{- $name := .Name -}}
+{{- $type := .Type -}}
+{{- $typeMap := .TypeMap -}}
+{{- $keywordMap := .KeywordMap -}}
+{{- $typePrefix := .TypePrefix -}}
+{{- $typeMeta := .TypeMeta -}}
+
+{{- $goType := "" -}}
+{{- range $meta := $typeMeta -}}
+    {{- if exists $meta "go.type" -}}
+        {{- $goType = get $meta "go.type" -}}
+    {{- end -}}
+{{- end }}
+
+type {{$typePrefix}}{{$name}} {{if ne $goType ""}}{{$goType}}{{else -}}
+{{- template "field" dict "Type" $type "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $typeMeta -}}
+{{- end}}
+{{- end -}}
