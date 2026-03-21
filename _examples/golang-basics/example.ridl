@@ -28,6 +28,10 @@ type Metadata: map<string,any>
   + go.type = json.RawMessage
   + go.type.import = encoding/json
 
+type TxHash: string
+  + go.type = Hash
+  + go.type.import = github.com/0xsequence/go-sequence/lib/prototyp
+
 # Defines users within out wallet app
 struct User
   - id: uint64
