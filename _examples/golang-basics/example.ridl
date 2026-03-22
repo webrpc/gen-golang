@@ -19,6 +19,19 @@ enum Intent: string
   - closeSession
   - validateSession
 
+type Username: string
+
+type Age: uint32
+  + go.type = int64
+
+type Metadata: map<string,any>
+  + go.type = json.RawMessage
+  + go.type.import = encoding/json
+
+type TxHash: string
+  + go.type = Hash
+  + go.type.import = github.com/0xsequence/go-sequence/lib/prototyp
+
 # Defines users within out wallet app
 struct User
   - id: uint64
@@ -31,9 +44,11 @@ struct User
     + go.type.import = github.com/google/uuid
 
   # unique identifier of the user
-  - username: string # must be unique !
+  - username: Username # must be unique !
     + json = USERNAME
     + go.tag.db = username
+
+  - age?: Age
 
   - role: string
     + go.tag.db = -
@@ -94,6 +109,8 @@ struct GetArticleRequest
   - articleId: uint64
     + go.field.name = ArticleID
 
+struct StreamNewArticlesRequest
+
 struct GetArticleResponse
   - title: string
   - content?: string
@@ -128,4 +145,4 @@ service Example
   - GetArticle(GetArticleRequest) => (GetArticleResponse)
 
   # Streaming article endpoint
-  - StreamNewArticles() => stream (GetArticleResponse)
+  - StreamNewArticles(StreamNewArticlesRequest) => stream (GetArticleResponse)
