@@ -1,0 +1,18 @@
+name: Notify main repo
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch to webrpc/webrpc
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GH_TOKEN_GIT_COMMIT }}
+          repository: webrpc/webrpc
+          event-type: generator-updated
+          client-payload: '{"generator": "gen-golang", "version": "${{ github.ref_name }}"}'
