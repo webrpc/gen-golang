@@ -12,7 +12,7 @@ jobs:
       - name: Dispatch to webrpc/webrpc
         uses: peter-evans/repository-dispatch@v3
         with:
-          token: ${{ secrets.WEBRPC_DISPATCH_TOKEN }}
+          token: ${{ secrets.GH_TOKEN_GIT_COMMIT }}
           repository: webrpc/webrpc
           event-type: generator-updated
           client-payload: '{"generator": "gen-golang", "version": "${{ github.ref_name }}"}'
