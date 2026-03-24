@@ -195,35 +195,11 @@ func (c *exampleAPIClient) GetUsers(ctx context.Context) ([]*User, Location, err
 }
 
 func (c *exampleAPIClient) GetUser(ctx context.Context, getUserRequest GetUserRequest) (*GetUserResponse, error) {
-	out := struct {
-		Ret0 *GetUserResponse
-	}{}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[3], getUserRequest, &out.Ret0)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return out.Ret0, err
+	return succinctFetch[GetUserRequest, *GetUserResponse](ctx, c.client, c.urls[3], getUserRequest)
 }
 
 func (c *exampleAPIClient) ListUsers(ctx context.Context, listUsersRequest ListUsersRequest) (*ListUsersResponse, error) {
-	out := struct {
-		Ret0 *ListUsersResponse
-	}{}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[4], listUsersRequest, &out.Ret0)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return out.Ret0, err
+	return succinctFetch[ListUsersRequest, *ListUsersResponse](ctx, c.client, c.urls[4], listUsersRequest)
 }
 
 //
@@ -647,6 +623,17 @@ func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context
 func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 	h, ok := ctx.Value(HTTPClientRequestHeadersCtxKey).(http.Header)
 	return h, ok
+}
+
+func succinctFetch[I any, O any](ctx context.Context, client HTTPClient, url string, in I) (out O, err error) {
+	resp, err := doHTTPRequest(ctx, client, url, in, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+	return out, err
 }
 
 //

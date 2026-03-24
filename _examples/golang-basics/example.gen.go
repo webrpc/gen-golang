@@ -382,6 +382,7 @@ func (c *exampleClient) GetUser(ctx context.Context, header map[string]string, t
 		Arg1 string            `json:"type"`
 		Arg2 uint64            `json:"userID"`
 	}{header, type_, userID}
+
 	out := struct {
 		Ret0 *User `json:"user"`
 	}{}
@@ -401,6 +402,7 @@ func (c *exampleClient) FindUser(ctx context.Context, s *SearchFilter) (string, 
 	in := struct {
 		Arg0 *SearchFilter `json:"s"`
 	}{s}
+
 	out := struct {
 		Ret0 string `json:"name"`
 		Ret1 *User  `json:"user"`
@@ -434,19 +436,7 @@ func (c *exampleClient) LogEvent(ctx context.Context, event string) error {
 }
 
 func (c *exampleClient) GetArticle(ctx context.Context, getArticleRequest GetArticleRequest) (*GetArticleResponse, error) {
-	out := struct {
-		Ret0 *GetArticleResponse
-	}{}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[6], getArticleRequest, &out.Ret0)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return out.Ret0, err
+	return succinctFetch[GetArticleRequest, *GetArticleResponse](ctx, c.client, c.urls[6], getArticleRequest)
 }
 
 func (c *exampleClient) StreamNewArticles(ctx context.Context) (StreamNewArticlesStreamReader, error) {
@@ -1144,6 +1134,17 @@ func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context
 func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 	h, ok := ctx.Value(HTTPClientRequestHeadersCtxKey).(http.Header)
 	return h, ok
+}
+
+func succinctFetch[I any, O any](ctx context.Context, client HTTPClient, url string, in I) (out O, err error) {
+	resp, err := doHTTPRequest(ctx, client, url, in, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+	return out, err
 }
 
 //
