@@ -51,3 +51,11 @@ func (s *ExampleRPC) GetUsers(ctx context.Context) ([]*User, Location, error) {
 		{Username: "pk", Age: 99},
 	}, loc, nil
 }
+
+func (s *ExampleRPC) GetUser(ctx context.Context, req GetUserRequest) (*GetUserResponse, error) {
+	return &GetUserResponse{User: &User{Username: req.Username, Age: 30}}, nil
+}
+
+func (s *ExampleRPC) ListUsers(ctx context.Context, req ListUsersRequest) (*ListUsersResponse, error) {
+	return &ListUsersResponse{Users: []*User{{Username: "pk", Age: 99}}}, nil
+}
