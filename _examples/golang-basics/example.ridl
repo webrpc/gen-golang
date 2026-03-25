@@ -32,6 +32,10 @@ type TxHash: string
   + go.type = Hash
   + go.type.import = github.com/0xsequence/go-sequence/lib/prototyp
 
+type Address: string
+  + go.alias = Hash
+  + go.type.import = github.com/0xsequence/go-sequence/lib/prototyp
+
 # Defines users within out wallet app
 struct User
   - id: uint64
