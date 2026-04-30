@@ -14,6 +14,12 @@
     {{- end}}
     )
 
+    var {{$name}}_values = []{{$name}}{
+    {{- range $fields}}
+        {{$name}}_{{.Name}},
+    {{- end}}
+    }
+
     func (x {{$name}}) MarshalText() ([]byte, error) {
     return []byte(x), nil
     }
