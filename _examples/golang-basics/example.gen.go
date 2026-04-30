@@ -232,6 +232,12 @@ const (
 	Intent_validateSession Intent = "validateSession"
 )
 
+var Intent_values = []Intent{
+	Intent_openSession,
+	Intent_closeSession,
+	Intent_validateSession,
+}
+
 func (x Intent) MarshalText() ([]byte, error) {
 	return []byte(x), nil
 }
