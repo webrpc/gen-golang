@@ -404,6 +404,7 @@ func (c *exampleClient) GetUser(ctx context.Context, header map[string]string, t
 		Arg1 string            `json:"type"`
 		Arg2 uint64            `json:"userID"`
 	}{header, type_, userID}
+
 	out := struct {
 		Ret0 *User `json:"user"`
 	}{}
@@ -423,6 +424,7 @@ func (c *exampleClient) FindUser(ctx context.Context, s *SearchFilter) (string, 
 	in := struct {
 		Arg0 *SearchFilter `json:"s"`
 	}{s}
+
 	out := struct {
 		Ret0 string `json:"name"`
 		Ret1 *User  `json:"user"`
@@ -456,19 +458,7 @@ func (c *exampleClient) LogEvent(ctx context.Context, event string) error {
 }
 
 func (c *exampleClient) GetArticle(ctx context.Context, getArticleRequest GetArticleRequest) (*GetArticleResponse, error) {
-	out := struct {
-		Ret0 *GetArticleResponse
-	}{}
-
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[6], getArticleRequest, &out.Ret0)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
-
-	return out.Ret0, err
+	return succinctFetch[GetArticleRequest, *GetArticleResponse](ctx, c.client, c.urls[6], getArticleRequest)
 }
 
 func (c *exampleClient) StreamNewArticles(ctx context.Context, streamNewArticlesRequest StreamNewArticlesRequest) (StreamNewArticlesStreamReader, error) {
@@ -615,7 +605,7 @@ func (s *exampleService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/v1/Example/LogEvent":
 		handler = s.serveLogEventJSON
 	case "/v1/Example/GetArticle":
-		handler = s.serveGetArticleJSON
+		handler = succinctHandler("GetArticle", s.ExampleServer.GetArticle, s.sendErrorJSON)
 	case "/v1/Example/StreamNewArticles":
 		handler = s.serveStreamNewArticlesJSONStream
 	default:
@@ -675,7 +665,6 @@ func (s *exampleService) servePingJSON(ctx context.Context, w http.ResponseWrite
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
-
 func (s *exampleService) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
@@ -703,7 +692,6 @@ func (s *exampleService) serveStatusJSON(ctx context.Context, w http.ResponseWri
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
-
 func (s *exampleService) serveVersionJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Version")
 
@@ -731,7 +719,6 @@ func (s *exampleService) serveVersionJSON(ctx context.Context, w http.ResponseWr
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
-
 func (s *exampleService) serveGetUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
 
@@ -776,7 +763,6 @@ func (s *exampleService) serveGetUserJSON(ctx context.Context, w http.ResponseWr
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
-
 func (s *exampleService) serveFindUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "FindUser")
 
@@ -820,7 +806,6 @@ func (s *exampleService) serveFindUserJSON(ctx context.Context, w http.ResponseW
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
-
 func (s *exampleService) serveLogEventJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "LogEvent")
 
@@ -854,45 +839,6 @@ func (s *exampleService) serveLogEventJSON(ctx context.Context, w http.ResponseW
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
-
-func (s *exampleService) serveGetArticleJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetArticle")
-
-	reqBody, err := io.ReadAll(r.Body)
-	if err != nil {
-		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to read request data: %w", err))
-		return
-	}
-	defer r.Body.Close()
-
-	var reqPayload GetArticleRequest
-	if err := jsonCfg.Unmarshal(reqBody, &reqPayload); err != nil {
-		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
-		return
-	}
-
-	// Call service method implementation.
-	respPayload, err := s.ExampleServer.GetArticle(ctx, reqPayload)
-	if err != nil {
-		rpcErr, ok := err.(WebRPCError)
-		if !ok {
-			rpcErr = ErrWebrpcEndpoint.WithCause(err)
-		}
-		s.sendErrorJSON(w, r, rpcErr)
-		return
-	}
-
-	respBody, err := jsonCfg.Marshal(respPayload)
-	if err != nil {
-		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write(respBody)
-}
-
 func (s *exampleService) serveStreamNewArticlesJSONStream(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "StreamNewArticles")
 
@@ -980,6 +926,47 @@ func RespondWithError(w http.ResponseWriter, err error) {
 
 	respBody, _ := jsonCfg.Marshal(rpcErr)
 	w.Write(respBody)
+}
+
+type sendErrorFunc func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
+
+func succinctHandler[I any, O any](method string, fn func(context.Context, I) (O, error), sendError sendErrorFunc) func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		ctx = context.WithValue(ctx, MethodNameCtxKey, method)
+
+		reqBody, err := io.ReadAll(r.Body)
+		if err != nil {
+			sendError(w, r, ErrWebrpcBadRequest.WithCausef("failed to read request data: %w", err))
+			return
+		}
+		defer r.Body.Close()
+
+		var reqPayload I
+		if err := jsonCfg.Unmarshal(reqBody, &reqPayload); err != nil {
+			sendError(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
+			return
+		}
+
+		respPayload, err := fn(ctx, reqPayload)
+		if err != nil {
+			rpcErr, ok := err.(WebRPCError)
+			if !ok {
+				rpcErr = ErrWebrpcEndpoint.WithCause(err)
+			}
+			sendError(w, r, rpcErr)
+			return
+		}
+
+		respBody, err := jsonCfg.Marshal(respPayload)
+		if err != nil {
+			sendError(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(respBody)
+	}
 }
 
 type method struct {
@@ -1182,6 +1169,17 @@ func WithHTTPRequestHeaders(ctx context.Context, h http.Header) (context.Context
 func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 	h, ok := ctx.Value(HTTPClientRequestHeadersCtxKey).(http.Header)
 	return h, ok
+}
+
+func succinctFetch[I any, O any](ctx context.Context, client HTTPClient, url string, in I) (out O, err error) {
+	resp, err := doHTTPRequest(ctx, client, url, in, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+	return out, err
 }
 
 //
