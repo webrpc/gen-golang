@@ -11,7 +11,7 @@
 {{- set $opts "fixEmptyArrays" (ternary (in .Opts.fixEmptyArrays "" "true") true false) -}}
 {{- set $opts "errorStackTrace" (ternary (in .Opts.errorStackTrace "" "true") true false) -}}
 {{- set $opts "webrpcHeader" (ternary (eq (default .Opts.webrpcHeader "true") "false") false true) -}}
-{{- set $opts "schemaHash" (ternary (in .Opts.schemaHash "" "true") true false) -}}
+{{- set $opts "schemaHash" (ternary (eq (default .Opts.schemaHash "true") "false") false true) -}}
 
 {{- /* Print help on -help. */ -}}
 {{- if exists .Opts "help" -}}
