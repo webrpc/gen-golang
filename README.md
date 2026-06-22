@@ -34,6 +34,7 @@ Change any of the following values by passing `-option="Value"` CLI flag to `web
 | `-fixEmptyArrays`     | `false`   | `encoding/json`: fix `null` arrays with reflect (see Go [#27589][go27589])  | v0.13.0  |
 | `-errorStackTrace`    | `false`   | enables error stack traces                                                  | v0.14.0  |
 | `-webrpcHeader=false` | `true`    | enable client send webrpc version in http headers                           | v0.16.0  |
+| `-schemaHash=false`   | `true`    | don't emit schema hash + version helper funcs (avoids merge conflicts)      | v0.30.0  |
 
 Example:
 ```
