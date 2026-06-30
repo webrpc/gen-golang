@@ -14,9 +14,9 @@
     {{- end}}
     )
 
-        // Deprecated: Use the corresponding idiomatic enum constants above instead.
     const (
     {{- range $fields}}
+        // Deprecated: Use {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}} instead.
         {{template "enumLegacyConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = "{{.Value}}"
     {{- end}}
     )
