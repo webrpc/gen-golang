@@ -10,13 +10,13 @@
 
     const (
     {{- range $fields}}
-        {{$name}}_{{.Name}} {{$name}} = "{{.Value}}"
+        {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = "{{.Value}}"
     {{- end}}
     )
 
     var {{$name}}_values = []{{$name}}{
     {{- range $fields}}
-        {{$name}}_{{.Name}},
+        {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}},
     {{- end}}
     }
 

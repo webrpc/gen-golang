@@ -19,6 +19,13 @@ enum Intent: string
   - closeSession
   - validateSession
 
+enum AuditActorType: string
+  - service
+  - apiKey
+  - externalURL
+  - resourceId
+  - httpRequest
+
 type Username: string
 
 type Age: uint32
