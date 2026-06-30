@@ -13,3 +13,5 @@ service ExampleAPI
   - Ping()
   - Status() => (status: bool)
   - GetUsers() => (users: []User, location: Location)
+  - GetUser(GetUserRequest) => (GetUserResponse)
+  - ListUsers(ListUsersRequest) => (ListUsersResponse)

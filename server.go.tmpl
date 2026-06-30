@@ -67,7 +67,11 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Path {
 	{{- range $_, $method := $service.Methods}}
 	case "{{$basepath}}{{$name}}/{{$method.Name}}":
+		{{- if and $method.Succinct (not $method.StreamOutput) }}
+		handler = succinctHandler("{{$method.Name}}", s.{{$name}}Server.{{$method.Name}}, s.sendErrorJSON)
+		{{- else }}
 		handler = s.serve{{$method.Name | firstLetterToUpper}}JSON{{if $method.StreamOutput}}Stream{{end}}
+		{{- end }}
 	{{- end}}
 	default:
 		err := ErrWebrpcBadRoute.WithCausef("no webrpc method defined for path %v", r.URL.Path)
@@ -109,6 +113,7 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 {{range $_, $method := $service.Methods}}
 {{- if eq $method.StreamOutput false }}
+{{- if not $method.Succinct }}
 func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{$method.Name}}")
 
@@ -120,16 +125,11 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx cont
 	}
 	defer r.Body.Close()
 
-	{{ if $method.Succinct }}
-	{{- $input := index $method.Inputs 0 -}}
-	var reqPayload {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Succinct" $method.Succinct}}
-	{{- else -}}
 	reqPayload := struct {
 	{{- range $i, $input := $method.Inputs}}
 		Arg{{$i}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "JsonTags" true}}
 	{{- end}}
 	}{}
-	{{- end}}
 	if err := {{$json}}.Unmarshal(reqBody, &reqPayload); err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
 		return
@@ -137,11 +137,7 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx cont
 	{{- end }}
 
 	// Call service method implementation.
-	{{ if $method.Succinct -}}
-	respPayload, err := s.{{$name}}Server.{{$method.Name}}(ctx, reqPayload)
-	{{- else -}}
 	{{range $i, $output := $method.Outputs}}ret{{$i}}, {{end}}err {{if or (eq (len $method.Inputs) 0) (gt (len $method.Outputs) 0)}}:{{end}}= s.{{$name}}Server.{{$method.Name}}(ctx{{range $i, $_ := $method.Inputs}}, reqPayload.Arg{{$i}}{{end}})
-	{{- end}}
 	if err != nil {
 		rpcErr, ok := err.(WebRPCError)
 		if !ok {
@@ -153,15 +149,12 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx cont
 
 	{{- if gt (len $method.Outputs) 0}}
 
-	{{ if eq $method.Succinct false }}
 	respPayload := struct {
 	{{- range $i, $output := $method.Outputs}}
 		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
 	{{- end }}
 	}{ {{- range $i, $_ := $method.Outputs}}{{if gt $i 0}}, {{end}}ret{{$i}}{{end}}}
 	{{- end }}
-	{{- end }}
-
 
 	{{- if $method.Outputs | len}}
 	{{ if $opts.fixEmptyArrays -}}
@@ -184,7 +177,8 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx cont
 	w.Write([]byte("{}"))
 	{{- end}}
 }
-{{ else }}
+{{- end}}{{/* if not Succinct */}}
+{{- else }}{{/* StreamOutput = true */}}
 func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSONStream(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{$method.Name}}")
 
@@ -288,6 +282,51 @@ func RespondWithError(w http.ResponseWriter, err error) {
 
 	respBody, _ := {{$json}}.Marshal(rpcErr)
 	w.Write(respBody)
+}
+
+type sendErrorFunc func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
+
+func succinctHandler[I any, O any](method string, fn func(context.Context, I) (O, error), sendError sendErrorFunc) func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		ctx = context.WithValue(ctx, MethodNameCtxKey, method)
+
+		reqBody, err := io.ReadAll(r.Body)
+		if err != nil {
+			sendError(w, r, ErrWebrpcBadRequest.WithCausef("failed to read request data: %w", err))
+			return
+		}
+		defer r.Body.Close()
+
+		var reqPayload I
+		if err := {{$json}}.Unmarshal(reqBody, &reqPayload); err != nil {
+			sendError(w, r, ErrWebrpcBadRequest.WithCausef("failed to unmarshal request data: %w", err))
+			return
+		}
+
+		respPayload, err := fn(ctx, reqPayload)
+		if err != nil {
+			rpcErr, ok := err.(WebRPCError)
+			if !ok {
+				rpcErr = ErrWebrpcEndpoint.WithCause(err)
+			}
+			sendError(w, r, rpcErr)
+			return
+		}
+
+		{{ if $opts.fixEmptyArrays -}}
+		respBody, err := {{$json}}.Marshal(initializeNilSlices(respPayload))
+		{{ else -}}
+		respBody, err := {{$json}}.Marshal(respPayload)
+		{{ end -}}
+		if err != nil {
+			sendError(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		w.Write(respBody)
+	}
 }
 
 {{ end -}}

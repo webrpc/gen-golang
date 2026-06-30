@@ -3,3 +3,15 @@ webrpc = v1
 struct User
   - username: string
   - age: uint32
+
+struct GetUserRequest
+  - username: string
+
+struct GetUserResponse
+  - user: User
+
+struct ListUsersRequest
+  - page: uint32
+
+struct ListUsersResponse
+  - users: []User

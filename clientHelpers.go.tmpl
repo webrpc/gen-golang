@@ -126,4 +126,15 @@ func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 	return h, ok
 }
 
+func succinctFetch[I any, O any](ctx context.Context, client HTTPClient, url string, in I) (out O, err error) {
+	resp, err := doHTTPRequest(ctx, client, url, in, &out)
+	if resp != nil {
+		cerr := resp.Body.Close()
+		if err == nil && cerr != nil {
+			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
+		}
+	}
+	return out, err
+}
+
 {{- end -}}
