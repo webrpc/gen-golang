@@ -190,9 +190,8 @@ const (
 )
 
 const (
-	// Deprecated: Use KindUser instead.
-	Kind_USER Kind = 0
-	// Deprecated: Use KindAdmin instead.
+	// Deprecated: Use the corresponding idiomatic enum constants above instead.
+	Kind_USER  Kind = 0
 	Kind_ADMIN Kind = 1
 )
 
@@ -240,11 +239,9 @@ const (
 )
 
 const (
-	// Deprecated: Use IntentOpenSession instead.
-	Intent_openSession Intent = "openSession"
-	// Deprecated: Use IntentCloseSession instead.
-	Intent_closeSession Intent = "closeSession"
-	// Deprecated: Use IntentValidateSession instead.
+	// Deprecated: Use the corresponding idiomatic enum constants above instead.
+	Intent_openSession     Intent = "openSession"
+	Intent_closeSession    Intent = "closeSession"
 	Intent_validateSession Intent = "validateSession"
 )
 
@@ -286,15 +283,11 @@ const (
 )
 
 const (
-	// Deprecated: Use AuditActorTypeService instead.
-	AuditActorType_service AuditActorType = "service"
-	// Deprecated: Use AuditActorTypeAPIKey instead.
-	AuditActorType_apiKey AuditActorType = "apiKey"
-	// Deprecated: Use AuditActorTypeExternalURL instead.
+	// Deprecated: Use the corresponding idiomatic enum constants above instead.
+	AuditActorType_service     AuditActorType = "service"
+	AuditActorType_apiKey      AuditActorType = "apiKey"
 	AuditActorType_externalURL AuditActorType = "externalURL"
-	// Deprecated: Use AuditActorTypeResourceID instead.
-	AuditActorType_resourceId AuditActorType = "resourceId"
-	// Deprecated: Use AuditActorTypeHTTPRequest instead.
+	AuditActorType_resourceId  AuditActorType = "resourceId"
 	AuditActorType_httpRequest AuditActorType = "httpRequest"
 )
 

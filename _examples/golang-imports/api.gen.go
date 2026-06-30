@@ -69,9 +69,8 @@ const (
 )
 
 const (
-	// Deprecated: Use LocationToronto instead.
-	Location_TORONTO Location = 0
-	// Deprecated: Use LocationNewYork instead.
+	// Deprecated: Use the corresponding idiomatic enum constants above instead.
+	Location_TORONTO  Location = 0
 	Location_NEW_YORK Location = 1
 )
 
