@@ -187,6 +187,9 @@ const (
 	// revert transactions
 	// see analytics dashboard
 	KindAdmin Kind = 1
+)
+
+const (
 	// Deprecated: Use KindUser instead.
 	Kind_USER Kind = 0
 	// Deprecated: Use KindAdmin instead.
@@ -234,6 +237,9 @@ const (
 	IntentOpenSession     Intent = "openSession"
 	IntentCloseSession    Intent = "closeSession"
 	IntentValidateSession Intent = "validateSession"
+)
+
+const (
 	// Deprecated: Use IntentOpenSession instead.
 	Intent_openSession Intent = "openSession"
 	// Deprecated: Use IntentCloseSession instead.
@@ -277,6 +283,9 @@ const (
 	AuditActorTypeExternalURL AuditActorType = "externalURL"
 	AuditActorTypeResourceID  AuditActorType = "resourceId"
 	AuditActorTypeHTTPRequest AuditActorType = "httpRequest"
+)
+
+const (
 	// Deprecated: Use AuditActorTypeService instead.
 	AuditActorType_service AuditActorType = "service"
 	// Deprecated: Use AuditActorTypeAPIKey instead.

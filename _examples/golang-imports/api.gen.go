@@ -66,6 +66,9 @@ type Location uint32
 const (
 	LocationToronto Location = 0
 	LocationNewYork Location = 1
+)
+
+const (
 	// Deprecated: Use LocationToronto instead.
 	Location_TORONTO Location = 0
 	// Deprecated: Use LocationNewYork instead.
