@@ -189,8 +189,8 @@ const (
 	KindAdmin Kind = 1
 )
 
+// Deprecated: Use the corresponding idiomatic enum constants above instead.
 const (
-	// Deprecated: Use the corresponding idiomatic enum constants above instead.
 	Kind_USER  Kind = 0
 	Kind_ADMIN Kind = 1
 )
@@ -238,8 +238,8 @@ const (
 	IntentValidateSession Intent = "validateSession"
 )
 
+// Deprecated: Use the corresponding idiomatic enum constants above instead.
 const (
-	// Deprecated: Use the corresponding idiomatic enum constants above instead.
 	Intent_openSession     Intent = "openSession"
 	Intent_closeSession    Intent = "closeSession"
 	Intent_validateSession Intent = "validateSession"
@@ -282,8 +282,8 @@ const (
 	AuditActorTypeHTTPRequest AuditActorType = "httpRequest"
 )
 
+// Deprecated: Use the corresponding idiomatic enum constants above instead.
 const (
-	// Deprecated: Use the corresponding idiomatic enum constants above instead.
 	AuditActorType_service     AuditActorType = "service"
 	AuditActorType_apiKey      AuditActorType = "apiKey"
 	AuditActorType_externalURL AuditActorType = "externalURL"

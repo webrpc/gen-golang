@@ -20,8 +20,8 @@ const (
 {{- end}}
 )
 
-const (
 	// Deprecated: Use the corresponding idiomatic enum constants above instead.
+const (
 {{- range $_, $field := $fields }}
 	{{template "enumLegacyConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = {{$field.Value}}
 {{- end}}
