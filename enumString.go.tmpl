@@ -12,6 +12,10 @@
     {{- range $fields}}
         {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = "{{.Value}}"
     {{- end}}
+    {{- range $fields}}
+        // Deprecated: Use {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}} instead.
+        {{template "enumLegacyConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = "{{.Value}}"
+    {{- end}}
     )
 
     var {{$name}}_values = []{{$name}}{

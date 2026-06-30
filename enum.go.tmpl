@@ -18,6 +18,10 @@ const (
 	{{- end }}
 	{{template "enumConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = {{$field.Value}}
 {{- end}}
+{{- range $_, $field := $fields }}
+	// Deprecated: Use {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}} instead.
+	{{template "enumLegacyConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = {{$field.Value}}
+{{- end}}
 )
 
 var {{$name}}_name = map[{{$name}}]string{

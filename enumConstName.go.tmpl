@@ -15,3 +15,7 @@
 {{- $fieldName = regexReplaceAll "Id($|[A-Z])" $fieldName "ID${1}" -}}
 {{- .EnumName }}{{ $fieldName -}}
 {{- end -}}
+
+{{- define "enumLegacyConstName" -}}
+{{- .EnumName }}_{{ .FieldName -}}
+{{- end -}}

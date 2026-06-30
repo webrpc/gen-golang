@@ -46,7 +46,7 @@ func (s *ExampleRPC) Status(ctx context.Context) (bool, error) {
 }
 
 func (s *ExampleRPC) GetUsers(ctx context.Context) ([]*User, Location, error) {
-	loc := LocationToronto
+	loc := Location_TORONTO
 	return []*User{
 		{Username: "pk", Age: 99},
 	}, loc, nil

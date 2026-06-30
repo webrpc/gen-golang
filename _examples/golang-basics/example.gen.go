@@ -187,6 +187,10 @@ const (
 	// revert transactions
 	// see analytics dashboard
 	KindAdmin Kind = 1
+	// Deprecated: Use KindUser instead.
+	Kind_USER Kind = 0
+	// Deprecated: Use KindAdmin instead.
+	Kind_ADMIN Kind = 1
 )
 
 var Kind_name = map[Kind]string{
@@ -230,6 +234,12 @@ const (
 	IntentOpenSession     Intent = "openSession"
 	IntentCloseSession    Intent = "closeSession"
 	IntentValidateSession Intent = "validateSession"
+	// Deprecated: Use IntentOpenSession instead.
+	Intent_openSession Intent = "openSession"
+	// Deprecated: Use IntentCloseSession instead.
+	Intent_closeSession Intent = "closeSession"
+	// Deprecated: Use IntentValidateSession instead.
+	Intent_validateSession Intent = "validateSession"
 )
 
 var Intent_values = []Intent{
@@ -267,6 +277,16 @@ const (
 	AuditActorTypeExternalURL AuditActorType = "externalURL"
 	AuditActorTypeResourceID  AuditActorType = "resourceId"
 	AuditActorTypeHTTPRequest AuditActorType = "httpRequest"
+	// Deprecated: Use AuditActorTypeService instead.
+	AuditActorType_service AuditActorType = "service"
+	// Deprecated: Use AuditActorTypeAPIKey instead.
+	AuditActorType_apiKey AuditActorType = "apiKey"
+	// Deprecated: Use AuditActorTypeExternalURL instead.
+	AuditActorType_externalURL AuditActorType = "externalURL"
+	// Deprecated: Use AuditActorTypeResourceID instead.
+	AuditActorType_resourceId AuditActorType = "resourceId"
+	// Deprecated: Use AuditActorTypeHTTPRequest instead.
+	AuditActorType_httpRequest AuditActorType = "httpRequest"
 )
 
 var AuditActorType_values = []AuditActorType{

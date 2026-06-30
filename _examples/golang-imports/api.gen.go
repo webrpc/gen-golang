@@ -66,6 +66,10 @@ type Location uint32
 const (
 	LocationToronto Location = 0
 	LocationNewYork Location = 1
+	// Deprecated: Use LocationToronto instead.
+	Location_TORONTO Location = 0
+	// Deprecated: Use LocationNewYork instead.
+	Location_NEW_YORK Location = 1
 )
 
 var Location_name = map[Location]string{
