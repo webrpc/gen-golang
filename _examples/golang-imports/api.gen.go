@@ -150,13 +150,7 @@ func NewExampleAPIClient(addr string, client HTTPClient) ExampleAPIClient {
 }
 
 func (c *exampleAPIClient) Ping(ctx context.Context) error {
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[0], nil, nil)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
+	err := doHTTPRequest(ctx, c.client, c.urls[0], nil, nil)
 
 	return err
 }
@@ -166,13 +160,7 @@ func (c *exampleAPIClient) Status(ctx context.Context) (bool, error) {
 		Ret0 bool `json:"status"`
 	}{}
 
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[1], nil, &out)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
+	err := doHTTPRequest(ctx, c.client, c.urls[1], nil, &out)
 
 	return out.Ret0, err
 }
@@ -183,23 +171,21 @@ func (c *exampleAPIClient) GetUsers(ctx context.Context) ([]*User, Location, err
 		Ret1 Location `json:"location"`
 	}{}
 
-	resp, err := doHTTPRequest(ctx, c.client, c.urls[2], nil, &out)
-	if resp != nil {
-		cerr := resp.Body.Close()
-		if err == nil && cerr != nil {
-			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
-		}
-	}
+	err := doHTTPRequest(ctx, c.client, c.urls[2], nil, &out)
 
 	return out.Ret0, out.Ret1, err
 }
 
 func (c *exampleAPIClient) GetUser(ctx context.Context, getUserRequest GetUserRequest) (*GetUserResponse, error) {
-	return succinctFetch[GetUserRequest, *GetUserResponse](ctx, c.client, c.urls[3], getUserRequest)
+	var out *GetUserResponse
+	err := doHTTPRequest(ctx, c.client, c.urls[3], getUserRequest, &out)
+	return out, err
 }
 
 func (c *exampleAPIClient) ListUsers(ctx context.Context, listUsersRequest ListUsersRequest) (*ListUsersResponse, error) {
-	return succinctFetch[ListUsersRequest, *ListUsersResponse](ctx, c.client, c.urls[4], listUsersRequest)
+	var out *ListUsersResponse
+	err := doHTTPRequest(ctx, c.client, c.urls[4], listUsersRequest, &out)
+	return out, err
 }
 
 //
@@ -548,8 +534,10 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 	return req, nil
 }
 
-// doHTTPRequest is common code to make a request to the remote service.
-func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
+// doHTTPRequestRaw is common code to make a request to the remote service.
+// It returns the open *http.Response; the caller is responsible for closing
+// its body. Unary methods should use doHTTPRequest, which closes it for them.
+func doHTTPRequestRaw(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
 	reqBody, err := json.Marshal(in)
 	if err != nil {
 		return nil, ErrWebrpcRequestFailed.WithCausef("failed to marshal JSON body: %w", err)
@@ -625,15 +613,18 @@ func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 	return h, ok
 }
 
-func succinctFetch[I any, O any](ctx context.Context, client HTTPClient, url string, in I) (out O, err error) {
-	resp, err := doHTTPRequest(ctx, client, url, in, &out)
+// doHTTPRequest makes a request to the remote service and closes the response
+// body. It is used by all unary methods; streaming methods use
+// doHTTPRequestRaw directly, since they read from the response body.
+func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) error {
+	resp, err := doHTTPRequestRaw(ctx, client, url, in, out)
 	if resp != nil {
 		cerr := resp.Body.Close()
 		if err == nil && cerr != nil {
 			err = ErrWebrpcRequestFailed.WithCausef("failed to close response body: %w", cerr)
 		}
 	}
-	return out, err
+	return err
 }
 
 //
