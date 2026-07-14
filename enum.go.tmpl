@@ -16,19 +16,26 @@ const (
 			// {{ replaceAll $comment "\"" "'" }}
 		{{- end }}
 	{{- end }}
-	{{$name}}_{{.Name}} {{$name}} = {{$field.Value}}
+	{{template "enumConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = {{$field.Value}}
+{{- end}}
+)
+
+const (
+{{- range $_, $field := $fields }}
+	// Deprecated: Use {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}} instead.
+	{{template "enumLegacyConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = {{$field.Value}}
 {{- end}}
 )
 
 var {{$name}}_name = map[{{$name}}]string{
 {{- range $fields}}
-	{{$name}}_{{.Name}}: "{{.Name}}",
+	{{template "enumConstName" dict "EnumName" $name "FieldName" .Name}}: "{{.Name}}",
 {{- end}}
 }
 
 var {{$name}}_value = map[string]{{$name}}{
 {{- range $fields}}
-	"{{.Name}}": {{$name}}_{{.Name}},
+	"{{.Name}}": {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}},
 {{- end}}
 }
 

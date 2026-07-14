@@ -52,8 +52,8 @@
 {{- else if isCoreType $type -}}
     {{if $optional}}*{{end}}{{ get $typeMap $type }}
 
-{{- else -}}{{- /* structs */ -}}
-    {{- if isEnumType $type -}}
+{{- else -}}{{- /* structs, enums, aliases */ -}}
+    {{- if or (isEnumType $type) (isAliasType $type) -}}
         {{if $optional}}*{{end}}{{$typePrefix}}{{$type}}
     {{- else -}}
         {{- if $succinct -}}

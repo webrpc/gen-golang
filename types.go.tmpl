@@ -19,6 +19,15 @@
 	{{- end -}}
 {{ end -}}
 
+{{- if and (eq $type.Kind "alias") $opts.types }}
+{{- if gt (len $type.Comments) 0 }}
+	{{- range $_, $comment := $type.Comments }}
+		// {{ replaceAll $comment "\"" "'" }}
+	{{- end }}
+{{- end }}
+{{template "alias" dict "Name" $type.Name "Type" $type.Type "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $type.Meta}}
+{{ end -}}
+
 {{- if and (eq $type.Kind "struct") $opts.types }}
 {{- if gt (len $type.Comments) 0 }}
 	{{- range $_, $comment := $type.Comments }}
