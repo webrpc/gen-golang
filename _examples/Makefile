@@ -1,6 +1,6 @@
-.PHONY: all generate diff
+.PHONY: all generate diff test
 
-all: generate diff
+all: generate diff test
 
 generate:
 	cd golang-basics && go generate -x ./...
@@ -8,3 +8,7 @@ generate:
 
 diff:
 	git diff --color --ignore-all-space --ignore-blank-lines --exit-code .
+
+test:
+	cd golang-basics && go test ./...
+	cd golang-imports && go test ./...
