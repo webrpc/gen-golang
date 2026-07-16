@@ -39,3 +39,21 @@ func TestStatus(t *testing.T) {
 	assert.Equal(t, true, resp)
 	assert.NoError(t, err)
 }
+
+// TestGetUser exercises the succinct request/response path end-to-end:
+// the succinct client method and the server's succinctHandler.
+func TestGetUser(t *testing.T) {
+	resp, err := client.GetUser(context.Background(), GetUserRequest{Username: "alice"})
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Equal(t, "alice", resp.User.Username)
+	assert.Equal(t, uint32(30), resp.User.Age)
+}
+
+func TestListUsers(t *testing.T) {
+	resp, err := client.ListUsers(context.Background(), ListUsersRequest{Page: 1})
+	assert.NoError(t, err)
+	assert.NotNil(t, resp)
+	assert.Len(t, resp.Users, 1)
+	assert.Equal(t, "pk", resp.Users[0].Username)
+}
