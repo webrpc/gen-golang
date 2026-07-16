@@ -55,7 +55,7 @@ func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context, {{$input.
 func (c *{{$serviceNameClient}}) {{$method.Name}}(ctx context.Context{{range $_, $input := $method.Inputs}}, {{$input.Name}}{{if index $keywordMap $input.Name}}_{{end}} {{template "field" dict "Name" $input.Name "Type" $input.Type "Optional" $input.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $input.Meta "Succinct" $method.Succinct}}{{end}}) {{if len $method.Outputs}}({{end}}{{range $i, $output := $method.Outputs}}{{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta}}{{if lt $i (len $method.Outputs)}}, {{end}}{{end}}error{{if len $method.Outputs}}){{end}} {
 	{{- $inputVar := "nil" -}}
 	{{- $outputVar := "nil" -}}
-	{{- if and ($method.Inputs | len) }}
+	{{- if $method.Inputs | len }}
 	{{- $inputVar = "in"}}
 	in := struct {
 	{{- range $i, $input := $method.Inputs}}
