@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"net"
 	"net/http"
 	"os"
 	"testing"
@@ -14,18 +15,20 @@ import (
 var client ExampleAPIClient
 
 func TestMain(m *testing.M) {
-	go func() {
-		if err := startServer(); err != nil {
-			log.Fatal(err)
-		}
-	}()
-	time.Sleep(time.Millisecond * 500)
+	// Bind an ephemeral port first: the listener accepts connections before
+	// http.Serve runs, so there is no startup race and nothing to wait for.
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		log.Fatal(err)
+	}
+	go http.Serve(ln, newHandler())
 
-	client = NewExampleAPIClient("http://0.0.0.0:4242", &http.Client{
+	client = NewExampleAPIClient("http://"+ln.Addr().String(), &http.Client{
 		Timeout: time.Duration(2 * time.Second),
 	})
 
 	code := m.Run()
+	ln.Close()
 	os.Exit(code)
 }
 

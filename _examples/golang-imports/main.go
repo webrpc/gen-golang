@@ -19,6 +19,10 @@ func main() {
 }
 
 func startServer() error {
+	return http.ListenAndServe(":4242", newHandler())
+}
+
+func newHandler() http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
@@ -31,7 +35,7 @@ func startServer() error {
 	webrpcHandler := NewExampleAPIServer(&ExampleRPC{})
 	r.Handle("/*", webrpcHandler)
 
-	return http.ListenAndServe(":4242", r)
+	return r
 }
 
 type ExampleRPC struct {
