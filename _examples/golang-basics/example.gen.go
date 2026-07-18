@@ -699,6 +699,7 @@ func (s *exampleService) servePingJSON(ctx context.Context, w http.ResponseWrite
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
+
 func (s *exampleService) serveStatusJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Status")
 
@@ -726,6 +727,7 @@ func (s *exampleService) serveStatusJSON(ctx context.Context, w http.ResponseWri
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
+
 func (s *exampleService) serveVersionJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "Version")
 
@@ -753,6 +755,7 @@ func (s *exampleService) serveVersionJSON(ctx context.Context, w http.ResponseWr
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
+
 func (s *exampleService) serveGetUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "GetUser")
 
@@ -797,6 +800,7 @@ func (s *exampleService) serveGetUserJSON(ctx context.Context, w http.ResponseWr
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
+
 func (s *exampleService) serveFindUserJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "FindUser")
 
@@ -840,6 +844,7 @@ func (s *exampleService) serveFindUserJSON(ctx context.Context, w http.ResponseW
 	w.WriteHeader(http.StatusOK)
 	w.Write(respBody)
 }
+
 func (s *exampleService) serveLogEventJSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "LogEvent")
 
@@ -873,6 +878,7 @@ func (s *exampleService) serveLogEventJSON(ctx context.Context, w http.ResponseW
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
+
 func (s *exampleService) serveStreamNewArticlesJSONStream(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "StreamNewArticles")
 

@@ -111,9 +111,10 @@ func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.sendErrorJSON(w, r, err)
 	}
 }
-{{range $_, $method := $service.Methods}}
+{{- range $_, $method := $service.Methods}}
 {{- if eq $method.StreamOutput false }}
 {{- if not $method.Succinct }}
+
 func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{$method.Name}}")
 
@@ -179,6 +180,7 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx cont
 }
 {{- end}}{{/* if not Succinct */}}
 {{- else }}{{/* StreamOutput = true */}}
+
 func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSONStream(ctx context.Context, w http.ResponseWriter, r *http.Request) {
 	ctx = context.WithValue(ctx, MethodNameCtxKey, "{{$method.Name}}")
 
