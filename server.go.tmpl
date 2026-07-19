@@ -7,6 +7,15 @@
 {{- $json := .Json -}}
 {{- $opts := .Opts -}}
 
+{{- $hasSuccinct := false -}}
+{{- range $_, $service := $services -}}
+{{- range $_, $method := $service.Methods -}}
+{{- if and $method.Succinct (not $method.StreamOutput) -}}
+{{- $hasSuccinct = true -}}
+{{- end -}}
+{{- end -}}
+{{- end -}}
+
 {{- if $services -}}
 //
 // Server
@@ -286,6 +295,7 @@ func RespondWithError(w http.ResponseWriter, err error) {
 	w.Write(respBody)
 }
 
+{{ if $hasSuccinct -}}
 type sendErrorFunc func(w http.ResponseWriter, r *http.Request, rpcErr WebRPCError)
 
 func succinctHandler[I any, O any](method string, fn func(context.Context, I) (O, error), sendError sendErrorFunc) func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
@@ -330,6 +340,7 @@ func succinctHandler[I any, O any](method string, fn func(context.Context, I) (O
 		w.Write(respBody)
 	}
 }
+{{ end -}}
 
 {{ end -}}
 {{ end -}}
