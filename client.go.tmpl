@@ -26,7 +26,7 @@ type {{$serviceNameClient}} struct {
 }
 
 func New{{$ServiceNameClient}}(addr string, client HTTPClient) {{$ServiceNameClient}} {
-	prefix := urlBase(addr) + {{$service.Name}}PathPrefix
+	prefix := serviceURL(addr, {{$service.Name}}PathPrefix)
 	urls := [{{len $service.Methods}}]string{
 	{{- range $_, $method := $service.Methods}}
 		prefix + "{{$method.Name}}",

@@ -405,7 +405,7 @@ type exampleClient struct {
 }
 
 func NewExampleClient(addr string, client HTTPClient) ExampleClient {
-	prefix := urlBase(addr) + ExamplePathPrefix
+	prefix := serviceURL(addr, ExamplePathPrefix)
 	urls := [8]string{
 		prefix + "Ping",
 		prefix + "Status",
@@ -1098,16 +1098,15 @@ type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// urlBase ensures that addr specifies a scheme, defaulting to http.
-func urlBase(addr string) string {
-	url, err := url.Parse(addr)
-	if err != nil {
-		return addr
+// serviceURL joins addr (a full URL, e.g. "http://localhost:8080") with the
+// service path prefix. Malformed addrs fail on the first request.
+func serviceURL(addr, prefix string) string {
+	u, err := url.Parse(addr)
+	if err != nil || u.Host == "" {
+		return addr + prefix
 	}
-	if url.Scheme == "" {
-		url.Scheme = "http"
-	}
-	return url.String()
+	u.RawQuery, u.Fragment = "", ""
+	return u.JoinPath(prefix).String()
 }
 
 // newRequest makes an http.Request with common headers.
