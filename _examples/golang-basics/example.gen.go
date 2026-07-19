@@ -1093,18 +1093,13 @@ var WebRPCServices = map[string][]string{
 // Client helpers
 //
 
-// HTTPClient is the interface used by generated clients to send HTTP requests.
-// It is fulfilled by *(net/http).Client, which is sufficient for most users.
-// Users can provide their own implementation for special retry policies.
+// HTTPClient is the interface used to send HTTP requests. It is fulfilled by *http.Client.
 type HTTPClient interface {
 	Do(req *http.Request) (*http.Response, error)
 }
 
-// urlBase helps ensure that addr specifies a scheme. If it is unparsable
-// as a URL, it returns addr unchanged.
+// urlBase ensures that addr specifies a scheme, defaulting to http.
 func urlBase(addr string) string {
-	// If the addr specifies a scheme, use it. If not, default to
-	// http. If url.Parse fails on it, return it unchanged.
 	url, err := url.Parse(addr)
 	if err != nil {
 		return addr
@@ -1115,7 +1110,7 @@ func urlBase(addr string) string {
 	return url.String()
 }
 
-// newRequest makes an http.Request from a client, adding common headers.
+// newRequest makes an http.Request with common headers.
 func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType string) (*http.Request, error) {
 	req, err := http.NewRequestWithContext(ctx, "POST", url, reqBody)
 	if err != nil {
@@ -1134,9 +1129,7 @@ func newRequest(ctx context.Context, url string, reqBody io.Reader, contentType 
 	return req, nil
 }
 
-// doHTTPRequestRaw is common code to make a request to the remote service.
-// It returns the open *http.Response; the caller is responsible for closing
-// its body. Unary methods should use doHTTPRequest, which closes it for them.
+// doHTTPRequestRaw makes a request and returns the open *http.Response; the caller must close its body.
 func doHTTPRequestRaw(ctx context.Context, client HTTPClient, url string, in, out interface{}) (*http.Response, error) {
 	reqBody, err := jsonCfg.Marshal(in)
 	if err != nil {
@@ -1213,9 +1206,7 @@ func HTTPRequestHeaders(ctx context.Context) (http.Header, bool) {
 	return h, ok
 }
 
-// doHTTPRequest makes a request to the remote service and closes the response
-// body. It is used by all unary methods; streaming methods use
-// doHTTPRequestRaw directly, since they read from the response body.
+// doHTTPRequest makes a request and closes the response body.
 func doHTTPRequest(ctx context.Context, client HTTPClient, url string, in, out interface{}) error {
 	resp, err := doHTTPRequestRaw(ctx, client, url, in, out)
 	if resp != nil {
