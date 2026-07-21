@@ -106,7 +106,7 @@ func TestGetUser(t *testing.T) {
 	}
 
 	{ // streaming
-		stream, err := client.StreamNewArticles(context.Background())
+		stream, err := client.StreamNewArticles(context.Background(), StreamNewArticlesRequest{})
 		assert.NoError(t, err)
 
 		var articles []*GetArticleResponse

@@ -104,7 +104,7 @@ func (rpc *ExampleServiceRPC) FindUser(ctx context.Context, s *SearchFilter) (st
 	name := s.Q
 	return s.Q, &User{
 		ID:       123,
-		Username: name,
+		Username: Username(name),
 	}, nil
 }
 
@@ -129,7 +129,7 @@ func (rpc *ExampleServiceRPC) GetArticle(ctx context.Context, req GetArticleRequ
 	}, nil
 }
 
-func (rpc *ExampleServiceRPC) StreamNewArticles(ctx context.Context, stream StreamNewArticlesStreamWriter) error {
+func (rpc *ExampleServiceRPC) StreamNewArticles(ctx context.Context, req StreamNewArticlesRequest, stream StreamNewArticlesStreamWriter) error {
 	for i := 0; i < 4; i++ {
 		// content := fmt.Sprintf("This is the content of the article, %d", i)
 		stream.Write(&GetArticleResponse{
