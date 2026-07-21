@@ -35,9 +35,8 @@ type Metadata: map<string,any>
   + go.type = json.RawMessage
   + go.type.import = encoding/json
 
-# TxHash and Address demonstrate go.type / go.alias pulling a custom Go type
-# from a package local to this repository (golang-basics/hash), rather than
-# a third-party module.
+# TxHash and Address demonstrate go.type / go.alias with a custom Go type
+# from a local package (golang-basics/hash).
 type TxHash: string
   + go.type = Hash
   + go.type.import = golang-basics/hash
