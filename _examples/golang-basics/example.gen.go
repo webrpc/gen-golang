@@ -192,11 +192,12 @@ const (
 	KindAdmin Kind = 1
 )
 
+//go:fix inline
 const (
 	// Deprecated: Use KindUser instead.
-	Kind_USER Kind = 0
+	Kind_USER Kind = KindUser
 	// Deprecated: Use KindAdmin instead.
-	Kind_ADMIN Kind = 1
+	Kind_ADMIN Kind = KindAdmin
 )
 
 var Kind_name = map[Kind]string{
@@ -242,13 +243,14 @@ const (
 	IntentValidateSession Intent = "validateSession"
 )
 
+//go:fix inline
 const (
 	// Deprecated: Use IntentOpenSession instead.
-	Intent_openSession Intent = "openSession"
+	Intent_openSession Intent = IntentOpenSession
 	// Deprecated: Use IntentCloseSession instead.
-	Intent_closeSession Intent = "closeSession"
+	Intent_closeSession Intent = IntentCloseSession
 	// Deprecated: Use IntentValidateSession instead.
-	Intent_validateSession Intent = "validateSession"
+	Intent_validateSession Intent = IntentValidateSession
 )
 
 var Intent_values = []Intent{
@@ -288,17 +290,18 @@ const (
 	AuditActorTypeHTTPRequest AuditActorType = "httpRequest"
 )
 
+//go:fix inline
 const (
 	// Deprecated: Use AuditActorTypeService instead.
-	AuditActorType_service AuditActorType = "service"
+	AuditActorType_service AuditActorType = AuditActorTypeService
 	// Deprecated: Use AuditActorTypeAPIKey instead.
-	AuditActorType_apiKey AuditActorType = "apiKey"
+	AuditActorType_apiKey AuditActorType = AuditActorTypeAPIKey
 	// Deprecated: Use AuditActorTypeExternalURL instead.
-	AuditActorType_externalURL AuditActorType = "externalURL"
+	AuditActorType_externalURL AuditActorType = AuditActorTypeExternalURL
 	// Deprecated: Use AuditActorTypeResourceID instead.
-	AuditActorType_resourceId AuditActorType = "resourceId"
+	AuditActorType_resourceId AuditActorType = AuditActorTypeResourceID
 	// Deprecated: Use AuditActorTypeHTTPRequest instead.
-	AuditActorType_httpRequest AuditActorType = "httpRequest"
+	AuditActorType_httpRequest AuditActorType = AuditActorTypeHTTPRequest
 )
 
 var AuditActorType_values = []AuditActorType{
@@ -1258,7 +1261,7 @@ func RequestFromContext(ctx context.Context) *http.Request {
 	return r
 }
 
-// Deprecated: Use Go 1.26's new(expr).
+// Deprecated: Use Go 1.26's new(expr). Migrate automatically with: go fix ./...
 func PtrTo[T any](v T) *T { return &v }
 
 func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {

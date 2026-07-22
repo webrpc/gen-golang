@@ -20,10 +20,11 @@ const (
 {{- end}}
 )
 
+//go:fix inline
 const (
 {{- range $_, $field := $fields }}
 	// Deprecated: Use {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}} instead.
-	{{template "enumLegacyConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = {{$field.Value}}
+	{{template "enumLegacyConstName" dict "EnumName" $name "FieldName" .Name}} {{$name}} = {{template "enumConstName" dict "EnumName" $name "FieldName" .Name}}
 {{- end}}
 )
 
