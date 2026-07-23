@@ -103,6 +103,9 @@ struct Version
 struct ComplexType
   - meta: map<string,any>
     + go.field.type = json.RawMessage
+  - optionalAny?: any
+  - optionalMap?: map<string,string>
+  - optionalList?: []string
   - metaNestedExample: map<string,map<string,uint32>>
   - namesList: []string
   - numsList: []int64

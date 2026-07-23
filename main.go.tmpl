@@ -69,7 +69,7 @@
 {{- /* Map webrpc core types to Go. */ -}}
 {{- $typeMap := dict -}}
 {{- set $typeMap "null" "struct{}" -}}
-{{- set $typeMap "any" "interface{}" -}}
+{{- set $typeMap "any" "any" -}}
 {{- set $typeMap "byte" "byte" -}}
 {{- set $typeMap "bool" "bool" -}}
 {{- set $typeMap "uint" "uint" -}}

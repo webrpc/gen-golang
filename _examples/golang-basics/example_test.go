@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
@@ -46,6 +47,25 @@ func TestVersion(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, version.ClientGenVersion)
 	assert.NotNil(t, version.ServerGenVersion)
+}
+
+func TestOptionalNilableFieldTypes(t *testing.T) {
+	complexType := reflect.TypeFor[ComplexType]()
+	tests := []struct {
+		name string
+		kind reflect.Kind
+	}{
+		{name: "OptionalAny", kind: reflect.Interface},
+		{name: "OptionalMap", kind: reflect.Map},
+		{name: "OptionalList", kind: reflect.Slice},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			field, ok := complexType.FieldByName(test.name)
+			require.True(t, ok)
+			assert.Equal(t, test.kind, field.Type.Kind())
+		})
+	}
 }
 
 func TestGetUser(t *testing.T) {
