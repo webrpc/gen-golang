@@ -1088,7 +1088,11 @@ func WebrpcMethods(services ...string) map[string]*method {
 	if len(services) == 0 {
 		return methods
 	}
-	out := make(map[string]*method, len(methods))
+	size := 0
+	for _, service := range services {
+		size += len(WebRPCServices[service])
+	}
+	out := make(map[string]*method, size)
 	for path, m := range methods {
 		if slices.Contains(services, m.service) {
 			out[path] = m
