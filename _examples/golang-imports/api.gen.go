@@ -14,7 +14,6 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"slices"
 	"strings"
 )
 
@@ -486,20 +485,19 @@ func MethodCtx(ctx context.Context) (*method, bool) {
 	return m, ok
 }
 
+const basePath = "/rpc/"
+
 // WebrpcMethods returns all RPC methods keyed by route path. Pass one or more
 // service names to return only those services' methods.
 func WebrpcMethods(services ...string) map[string]*method {
 	if len(services) == 0 {
 		return methods
 	}
-	size := 0
+	out := make(map[string]*method)
 	for _, service := range services {
-		size += len(WebRPCServices[service])
-	}
-	out := make(map[string]*method, size)
-	for path, m := range methods {
-		if slices.Contains(services, m.service) {
-			out[path] = m
+		for _, name := range WebRPCServices[service] {
+			path := basePath + service + "/" + name
+			out[path] = methods[path]
 		}
 	}
 	return out
