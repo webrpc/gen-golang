@@ -14,6 +14,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -1087,10 +1088,9 @@ func WebrpcMethods(services ...string) map[string]*method {
 		return methods
 	}
 	out := make(map[string]*method)
-	for _, service := range services {
-		for _, name := range WebRPCServices[service] {
-			path := "/v1/" + service + "/" + name
-			out[path] = methods[path]
+	for path, m := range methods {
+		if slices.Contains(services, m.service) {
+			out[path] = m
 		}
 	}
 	return out
