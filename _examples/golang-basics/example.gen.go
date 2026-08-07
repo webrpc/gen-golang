@@ -1081,10 +1081,7 @@ func MethodCtx(ctx context.Context) (*method, bool) {
 	return m, ok
 }
 
-const basePath = "/v1/"
-
-// WebrpcMethods returns all RPC methods keyed by route path. Pass one or more
-// service names to return only those services' methods.
+// WebrpcMethods returns all methods, or only those for the given services.
 func WebrpcMethods(services ...string) map[string]*method {
 	if len(services) == 0 {
 		return methods
@@ -1092,7 +1089,7 @@ func WebrpcMethods(services ...string) map[string]*method {
 	out := make(map[string]*method)
 	for _, service := range services {
 		for _, name := range WebRPCServices[service] {
-			path := basePath + service + "/" + name
+			path := "/v1/" + service + "/" + name
 			out[path] = methods[path]
 		}
 	}
