@@ -32,8 +32,7 @@ func newHandler() http.Handler {
 		w.Write([]byte("."))
 	})
 
-	webrpcHandler := NewExampleAPIServer(&ExampleRPC{})
-	r.Handle("/*", webrpcHandler)
+	RegisterExampleAPIServer(r, NewExampleAPIServer(&ExampleRPC{}))
 
 	return r
 }

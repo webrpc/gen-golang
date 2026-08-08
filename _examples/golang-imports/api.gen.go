@@ -206,6 +206,11 @@ type WebRPCServer interface {
 	http.Handler
 }
 
+// WebRPCRouter registers HTTP handlers by pattern.
+type WebRPCRouter interface {
+	Handle(pattern string, handler http.Handler)
+}
+
 type Options struct {
 	OnError   func(r *http.Request, rpcErr *WebRPCError)
 	OnRequest func(w http.ResponseWriter, r *http.Request) error
@@ -226,6 +231,15 @@ func NewExampleAPIServer(svc ExampleAPIServer, options ...*Options) *exampleAPIS
 		server.OnRequest = options[0].OnRequest
 	}
 	return server
+}
+
+// RegisterExampleAPIServer registers every ExampleAPI method using its absolute WebRPC path.
+// Use a router rooted at /. To wrap or select handlers, register paths from
+// WebrpcMethods(ServiceExampleAPI) directly.
+func RegisterExampleAPIServer(r WebRPCRouter, server *exampleAPIService) {
+	for path := range WebrpcMethods(ServiceExampleAPI) {
+		r.Handle(path, server)
+	}
 }
 
 func (s *exampleAPIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
