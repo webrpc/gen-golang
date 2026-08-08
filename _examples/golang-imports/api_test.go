@@ -77,6 +77,18 @@ func (r *recordingRouter) Handle(pattern string, handler http.Handler) {
 	r.routes = append(r.routes, registeredRoute{pattern: pattern, handler: handler})
 }
 
+func routePatterns(routes []registeredRoute) []string {
+	patterns := make([]string, 0, len(routes))
+	for _, route := range routes {
+		patterns = append(patterns, route.pattern)
+	}
+	return patterns
+}
+
+type adminRPC struct{}
+
+func (*adminRPC) Reset(context.Context) error { return nil }
+
 type wrappedServer struct {
 	WebRPCServer
 }
@@ -99,12 +111,19 @@ func TestRegisterServer(t *testing.T) {
 		router := &recordingRouter{}
 		RegisterServer(router, server)
 
-		patterns := make([]string, 0, len(router.routes))
 		for _, route := range router.routes {
-			patterns = append(patterns, route.pattern)
 			assert.Same(t, server, route.handler)
 		}
-		assert.ElementsMatch(t, wantPatterns, patterns)
+		assert.ElementsMatch(t, wantPatterns, routePatterns(router.routes))
+	})
+
+	t.Run("registers only the server service", func(t *testing.T) {
+		router := &recordingRouter{}
+		adminServer := NewAdminAPIServer(&adminRPC{})
+		RegisterServer(router, adminServer)
+
+		assert.Equal(t, []string{"/rpc/AdminAPI/Reset"}, routePatterns(router.routes))
+		assert.Same(t, adminServer, router.routes[0].handler)
 	})
 
 	t.Run("dispatches through http ServeMux", func(t *testing.T) {
@@ -148,5 +167,52 @@ func TestRegisterServer(t *testing.T) {
 		for _, route := range router.routes {
 			assert.Same(t, wrapped, route.handler)
 		}
+	})
+}
+
+func TestRegisterMethods(t *testing.T) {
+	server := NewExampleAPIServer(&ExampleRPC{})
+
+	t.Run("registers only named methods", func(t *testing.T) {
+		router := &recordingRouter{}
+		RegisterMethods(router, server, "Ping", "GetUser")
+
+		assert.ElementsMatch(t, []string{
+			"/rpc/ExampleAPI/Ping",
+			"/rpc/ExampleAPI/GetUser",
+		}, routePatterns(router.routes))
+	})
+
+	t.Run("panics before registering an unknown method", func(t *testing.T) {
+		router := &recordingRouter{}
+
+		assert.Panics(t, func() {
+			RegisterMethods(router, server, "Ping", "Unknown")
+		})
+		assert.Empty(t, router.routes)
+	})
+}
+
+func TestRegisterMethodsExcept(t *testing.T) {
+	server := NewExampleAPIServer(&ExampleRPC{})
+
+	t.Run("registers every method except named methods", func(t *testing.T) {
+		router := &recordingRouter{}
+		RegisterMethodsExcept(router, server, "Ping", "GetUser")
+
+		assert.ElementsMatch(t, []string{
+			"/rpc/ExampleAPI/Status",
+			"/rpc/ExampleAPI/GetUsers",
+			"/rpc/ExampleAPI/ListUsers",
+		}, routePatterns(router.routes))
+	})
+
+	t.Run("panics before registering an unknown method", func(t *testing.T) {
+		router := &recordingRouter{}
+
+		assert.Panics(t, func() {
+			RegisterMethodsExcept(router, server, "Unknown")
+		})
+		assert.Empty(t, router.routes)
 	})
 }

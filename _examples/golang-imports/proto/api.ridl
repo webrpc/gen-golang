@@ -15,3 +15,6 @@ service ExampleAPI
   - GetUsers() => (users: []User, location: Location)
   - GetUser(GetUserRequest) => (GetUserResponse)
   - ListUsers(ListUsersRequest) => (ListUsersResponse)
+
+service AdminAPI
+  - Reset()

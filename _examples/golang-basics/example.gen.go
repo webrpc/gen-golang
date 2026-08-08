@@ -591,10 +591,11 @@ func (r *streamReader) handleReadError(err error) error {
 // Server
 //
 
-// WebRPCServer handles WebRPC requests and identifies its service.
+// WebRPCServer handles WebRPC requests and identifies its service. It is
+// implemented by generated servers. Wrap a server by embedding this interface.
 type WebRPCServer interface {
 	http.Handler
-	WebRPCService() Service
+	webRPCService() Service
 }
 
 // WebRPCRouter registers HTTP handlers by pattern.
@@ -603,10 +604,46 @@ type WebRPCRouter interface {
 }
 
 // RegisterServer registers every method of the server's service using its
-// absolute WebRPC path. Use a router rooted at /. To wrap or select individual
-// handlers, register paths from WebrpcMethods(...) directly.
+// absolute WebRPC path. Use a router rooted at /. Unknown paths under the
+// service base path are handled by the router.
 func RegisterServer(r WebRPCRouter, server WebRPCServer) {
-	for path := range WebrpcMethods(server.WebRPCService()) {
+	for path := range WebrpcMethods(server.webRPCService()) {
+		r.Handle(path, server)
+	}
+}
+
+// RegisterMethods registers only the named methods of the server's service. It
+// panics before registering any routes if a method name is unknown.
+func RegisterMethods(r WebRPCRouter, server WebRPCServer, methods ...string) {
+	registerMethods(r, server, true, methods)
+}
+
+// RegisterMethodsExcept registers every method of the server's service except
+// the named methods. It panics before registering any routes if a method name is
+// unknown.
+func RegisterMethodsExcept(r WebRPCRouter, server WebRPCServer, methods ...string) {
+	registerMethods(r, server, false, methods)
+}
+
+func registerMethods(r WebRPCRouter, server WebRPCServer, include bool, names []string) {
+	service := server.webRPCService()
+	serviceMethods := WebrpcMethods(service)
+	available := make(map[string]struct{}, len(serviceMethods))
+	for _, method := range serviceMethods {
+		available[method.name] = struct{}{}
+	}
+	selected := make(map[string]struct{}, len(names))
+	for _, name := range names {
+		if _, ok := available[name]; !ok {
+			panic(fmt.Sprintf("webrpc: method %q is not part of service %q", name, service))
+		}
+		selected[name] = struct{}{}
+	}
+	for path, method := range serviceMethods {
+		_, ok := selected[method.name]
+		if ok != include {
+			continue
+		}
 		r.Handle(path, server)
 	}
 }
@@ -633,8 +670,7 @@ func NewExampleServer(svc ExampleServer, options ...*Options) *exampleService {
 	return server
 }
 
-// WebRPCService returns the service handled by this server.
-func (*exampleService) WebRPCService() Service { return ServiceExample }
+func (*exampleService) webRPCService() Service { return ServiceExample }
 
 func (s *exampleService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
