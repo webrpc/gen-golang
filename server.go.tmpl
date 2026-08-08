@@ -21,13 +21,24 @@
 // Server
 //
 
+// WebRPCServer handles WebRPC requests and identifies its service.
 type WebRPCServer interface {
 	http.Handler
+	WebRPCService() Service
 }
 
 // WebRPCRouter registers HTTP handlers by pattern.
 type WebRPCRouter interface {
 	Handle(pattern string, handler http.Handler)
+}
+
+// RegisterServer registers every method of the server's service using its
+// absolute WebRPC path. Use a router rooted at /. To wrap or select individual
+// handlers, register paths from WebrpcMethods(...) directly.
+func RegisterServer(r WebRPCRouter, server WebRPCServer) {
+	for path := range WebrpcMethods(server.WebRPCService()) {
+		r.Handle(path, server)
+	}
 }
 
 type Options struct {
@@ -59,14 +70,8 @@ func New{{firstLetterToUpper $service.Name}}Server(svc {{$typePrefix}}{{.Name}}S
 	return server
 }
 
-// Register{{firstLetterToUpper $service.Name}}Server registers every {{$service.Name}} method using its absolute WebRPC path.
-// Use a router rooted at /. To wrap or select handlers, register paths from
-// WebrpcMethods(Service{{$service.Name}}) directly.
-func Register{{firstLetterToUpper $service.Name}}Server(r WebRPCRouter, server *{{$serviceName}}) {
-	for path := range WebrpcMethods(Service{{$service.Name}}) {
-		r.Handle(path, server)
-	}
-}
+// WebRPCService returns the service handled by this server.
+func (*{{$serviceName}}) WebRPCService() Service { return Service{{$service.Name}} }
 
 func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {

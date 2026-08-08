@@ -202,13 +202,24 @@ func (c *exampleAPIClient) ListUsers(ctx context.Context, listUsersRequest ListU
 // Server
 //
 
+// WebRPCServer handles WebRPC requests and identifies its service.
 type WebRPCServer interface {
 	http.Handler
+	WebRPCService() Service
 }
 
 // WebRPCRouter registers HTTP handlers by pattern.
 type WebRPCRouter interface {
 	Handle(pattern string, handler http.Handler)
+}
+
+// RegisterServer registers every method of the server's service using its
+// absolute WebRPC path. Use a router rooted at /. To wrap or select individual
+// handlers, register paths from WebrpcMethods(...) directly.
+func RegisterServer(r WebRPCRouter, server WebRPCServer) {
+	for path := range WebrpcMethods(server.WebRPCService()) {
+		r.Handle(path, server)
+	}
 }
 
 type Options struct {
@@ -233,14 +244,8 @@ func NewExampleAPIServer(svc ExampleAPIServer, options ...*Options) *exampleAPIS
 	return server
 }
 
-// RegisterExampleAPIServer registers every ExampleAPI method using its absolute WebRPC path.
-// Use a router rooted at /. To wrap or select handlers, register paths from
-// WebrpcMethods(ServiceExampleAPI) directly.
-func RegisterExampleAPIServer(r WebRPCRouter, server *exampleAPIService) {
-	for path := range WebrpcMethods(ServiceExampleAPI) {
-		r.Handle(path, server)
-	}
-}
+// WebRPCService returns the service handled by this server.
+func (*exampleAPIService) WebRPCService() Service { return ServiceExampleAPI }
 
 func (s *exampleAPIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {

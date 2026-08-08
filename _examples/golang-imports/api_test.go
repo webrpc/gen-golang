@@ -77,7 +77,15 @@ func (r *recordingRouter) Handle(pattern string, handler http.Handler) {
 	r.routes = append(r.routes, registeredRoute{pattern: pattern, handler: handler})
 }
 
-func TestRegisterExampleAPIServer(t *testing.T) {
+type wrappedServer struct {
+	WebRPCServer
+}
+
+func (s *wrappedServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	s.WebRPCServer.ServeHTTP(w, r)
+}
+
+func TestRegisterServer(t *testing.T) {
 	server := NewExampleAPIServer(&ExampleRPC{})
 	wantPatterns := []string{
 		"/rpc/ExampleAPI/Ping",
@@ -89,7 +97,7 @@ func TestRegisterExampleAPIServer(t *testing.T) {
 
 	t.Run("registers every exact route", func(t *testing.T) {
 		router := &recordingRouter{}
-		RegisterExampleAPIServer(router, server)
+		RegisterServer(router, server)
 
 		patterns := make([]string, 0, len(router.routes))
 		for _, route := range router.routes {
@@ -101,7 +109,7 @@ func TestRegisterExampleAPIServer(t *testing.T) {
 
 	t.Run("dispatches through http ServeMux", func(t *testing.T) {
 		router := http.NewServeMux()
-		RegisterExampleAPIServer(router, server)
+		RegisterServer(router, server)
 
 		req := httptest.NewRequest(http.MethodPost, "/rpc/ExampleAPI/Ping", strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
@@ -120,7 +128,7 @@ func TestRegisterExampleAPIServer(t *testing.T) {
 				routePattern = chi.RouteContext(r.Context()).RoutePattern()
 			})
 		})
-		RegisterExampleAPIServer(router, server)
+		RegisterServer(router, server)
 
 		req := httptest.NewRequest(http.MethodPost, "/rpc/ExampleAPI/GetUser", strings.NewReader(`{"username":"alice"}`))
 		req.Header.Set("Content-Type", "application/json")
@@ -129,5 +137,16 @@ func TestRegisterExampleAPIServer(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, resp.Code)
 		assert.Equal(t, "/rpc/ExampleAPI/GetUser", routePattern)
+	})
+
+	t.Run("registers a wrapped server", func(t *testing.T) {
+		router := &recordingRouter{}
+		wrapped := &wrappedServer{WebRPCServer: server}
+		RegisterServer(router, wrapped)
+
+		assert.Len(t, router.routes, len(wantPatterns))
+		for _, route := range router.routes {
+			assert.Same(t, wrapped, route.handler)
+		}
 	})
 }

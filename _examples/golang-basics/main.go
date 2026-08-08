@@ -30,7 +30,7 @@ func startServer() error {
 		w.Write([]byte("."))
 	})
 
-	RegisterExampleServer(r, NewExampleServer(&ExampleServiceRPC{}))
+	RegisterServer(r, NewExampleServer(&ExampleServiceRPC{}))
 
 	log.Printf("Listening on :4242")
 	return http.ListenAndServe(":4242", r)
