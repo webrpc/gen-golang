@@ -591,8 +591,9 @@ func (r *streamReader) handleReadError(err error) error {
 // Server
 //
 
-type WebRPCServer interface {
+type Server interface {
 	http.Handler
+	Service() Service
 }
 
 type Options struct {
@@ -616,6 +617,8 @@ func NewExampleServer(svc ExampleServer, options ...*Options) *exampleService {
 	}
 	return server
 }
+
+func (s *exampleService) Service() Service { return ServiceExample }
 
 func (s *exampleService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
@@ -1117,6 +1120,27 @@ var WebRPCServices = map[string][]string{
 		"GetArticle",
 		"StreamNewArticles",
 	},
+}
+
+// Method pairs an RPC method's metadata with the server that handles it.
+// Handler is the server itself, which dispatches by request path.
+type Method struct {
+	*method
+	Path    string
+	Handler http.Handler
+}
+
+// Methods returns every method of the given servers, each bound to the server
+// that handles it. Range over the result to register routes and attach
+// per-method middleware based on annotations (see Annotation, HasAnnotation).
+func Methods(servers ...Server) []Method {
+	var out []Method
+	for _, server := range servers {
+		for path, m := range WebrpcMethods(server.Service()) {
+			out = append(out, Method{method: m, Path: path, Handler: server})
+		}
+	}
+	return out
 }
 
 //

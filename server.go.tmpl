@@ -21,8 +21,9 @@
 // Server
 //
 
-type WebRPCServer interface {
+type Server interface {
 	http.Handler
+	Service() Service
 }
 
 type Options struct {
@@ -53,6 +54,8 @@ func New{{firstLetterToUpper $service.Name}}Server(svc {{$typePrefix}}{{.Name}}S
 	}
 	return server
 }
+
+func (s *{{$serviceName}}) Service() Service { return Service{{$service.Name}} }
 
 func (s *{{$serviceName}}) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {

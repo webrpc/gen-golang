@@ -10,6 +10,7 @@ import ./util.ridl
   - Location
 
 service ExampleAPI
+    @auth
   - Ping()
   - Status() => (status: bool)
   - GetUsers() => (users: []User, location: Location)
