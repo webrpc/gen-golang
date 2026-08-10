@@ -202,9 +202,8 @@ func (c *exampleAPIClient) ListUsers(ctx context.Context, listUsersRequest ListU
 // Server
 //
 
-type Server interface {
+type WebRPCServer interface {
 	http.Handler
-	Service() Service
 }
 
 type Options struct {
@@ -229,7 +228,7 @@ func NewExampleAPIServer(svc ExampleAPIServer, options ...*Options) *exampleAPIS
 	return server
 }
 
-func (s *exampleAPIService) Service() Service { return ServiceExampleAPI }
+func (s *exampleAPIService) Methods() []Method { return methodsFor(ServiceExampleAPI, s) }
 
 func (s *exampleAPIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer func() {
@@ -531,15 +530,11 @@ type Method struct {
 	Handler http.Handler
 }
 
-// Methods returns every method of the given servers, each bound to the server
-// that handles it. Range over the result to register routes and attach
-// per-method middleware based on annotations (see Annotation, HasAnnotation).
-func Methods(servers ...Server) []Method {
+// methodsFor binds every method of service to the handler that serves it.
+func methodsFor(service Service, handler http.Handler) []Method {
 	var out []Method
-	for _, server := range servers {
-		for path, m := range WebrpcMethods(server.Service()) {
-			out = append(out, Method{method: m, Path: path, Handler: server})
-		}
+	for path, m := range WebrpcMethods(service) {
+		out = append(out, Method{method: m, Path: path, Handler: handler})
 	}
 	return out
 }

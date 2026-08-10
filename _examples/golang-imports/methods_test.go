@@ -15,7 +15,7 @@ import (
 func TestMethods(t *testing.T) {
 	srv := NewExampleAPIServer(&ExampleRPC{})
 
-	ms := Methods(srv)
+	ms := srv.Methods()
 	require.Len(t, ms, 5)
 
 	byPath := make(map[string]Method, len(ms))
@@ -46,7 +46,7 @@ func TestMethodsMountRouterNeutral(t *testing.T) {
 	}
 
 	mux := http.NewServeMux()
-	for _, m := range Methods(srv) {
+	for _, m := range srv.Methods() {
 		h := m.Handler
 		if m.HasAnnotation("auth") {
 			h = requireAuth(h)
