@@ -8,7 +8,8 @@
 {{- set $opts "types" (ternary (eq (default .Opts.types "true") "false") false true) -}}
 {{- set $opts "json" (default .Opts.json "stdlib") -}}
 {{- set $opts "importTypesFrom" (default .Opts.importTypesFrom "" ) -}}
-{{- set $opts "fixEmptyArrays" (ternary (in .Opts.fixEmptyArrays "" "true") true false) -}}
+{{- $fixEmptyArraysAsked := exists .Opts "fixEmptyArrays" -}}
+{{- set $opts "fixEmptyArrays" (ternary (eq (default .Opts.fixEmptyArrays "true") "false") false true) -}}
 {{- set $opts "errorStackTrace" (ternary (in .Opts.errorStackTrace "" "true") true false) -}}
 {{- set $opts "webrpcHeader" (ternary (eq (default .Opts.webrpcHeader "true") "false") false true) -}}
 {{- set $opts "schemaHash" (ternary (eq (default .Opts.schemaHash "true") "false") false true) -}}
@@ -39,10 +40,23 @@
 {{- end -}}
 
 {{- /* -fixEmptyArrays generates a method on each schema struct, so the structs
-       have to be generated here rather than imported from another package. */ -}}
+       have to be generated here rather than imported from another package.
+       Only complain when it was asked for; when it is just the default, step
+       out of the way so that importing types keeps working. */ -}}
 {{- if and $opts.fixEmptyArrays (or (not $opts.types) (ne $opts.importTypesFrom "")) -}}
-  {{- stderrPrintf "%s generator error: -fixEmptyArrays needs generated types, it can't be combined with -types=false or -importTypesFrom\n" .WebrpcTarget -}}
-  {{- exit 1 -}}
+  {{- if $fixEmptyArraysAsked -}}
+    {{- stderrPrintf "%s generator error: -fixEmptyArrays needs generated types, it can't be combined with -types=false or -importTypesFrom\n" .WebrpcTarget -}}
+    {{- exit 1 -}}
+  {{- else -}}
+    {{- set $opts "fixEmptyArrays" false -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* jsoniter predates the omitzero tag and ignores it, so optional fields
+       still serialize as null there. Required lists and maps are fixed by
+       generated code and are unaffected. */ -}}
+{{- if and $opts.fixEmptyArrays (eq $opts.json "jsoniter") -}}
+  {{- stderrPrintf "%s generator warning: -json=jsoniter ignores the omitzero tag, so unset optional fields serialize as null instead of being omitted\n" .WebrpcTarget -}}
 {{- end -}}
 
 {{- /* Maps Go keywords. */ -}}

@@ -1,6 +1,6 @@
 package main
 
-//go:generate go run github.com/webrpc/webrpc/cmd/webrpc-gen -schema=empty_arrays.ridl -target=../../../gen-golang -pkg=main -server -client -fixEmptyArrays=true -out=./empty_arrays.gen.go
+//go:generate go run github.com/webrpc/webrpc/cmd/webrpc-gen -schema=empty_arrays.ridl -target=../../../gen-golang -pkg=main -server -client -out=./empty_arrays.gen.go
 
 import (
 	"context"

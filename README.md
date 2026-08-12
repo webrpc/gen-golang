@@ -31,7 +31,7 @@ Change any of the following values by passing `-option="Value"` CLI flag to `web
 | `-json=sonic`         |           | use [sonic](https://github.com/bytedance/sonic) for JSON encoding           | v0.18.0  |
 | `-json=jsoniter`      |           | use [jsoniter](https://github.com/json-iterator/go) for JSON encoding       | v0.12.0  |
 | `-json=<pkg>`         |           | use alternative drop-in replacement import path for JSON encoding package   | v0.18.0  |
-| `-fixEmptyArrays`     | `false`   | serialize lists per the schema, never as `null` (see Go [#27589][go27589])  | v0.13.0  |
+| `-fixEmptyArrays=false` | `true`  | serialize collections as `null` again (see Go [#27589][go27589])            | v0.13.0  |
 | `-errorStackTrace`    | `false`   | enables error stack traces                                                  | v0.14.0  |
 | `-webrpcHeader=false` | `true`    | enable client send webrpc version in http headers                           | v0.16.0  |
 | `-schemaHash=false`   | `true`    | don't emit schema hash + version helper funcs (avoids merge conflicts)      | v0.30.0  |
@@ -44,8 +44,12 @@ webrpc-gen -schema=./proto.json -target=golang -out server.gen.go -pkg=main -ser
 ## Empty arrays
 
 A nil Go slice or map serializes as `null`, which does not match a schema that
-says the field is a list or a map. `-fixEmptyArrays` makes the generated server
-serialize collections the way the schema declares them:
+says the field is a list or a map. Every other webrpc generator already types a
+required list as a non-nullable array, so a Go server sending `null` there
+contradicts the clients built from the same schema.
+
+Collections are therefore serialized the way the schema declares them, which is
+the default. Pass `-fixEmptyArrays=false` for the old behavior.
 
 | Schema field                | Go value             | JSON      |
 |-----------------------------|----------------------|-----------|
@@ -63,11 +67,17 @@ said empty".
 Nesting is walked all the way down, so the lists inside `[][]string`,
 `[]Item`, `map<string,[]string>` and `map<string,Item>` get the same treatment.
 
-The flag generates an `initNilSlices()` method on each schema struct and tags
+This generates an `initNilSlices()` method on each schema struct and tags
 optional fields `omitzero`. A few notes:
 
 - `omitzero` needs Go 1.24+ in the module that consumes the generated code.
   Older toolchains ignore the tag and keep emitting `null`, as they do today.
+- `-json=jsoniter` ignores `omitzero` too, so unset optional fields serialize as
+  `null` there. Required lists and maps are fixed by generated code and are
+  unaffected. `encoding/json` and `sonic` both honor it.
+- `-types=false` and `-importTypesFrom` turn this off, since it needs the
+  structs to be generated here. Asking for it explicitly alongside them is an
+  error rather than a silent no-op.
 - A nil **struct** is left as `null`. A zero struct is a different value rather
   than an empty collection, so filling one in would invent data and hide the bug
   that produced the nil.
@@ -78,11 +88,9 @@ optional fields `omitzero`. A few notes:
 - Fields that pin their own `go.tag.json` keep exactly the tag they asked for.
 - A `[]byte` is base64-encoded by `encoding/json`, so it serializes as `""`
   rather than `[]`.
-- The flag needs generated types, so it cannot be combined with `-types=false`
-  or `-importTypesFrom`.
 
-Generate the client with the same flag as the server, so both sides agree on the
-struct tags.
+Generate the client and the server with the same setting, so both sides agree on
+the struct tags.
 
 ## Set custom Go field meta tags in your RIDL file
 

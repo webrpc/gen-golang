@@ -342,24 +342,45 @@ type User struct {
 	// unique identifier of the user
 	// must be unique !
 	Username  Username   `json:"USERNAME" db:"username"`
-	Age       *Age       `json:"age"`
+	Age       *Age       `json:"age,omitzero"`
 	Role      string     `json:"role" db:"-"`
 	Nicknames []Nickname `json:"nicknames" db:"-"`
 	CreatedAt time.Time  `json:"createdAt" db:"created_at"`
-	UpdatedAt *time.Time `json:"updatedAt" db:"updated_at"`
+	UpdatedAt *time.Time `json:"updatedAt,omitzero" db:"updated_at"`
 	Kind      Kind       `json:"kind"`
 	Intent    Intent     `json:"intent"`
+}
+
+func (x *User) initNilSlices() {
+	if x == nil {
+		return
+	}
+	if x.Nicknames == nil {
+		x.Nicknames = []Nickname{}
+	}
 }
 
 type Nickname struct {
 	ID        uint64     `json:"ID" db:"id"`
 	Nickname  string     `json:"nickname" db:"nickname"`
 	CreatedAt time.Time  `json:"createdAt" db:"created_at"`
-	UpdatedAt *time.Time `json:"updatedAt" db:"updated_at"`
+	UpdatedAt *time.Time `json:"updatedAt,omitzero" db:"updated_at"`
+}
+
+func (x *Nickname) initNilSlices() {
+	if x == nil {
+		return
+	}
 }
 
 type SearchFilter struct {
 	Q string `json:"q"`
+}
+
+func (x *SearchFilter) initNilSlices() {
+	if x == nil {
+		return
+	}
 }
 
 type Version struct {
@@ -370,11 +391,19 @@ type Version struct {
 	ServerGenVersion *GenVersions `json:"serverGenVersion"`
 }
 
+func (x *Version) initNilSlices() {
+	if x == nil {
+		return
+	}
+	x.ClientGenVersion.initNilSlices()
+	x.ServerGenVersion.initNilSlices()
+}
+
 type ComplexType struct {
 	Meta              json.RawMessage              `json:"meta"`
-	OptionalAny       any                          `json:"optionalAny"`
-	OptionalMap       map[string]string            `json:"optionalMap"`
-	OptionalList      []string                     `json:"optionalList"`
+	OptionalAny       any                          `json:"optionalAny,omitzero"`
+	OptionalMap       map[string]string            `json:"optionalMap,omitzero"`
+	OptionalList      []string                     `json:"optionalList,omitzero"`
 	MetaNestedExample map[string]map[string]uint32 `json:"metaNestedExample"`
 	NamesList         []string                     `json:"namesList"`
 	NumsList          []int64                      `json:"numsList"`
@@ -385,6 +414,55 @@ type ComplexType struct {
 	User              *User                        `json:"user"`
 }
 
+func (x *ComplexType) initNilSlices() {
+	if x == nil {
+		return
+	}
+	if x.MetaNestedExample == nil {
+		x.MetaNestedExample = map[string]map[string]uint32{}
+	}
+	for k0 := range x.MetaNestedExample {
+		if x.MetaNestedExample[k0] == nil {
+			x.MetaNestedExample[k0] = map[string]uint32{}
+		}
+	}
+	if x.NamesList == nil {
+		x.NamesList = []string{}
+	}
+	if x.NumsList == nil {
+		x.NumsList = []int64{}
+	}
+	if x.DoubleArray == nil {
+		x.DoubleArray = [][]string{}
+	}
+	for i0 := range x.DoubleArray {
+		if x.DoubleArray[i0] == nil {
+			x.DoubleArray[i0] = []string{}
+		}
+	}
+	if x.ListOfMaps == nil {
+		x.ListOfMaps = []map[string]uint32{}
+	}
+	for i0 := range x.ListOfMaps {
+		if x.ListOfMaps[i0] == nil {
+			x.ListOfMaps[i0] = map[string]uint32{}
+		}
+	}
+	if x.ListOfUsers == nil {
+		x.ListOfUsers = []*User{}
+	}
+	for i0 := range x.ListOfUsers {
+		x.ListOfUsers[i0].initNilSlices()
+	}
+	if x.MapOfUsers == nil {
+		x.MapOfUsers = map[string]*User{}
+	}
+	for k0 := range x.MapOfUsers {
+		x.MapOfUsers[k0].initNilSlices()
+	}
+	x.User.initNilSlices()
+}
+
 type GenVersions struct {
 	WebrpcGenVersion string `json:"WebrpcGenVersion"`
 	TmplTarget       string `json:"TmplTarget"`
@@ -392,16 +470,40 @@ type GenVersions struct {
 	SchemaVersion    string `json:"SchemaVersion"`
 }
 
+func (x *GenVersions) initNilSlices() {
+	if x == nil {
+		return
+	}
+}
+
 type GetArticleRequest struct {
 	ArticleID uint64 `json:"articleId"`
+}
+
+func (x *GetArticleRequest) initNilSlices() {
+	if x == nil {
+		return
+	}
 }
 
 type StreamNewArticlesRequest struct {
 }
 
+func (x *StreamNewArticlesRequest) initNilSlices() {
+	if x == nil {
+		return
+	}
+}
+
 type GetArticleResponse struct {
 	Title   string  `json:"title"`
 	Content *string `json:"content,omitempty"`
+}
+
+func (x *GetArticleResponse) initNilSlices() {
+	if x == nil {
+		return
+	}
 }
 
 //
@@ -755,6 +857,7 @@ func (s *exampleService) serveVersionJSON(ctx context.Context, w http.ResponseWr
 		return
 	}
 
+	ret0.initNilSlices()
 	respPayload := struct {
 		Ret0 *Version `json:"version"`
 	}{ret0}
@@ -800,6 +903,7 @@ func (s *exampleService) serveGetUserJSON(ctx context.Context, w http.ResponseWr
 		return
 	}
 
+	ret0.initNilSlices()
 	respPayload := struct {
 		Ret0 *User `json:"user"`
 	}{ret0}
@@ -843,6 +947,7 @@ func (s *exampleService) serveFindUserJSON(ctx context.Context, w http.ResponseW
 		return
 	}
 
+	ret1.initNilSlices()
 	respPayload := struct {
 		Ret0 string `json:"name"`
 		Ret1 *User  `json:"user"`
@@ -1010,6 +1115,9 @@ func succinctHandler[I any, O any](method string, fn func(context.Context, I) (O
 			return
 		}
 
+		if v, ok := any(respPayload).(nilSliceInitializer); ok {
+			v.initNilSlices()
+		}
 		respBody, err := jsonCfg.Marshal(respPayload)
 		if err != nil {
 			sendError(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
@@ -1310,6 +1418,12 @@ func PtrTo[T any](v T) *T { return &v }
 func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
 	w, _ := ctx.Value(HTTPResponseWriterCtxKey).(http.ResponseWriter)
 	return w
+}
+
+// Implemented by every generated schema struct, so that a generic handler can
+// give a response its empty-array treatment without knowing its concrete type.
+type nilSliceInitializer interface {
+	initNilSlices()
 }
 
 //
