@@ -1,0 +1,104 @@
+{{- /*
+    Emits the statements that make one value match what the schema promises.
+
+    Required lists and maps become empty when nil, so they serialize as [] or {}
+    instead of null. Optional ones are left alone: their nil is meaningful and
+    drops out of the JSON via the omitzero tag.
+
+    A required struct that is nil is an error rather than something to fill in.
+    A zero struct is a different value, not an empty container, so inventing one
+    would put a fabricated record on the wire and bury whatever produced the
+    nil. Structs are still walked either way, so the collections inside a
+    present optional struct get their treatment too.
+
+    "Expr" is the Go expression to work on, so the same template serves struct
+    fields (x.Foo), a method's return values (ret0), and anything reached by
+    recursion (x.Foo[i0], x.Bar[k0]). "Label" names it in errors.
+*/ -}}
+{{- define "prepareJSON" -}}
+{{- $expr := .Expr -}}
+{{- $label := .Label -}}
+{{- $type := .Type -}}
+{{- $optional := .Optional -}}
+{{- $typeMap := .TypeMap -}}
+{{- $keywordMap := .KeywordMap -}}
+{{- $typePrefix := .TypePrefix -}}
+{{- $typeMeta := .TypeMeta -}}
+{{- $structTypes := .StructTypes -}}
+{{- $depth := or .Depth 0 -}}
+{{- /* Elements reached by recursion are not fields, so nothing declared them
+       required. They are still walked, they just cannot fail the response. */ -}}
+{{- $noNilCheck := or .NoNilCheck false -}}
+{{- /* Set to the handler's error-sending func when these statements land in a
+       request handler rather than in a generated prepareJSON method. */ -}}
+{{- $sendError := or .SendError "" -}}
+
+{{- $customType := "" -}}
+{{- range $meta := $typeMeta -}}
+    {{- if exists $meta "go.field.type" -}}
+        {{- $customType = get $meta "go.field.type" -}}
+    {{- end -}}
+{{- end -}}
+
+{{- if and (eq $customType "") (exists $structTypes (printf "%v" $type)) -}}
+{{- if $sendError -}}
+{{- /* Inside a request handler, a broken contract becomes a response. */ -}}
+{{- if not (or $optional $noNilCheck) }}
+	if {{$expr}} == nil {
+		{{$sendError}}(w, r, ErrWebrpcBadResponse.WithCausef("required field {{$label}} is nil"))
+		return
+	}
+{{- end }}
+	if err := {{$expr}}.prepareJSON(); err != nil {
+		{{$sendError}}(w, r, ErrWebrpcBadResponse.WithCausef("failed to prepare json response: %w", err))
+		return
+	}
+{{- else -}}
+{{- if not (or $optional $noNilCheck) }}
+	if {{$expr}} == nil {
+		return fmt.Errorf("required field {{$label}} is nil")
+	}
+{{- end }}
+	if err := {{$expr}}.prepareJSON(); err != nil {
+		return fmt.Errorf("{{$label}}: %w", err)
+	}
+{{- end }}
+
+{{- else if $optional -}}
+{{- /* Nil is a value here, not a gap to fill. */ -}}
+
+{{- else if ne $customType "" -}}
+{{- /* The schema pinned its own Go type. Only a slice can take an empty
+       literal; anything else (json.RawMessage, a named type, a pointer) has
+       semantics we cannot know, so leave it untouched. */ -}}
+{{- if hasPrefix $customType "[]" }}
+	if {{$expr}} == nil {
+		{{$expr}} = {{$customType}}{}
+	}
+{{- end -}}
+
+{{- else if isListType $type }}
+	if {{$expr}} == nil {
+		{{$expr}} = {{template "field" dict "Type" $type "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix}}{}
+	}
+{{- $elem := listElemType $type -}}
+{{- if or (exists $structTypes (printf "%v" $elem)) (isListType $elem) (isMapType $elem) }}
+	for i{{$depth}} := range {{$expr}} {
+		{{- template "prepareJSON" dict "Expr" (printf "%s[i%d]" $expr $depth) "Label" $label "Type" $elem "NoNilCheck" true "SendError" $sendError "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "StructTypes" $structTypes "Depth" (add $depth 1) }}
+	}
+{{- end -}}
+
+{{- else if isMapType $type }}
+	if {{$expr}} == nil {
+		{{$expr}} = {{template "field" dict "Type" $type "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix}}{}
+	}
+{{- $value := mapValueType $type -}}
+{{- if or (exists $structTypes (printf "%v" $value)) (isListType $value) (isMapType $value) }}
+	for k{{$depth}} := range {{$expr}} {
+		{{- template "prepareJSON" dict "Expr" (printf "%s[k%d]" $expr $depth) "Label" $label "Type" $value "NoNilCheck" true "SendError" $sendError "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "StructTypes" $structTypes "Depth" (add $depth 1) }}
+	}
+{{- end -}}
+
+{{- end -}}
+
+{{- end -}}

@@ -56,9 +56,9 @@ func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
 {{- if and $opts.fixEmptyArrays $opts.server}}
 
 // Implemented by every generated schema struct, so that a generic handler can
-// give a response its empty-array treatment without knowing its concrete type.
-type nilSliceInitializer interface {
-	initNilSlices()
+// prepare a response without knowing its concrete type.
+type jsonPreparer interface {
+	prepareJSON() error
 }
 {{- end -}}
 

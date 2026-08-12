@@ -66,13 +66,14 @@ type Item struct {
 	Tags []string `json:"tags"`
 }
 
-func (x *Item) initNilSlices() {
+func (x *Item) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
 	if x.Tags == nil {
 		x.Tags = []string{}
 	}
+	return nil
 }
 
 type Report struct {
@@ -100,9 +101,9 @@ type Report struct {
 	Count uint32 `json:"count"`
 }
 
-func (x *Report) initNilSlices() {
+func (x *Report) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
 	if x.Required == nil {
 		x.Required = []string{}
@@ -111,7 +112,9 @@ func (x *Report) initNilSlices() {
 		x.Items = []*Item{}
 	}
 	for i0 := range x.Items {
-		x.Items[i0].initNilSlices()
+		if err := x.Items[i0].prepareJSON(); err != nil {
+			return fmt.Errorf("items: %w", err)
+		}
 	}
 	if x.Matrix == nil {
 		x.Matrix = [][]string{}
@@ -136,29 +139,39 @@ func (x *Report) initNilSlices() {
 		x.ByName = map[string]*Item{}
 	}
 	for k0 := range x.ByName {
-		x.ByName[k0].initNilSlices()
+		if err := x.ByName[k0].prepareJSON(); err != nil {
+			return fmt.Errorf("byName: %w", err)
+		}
 	}
+	return nil
 }
 
 type GetReportRequest struct {
 	Id string `json:"id"`
 }
 
-func (x *GetReportRequest) initNilSlices() {
+func (x *GetReportRequest) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
+	return nil
 }
 
 type GetReportResponse struct {
 	Report *Report `json:"report"`
 }
 
-func (x *GetReportResponse) initNilSlices() {
+func (x *GetReportResponse) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
-	x.Report.initNilSlices()
+	if x.Report == nil {
+		return fmt.Errorf("required field report is nil")
+	}
+	if err := x.Report.prepareJSON(); err != nil {
+		return fmt.Errorf("report: %w", err)
+	}
+	return nil
 }
 
 //
@@ -314,7 +327,10 @@ func (s *emptyArraysService) serveListReportsJSON(ctx context.Context, w http.Re
 		ret0 = []*Report{}
 	}
 	for i0 := range ret0 {
-		ret0[i0].initNilSlices()
+		if err := ret0[i0].prepareJSON(); err != nil {
+			s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to prepare json response: %w", err))
+			return
+		}
 	}
 	respPayload := struct {
 		Ret0 []*Report `json:"reports"`
@@ -385,8 +401,11 @@ func succinctHandler[I any, O any](method string, fn func(context.Context, I) (O
 			return
 		}
 
-		if v, ok := any(respPayload).(nilSliceInitializer); ok {
-			v.initNilSlices()
+		if v, ok := any(respPayload).(jsonPreparer); ok {
+			if err := v.prepareJSON(); err != nil {
+				sendError(w, r, ErrWebrpcBadResponse.WithCausef("failed to prepare json response: %w", err))
+				return
+			}
 		}
 		respBody, err := json.Marshal(respPayload)
 		if err != nil {
@@ -655,9 +674,9 @@ func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
 }
 
 // Implemented by every generated schema struct, so that a generic handler can
-// give a response its empty-array treatment without knowing its concrete type.
-type nilSliceInitializer interface {
-	initNilSlices()
+// prepare a response without knowing its concrete type.
+type jsonPreparer interface {
+	prepareJSON() error
 }
 
 //

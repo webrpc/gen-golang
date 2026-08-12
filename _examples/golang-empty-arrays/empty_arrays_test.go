@@ -13,14 +13,20 @@ import (
 // post calls a webrpc method and returns the raw response body. These tests
 // assert on the JSON itself, because the wire format is what -fixEmptyArrays
 // exists to control -- a typed client would hide the difference.
-func post(t *testing.T, path, body string) string {
-	t.Helper()
-
+func call(path, body string) *httptest.ResponseRecorder {
 	r := httptest.NewRequest(http.MethodPost, path, strings.NewReader(body))
 	r.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
 	newHandler().ServeHTTP(w, r)
+
+	return w
+}
+
+func post(t *testing.T, path, body string) string {
+	t.Helper()
+
+	w := call(path, body)
 	require.Equal(t, http.StatusOK, w.Code, w.Body.String())
 
 	return w.Body.String()
@@ -59,6 +65,17 @@ func TestEmptyArrays(t *testing.T) {
 			"raw":       null,
 			"count":     0
 		}}`, post(t, "/rpc/EmptyArrays/GetReport", `{"id":"explicit"}`))
+	})
+
+	t.Run("NilRequiredStructFailsTheResponse", func(t *testing.T) {
+		// A required struct cannot be filled in the way a list can, because a
+		// zero struct is a different value rather than an empty one. Serving
+		// null would break every client whose schema says the field is there,
+		// so the response fails at the server and names the field.
+		w := call("/rpc/EmptyArrays/GetReport", `{"id":"nil"}`)
+
+		assert.Equal(t, http.StatusInternalServerError, w.Code)
+		assert.Contains(t, w.Body.String(), "required field report is nil")
 	})
 
 	t.Run("TopLevelReturnValueIsArrayWhenNil", func(t *testing.T) {

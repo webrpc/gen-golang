@@ -23,6 +23,10 @@ type EmptyArraysRPC struct{}
 // GetReport builds a report per the requested id, so a single succinct method
 // covers both a fully unset report and one whose lists are set but empty.
 func (s *EmptyArraysRPC) GetReport(ctx context.Context, req GetReportRequest) (*GetReportResponse, error) {
+	if req.Id == "nil" {
+		// report is required, so this response cannot be served.
+		return &GetReportResponse{}, nil
+	}
 	if req.Id == "explicit" {
 		return &GetReportResponse{Report: &Report{
 			Optional:  []string{},

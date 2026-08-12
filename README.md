@@ -67,8 +67,22 @@ said empty".
 Nesting is walked all the way down, so the lists inside `[][]string`,
 `[]Item`, `map<string,[]string>` and `map<string,Item>` get the same treatment.
 
-This generates an `initNilSlices()` method on each schema struct and tags
-optional fields `omitzero`. A few notes:
+A required **struct** is the one case that cannot be filled in. A zero struct is
+a different value rather than an empty container, so inventing one would put a
+fabricated record on the wire and bury whatever produced the nil. The response
+fails instead, naming the field:
+
+```
+500 ErrWebrpcBadResponse: required field report is nil
+```
+
+That keeps `report: Report` honest for every client generated from the schema,
+rather than sending `null` and breaking them at a distance. Note that a struct
+cannot simply stop being a pointer, since recursive schemas need one to be a
+finite type.
+
+This generates a `prepareJSON()` method on each schema struct and tags optional
+fields `omitzero`. A few notes:
 
 - `omitzero` needs Go 1.24+ in the module that consumes the generated code.
   Older toolchains ignore the tag and keep emitting `null`, as they do today.
@@ -78,9 +92,8 @@ optional fields `omitzero`. A few notes:
 - `-types=false` and `-importTypesFrom` turn this off, since it needs the
   structs to be generated here. Asking for it explicitly alongside them is an
   error rather than a silent no-op.
-- A nil **struct** is left as `null`. A zero struct is a different value rather
-  than an empty collection, so filling one in would invent data and hide the bug
-  that produced the nil.
+- A nil struct reached through a list or a map element is left as `null`. Only
+  fields the schema declares required fail the response.
 - Fields that pin their own type with `go.field.type` are left alone unless that
   type is a slice, since the generator cannot know what an empty value means for
   an arbitrary type. This is what keeps an empty `json.RawMessage`, which is not

@@ -21,9 +21,9 @@ type {{$name}} struct {
 
 {{- if and $opts.fixEmptyArrays $opts.server }}
 
-func (x *{{$name}}) initNilSlices() {
+func (x *{{$name}}) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
 {{- range $_, $field := $fields -}}
 	{{- $fieldName := $field.Name | firstLetterToUpper -}}
@@ -32,8 +32,9 @@ func (x *{{$name}}) initNilSlices() {
 			{{- $fieldName = get $meta "go.field.name" -}}
 		{{- end -}}
 	{{- end -}}
-	{{- template "initNilSlices" dict "Expr" (printf "x.%s" $fieldName) "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "StructTypes" $structTypes }}
+	{{- template "prepareJSON" dict "Expr" (printf "x.%s" $fieldName) "Label" $field.Name "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "StructTypes" $structTypes }}
 {{- end }}
+	return nil
 }
 {{- end }}
 {{- end }}

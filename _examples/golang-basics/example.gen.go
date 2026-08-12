@@ -351,13 +351,14 @@ type User struct {
 	Intent    Intent     `json:"intent"`
 }
 
-func (x *User) initNilSlices() {
+func (x *User) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
 	if x.Nicknames == nil {
 		x.Nicknames = []Nickname{}
 	}
+	return nil
 }
 
 type Nickname struct {
@@ -367,20 +368,22 @@ type Nickname struct {
 	UpdatedAt *time.Time `json:"updatedAt,omitzero" db:"updated_at"`
 }
 
-func (x *Nickname) initNilSlices() {
+func (x *Nickname) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
+	return nil
 }
 
 type SearchFilter struct {
 	Q string `json:"q"`
 }
 
-func (x *SearchFilter) initNilSlices() {
+func (x *SearchFilter) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
+	return nil
 }
 
 type Version struct {
@@ -391,12 +394,23 @@ type Version struct {
 	ServerGenVersion *GenVersions `json:"serverGenVersion"`
 }
 
-func (x *Version) initNilSlices() {
+func (x *Version) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
-	x.ClientGenVersion.initNilSlices()
-	x.ServerGenVersion.initNilSlices()
+	if x.ClientGenVersion == nil {
+		return fmt.Errorf("required field clientGenVersion is nil")
+	}
+	if err := x.ClientGenVersion.prepareJSON(); err != nil {
+		return fmt.Errorf("clientGenVersion: %w", err)
+	}
+	if x.ServerGenVersion == nil {
+		return fmt.Errorf("required field serverGenVersion is nil")
+	}
+	if err := x.ServerGenVersion.prepareJSON(); err != nil {
+		return fmt.Errorf("serverGenVersion: %w", err)
+	}
+	return nil
 }
 
 type ComplexType struct {
@@ -414,9 +428,9 @@ type ComplexType struct {
 	User              *User                        `json:"user"`
 }
 
-func (x *ComplexType) initNilSlices() {
+func (x *ComplexType) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
 	if x.MetaNestedExample == nil {
 		x.MetaNestedExample = map[string]map[string]uint32{}
@@ -452,15 +466,25 @@ func (x *ComplexType) initNilSlices() {
 		x.ListOfUsers = []*User{}
 	}
 	for i0 := range x.ListOfUsers {
-		x.ListOfUsers[i0].initNilSlices()
+		if err := x.ListOfUsers[i0].prepareJSON(); err != nil {
+			return fmt.Errorf("listOfUsers: %w", err)
+		}
 	}
 	if x.MapOfUsers == nil {
 		x.MapOfUsers = map[string]*User{}
 	}
 	for k0 := range x.MapOfUsers {
-		x.MapOfUsers[k0].initNilSlices()
+		if err := x.MapOfUsers[k0].prepareJSON(); err != nil {
+			return fmt.Errorf("mapOfUsers: %w", err)
+		}
 	}
-	x.User.initNilSlices()
+	if x.User == nil {
+		return fmt.Errorf("required field user is nil")
+	}
+	if err := x.User.prepareJSON(); err != nil {
+		return fmt.Errorf("user: %w", err)
+	}
+	return nil
 }
 
 type GenVersions struct {
@@ -470,29 +494,32 @@ type GenVersions struct {
 	SchemaVersion    string `json:"SchemaVersion"`
 }
 
-func (x *GenVersions) initNilSlices() {
+func (x *GenVersions) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
+	return nil
 }
 
 type GetArticleRequest struct {
 	ArticleID uint64 `json:"articleId"`
 }
 
-func (x *GetArticleRequest) initNilSlices() {
+func (x *GetArticleRequest) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
+	return nil
 }
 
 type StreamNewArticlesRequest struct {
 }
 
-func (x *StreamNewArticlesRequest) initNilSlices() {
+func (x *StreamNewArticlesRequest) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
+	return nil
 }
 
 type GetArticleResponse struct {
@@ -500,10 +527,11 @@ type GetArticleResponse struct {
 	Content *string `json:"content,omitempty"`
 }
 
-func (x *GetArticleResponse) initNilSlices() {
+func (x *GetArticleResponse) prepareJSON() error {
 	if x == nil {
-		return
+		return nil
 	}
+	return nil
 }
 
 //
@@ -857,7 +885,14 @@ func (s *exampleService) serveVersionJSON(ctx context.Context, w http.ResponseWr
 		return
 	}
 
-	ret0.initNilSlices()
+	if ret0 == nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("required field version is nil"))
+		return
+	}
+	if err := ret0.prepareJSON(); err != nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to prepare json response: %w", err))
+		return
+	}
 	respPayload := struct {
 		Ret0 *Version `json:"version"`
 	}{ret0}
@@ -903,7 +938,14 @@ func (s *exampleService) serveGetUserJSON(ctx context.Context, w http.ResponseWr
 		return
 	}
 
-	ret0.initNilSlices()
+	if ret0 == nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("required field user is nil"))
+		return
+	}
+	if err := ret0.prepareJSON(); err != nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to prepare json response: %w", err))
+		return
+	}
 	respPayload := struct {
 		Ret0 *User `json:"user"`
 	}{ret0}
@@ -947,7 +989,14 @@ func (s *exampleService) serveFindUserJSON(ctx context.Context, w http.ResponseW
 		return
 	}
 
-	ret1.initNilSlices()
+	if ret1 == nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("required field user is nil"))
+		return
+	}
+	if err := ret1.prepareJSON(); err != nil {
+		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to prepare json response: %w", err))
+		return
+	}
 	respPayload := struct {
 		Ret0 string `json:"name"`
 		Ret1 *User  `json:"user"`
@@ -1115,8 +1164,11 @@ func succinctHandler[I any, O any](method string, fn func(context.Context, I) (O
 			return
 		}
 
-		if v, ok := any(respPayload).(nilSliceInitializer); ok {
-			v.initNilSlices()
+		if v, ok := any(respPayload).(jsonPreparer); ok {
+			if err := v.prepareJSON(); err != nil {
+				sendError(w, r, ErrWebrpcBadResponse.WithCausef("failed to prepare json response: %w", err))
+				return
+			}
 		}
 		respBody, err := jsonCfg.Marshal(respPayload)
 		if err != nil {
@@ -1421,9 +1473,9 @@ func ResponseWriterFromContext(ctx context.Context) http.ResponseWriter {
 }
 
 // Implemented by every generated schema struct, so that a generic handler can
-// give a response its empty-array treatment without knowing its concrete type.
-type nilSliceInitializer interface {
-	initNilSlices()
+// prepare a response without knowing its concrete type.
+type jsonPreparer interface {
+	prepareJSON() error
 }
 
 //
