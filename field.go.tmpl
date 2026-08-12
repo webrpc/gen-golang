@@ -41,6 +41,15 @@
        can tell "absent" apart from an explicitly empty list. Skipped when the
        schema pins its own go.tag.json, or when the field is excluded already. */ -}}
 {{- $omitzero := and (or .Omitzero false) $optional (ne $jsonName "-") -}}
+
+{{- /* omitzero drops any zero value, not just an unset one, so it only says
+       "absent" on a type whose zero value is nil. Left to itself an optional
+       field is a pointer, a slice or a map, and all three qualify. A schema
+       that pins its own Go type can land on a bare string or int, where ""
+       and 0 are values a caller meant to send. */ -}}
+{{- if and $omitzero (ne $customType "") -}}
+    {{- $omitzero = or (hasPrefix $customType "*") (hasPrefix $customType "[]") (hasPrefix $customType "map[") -}}
+{{- end -}}
 {{- $jsonTag := printf "json:%q" $jsonName -}}
 {{- if ne $jsonTagOverride "" -}}
     {{- $jsonTag = printf "json:%q" $jsonTagOverride -}}

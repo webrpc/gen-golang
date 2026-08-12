@@ -28,6 +28,10 @@ struct Report
     + go.field.type = json.RawMessage
     + go.type.import = encoding/json
   - label?: string
+    # Optional, but pinned to a bare Go string. "" is a value a caller meant to
+    # send, so this one keeps serializing rather than dropping out.
+  - note?: string
+    + go.field.type = string
   - count: uint32
 
 struct GetReportRequest

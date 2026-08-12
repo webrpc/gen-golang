@@ -37,6 +37,7 @@ func TestEmptyArrays(t *testing.T) {
 			"counts":   {},
 			"buckets":  {},
 			"byName":   {},
+			"note":     "",
 			"raw":      null,
 			"count":    0
 		}}`, post(t, "/rpc/EmptyArrays/GetReport", `{"id":"empty"}`))
@@ -54,6 +55,7 @@ func TestEmptyArrays(t *testing.T) {
 			"buckets":   {"a": []},
 			"byName":    {"a": {"tags": []}},
 			"optCounts": {},
+			"note":      "",
 			"raw":       null,
 			"count":     0
 		}}`, post(t, "/rpc/EmptyArrays/GetReport", `{"id":"explicit"}`))
