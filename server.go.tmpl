@@ -160,20 +160,16 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx cont
 	}
 
 	{{- if gt (len $method.Outputs) 0}}
-
+{{ if $opts.fixEmptyArrays }}{{ range $i, $output := $method.Outputs }}{{ template "initNilSlices" dict "Expr" (printf "ret%d" $i) "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta }}{{ end }}{{ end }}
 	respPayload := struct {
 	{{- range $i, $output := $method.Outputs}}
-		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true}}
+		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true "Omitzero" $opts.fixEmptyArrays}}
 	{{- end }}
 	}{ {{- range $i, $_ := $method.Outputs}}{{if gt $i 0}}, {{end}}ret{{$i}}{{end}}}
 	{{- end }}
 
 	{{- if $method.Outputs | len}}
-	{{ if $opts.fixEmptyArrays -}}
-	respBody, err := {{$json}}.Marshal(initializeNilSlices(respPayload))
-	{{ else -}}
 	respBody, err := {{$json}}.Marshal(respPayload)
-	{{ end -}}
 	if err != nil {
 		s.sendErrorJSON(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
 		return
@@ -328,10 +324,11 @@ func succinctHandler[I any, O any](method string, fn func(context.Context, I) (O
 		}
 
 		{{ if $opts.fixEmptyArrays -}}
-		respBody, err := {{$json}}.Marshal(initializeNilSlices(respPayload))
-		{{ else -}}
-		respBody, err := {{$json}}.Marshal(respPayload)
+		if v, ok := any(respPayload).(nilSliceInitializer); ok {
+			v.initNilSlices()
+		}
 		{{ end -}}
+		respBody, err := {{$json}}.Marshal(respPayload)
 		if err != nil {
 			sendError(w, r, ErrWebrpcBadResponse.WithCausef("failed to marshal json response: %w", err))
 			return

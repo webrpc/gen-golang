@@ -14,11 +14,12 @@
 {{- $succinct := or .Succinct false -}}
 
 {{- $customType := "" -}}
-{{- $jsonTag := printf "json:%q" $name }}
+{{- $jsonName := $name -}}
+{{- $jsonTagOverride := "" -}}
 {{- $structTags := array -}}
 {{- range $meta := $typeMeta -}}
     {{- if exists $meta "json" -}}
-        {{- $jsonTag = printf "json:%q" (get $meta "json") -}}
+        {{- $jsonName = printf "%v" (get $meta "json") -}}
     {{- end -}}
     {{- if exists $meta "go.field.name" -}}
         {{- $fieldName = get $meta "go.field.name" -}}
@@ -27,13 +28,24 @@
         {{- $customType = get $meta "go.field.type" -}}
     {{- end -}}
     {{- if exists $meta "go.tag.json" -}}
-        {{- $jsonTag = printf "json:%q" (get $meta "go.tag.json") -}}
+        {{- $jsonTagOverride = printf "%v" (get $meta "go.tag.json") -}}
     {{- end -}}
     {{- range $metaKey, $metaValue := $meta -}}
         {{- if and (hasPrefix $metaKey "go.tag.") (ne $metaKey "go.tag.json") -}}
             {{- $structTags = append $structTags (printf "%s:%q" (trimPrefix $metaKey "go.tag.") $metaValue) -}}
         {{- end -}}
     {{- end -}}
+{{- end }}
+
+{{- /* Optional fields are omitted from JSON entirely when unset, so that clients
+       can tell "absent" apart from an explicitly empty list. Skipped when the
+       schema pins its own go.tag.json, or when the field is excluded already. */ -}}
+{{- $omitzero := and (or .Omitzero false) $optional (ne $jsonName "-") -}}
+{{- $jsonTag := printf "json:%q" $jsonName -}}
+{{- if ne $jsonTagOverride "" -}}
+    {{- $jsonTag = printf "json:%q" $jsonTagOverride -}}
+{{- else if $omitzero -}}
+    {{- $jsonTag = printf "json:%q" (printf "%s,omitzero" $jsonName) -}}
 {{- end }}
 
 {{- if $printName}}{{"\t"}}{{$fieldName}} {{end -}}

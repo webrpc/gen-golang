@@ -1,0 +1,38 @@
+webrpc = v1
+
+name = empty-arrays-example
+version = v1.0.0
+basepath = /rpc
+
+struct Item
+  - tags: []string
+
+struct Report
+    # Required list: always an array on the wire, never null.
+  - required: []string
+    # Optional list: absent when unset, [] when explicitly empty.
+  - optional?: []string
+    # Required list of structs: the elements get the same treatment.
+  - items: []Item
+    # Nested lists are walked all the way down.
+  - matrix: [][]string
+    # The schema pins its own Go type, so the generator leaves it alone.
+    # An empty json.RawMessage is not valid JSON and would fail to marshal.
+  - raw: any
+    + go.field.type = json.RawMessage
+    + go.type.import = encoding/json
+  - label?: string
+  - count: uint32
+
+struct GetReportRequest
+  - id: string
+
+struct GetReportResponse
+  - report: Report
+
+service EmptyArrays
+    # Succinct: served by the generic succinctHandler.
+  - GetReport(GetReportRequest) => (GetReportResponse)
+    # Multiple return values: served by a per-method handler that builds an
+    # anonymous response struct, with a list returned at the top level.
+  - ListReports() => (reports: []Report, total: uint32)

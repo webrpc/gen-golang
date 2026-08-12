@@ -38,6 +38,13 @@
   {{- exit 1 -}}
 {{- end -}}
 
+{{- /* -fixEmptyArrays generates a method on each schema struct, so the structs
+       have to be generated here rather than imported from another package. */ -}}
+{{- if and $opts.fixEmptyArrays (or (not $opts.types) (ne $opts.importTypesFrom "")) -}}
+  {{- stderrPrintf "%s generator error: -fixEmptyArrays needs generated types, it can't be combined with -types=false or -importTypesFrom\n" .WebrpcTarget -}}
+  {{- exit 1 -}}
+{{- end -}}
+
 {{- /* Maps Go keywords. */ -}}
 {{- $keywordMap := dict -}}
 {{- set $keywordMap "type" true -}}

@@ -31,7 +31,7 @@ Change any of the following values by passing `-option="Value"` CLI flag to `web
 | `-json=sonic`         |           | use [sonic](https://github.com/bytedance/sonic) for JSON encoding           | v0.18.0  |
 | `-json=jsoniter`      |           | use [jsoniter](https://github.com/json-iterator/go) for JSON encoding       | v0.12.0  |
 | `-json=<pkg>`         |           | use alternative drop-in replacement import path for JSON encoding package   | v0.18.0  |
-| `-fixEmptyArrays`     | `false`   | `encoding/json`: fix `null` arrays with reflect (see Go [#27589][go27589])  | v0.13.0  |
+| `-fixEmptyArrays`     | `false`   | serialize lists per the schema, never as `null` (see Go [#27589][go27589])  | v0.13.0  |
 | `-errorStackTrace`    | `false`   | enables error stack traces                                                  | v0.14.0  |
 | `-webrpcHeader=false` | `true`    | enable client send webrpc version in http headers                           | v0.16.0  |
 | `-schemaHash=false`   | `true`    | don't emit schema hash + version helper funcs (avoids merge conflicts)      | v0.30.0  |
@@ -40,6 +40,40 @@ Example:
 ```
 webrpc-gen -schema=./proto.json -target=golang -out server.gen.go -pkg=main -server
 ```
+
+## Empty arrays
+
+A nil Go slice serializes as `null`, which does not match a schema that says the
+field is a list. `-fixEmptyArrays` makes the generated server serialize lists the
+way the schema declares them:
+
+| Schema field       | Go value       | JSON      |
+|--------------------|----------------|-----------|
+| `- tags: []string` | `nil`          | `[]`      |
+| `- tags: []string` | `[]string{}`   | `[]`      |
+| `- tags?: []string`| `nil`          | *absent*  |
+| `- tags?: []string`| `[]string{}`   | `[]`      |
+
+Required lists are always an array. Optional lists keep all three states, so a
+client can tell "the server said nothing" apart from "the server said empty".
+
+The flag generates an `initNilSlices()` method on each schema struct and tags
+optional fields `omitzero`. A few notes:
+
+- Optional fields are tagged `omitzero`, which needs Go 1.24+ in the module that
+  consumes the generated code. Older toolchains ignore the tag and keep emitting
+  `null`, as they do today.
+- Fields that pin their own type with `go.field.type` are left alone unless that
+  type is a slice, since the generator cannot know what an empty value means for
+  an arbitrary type. This is what keeps an empty `json.RawMessage`, which is not
+  valid JSON, from breaking the response.
+- Fields that pin their own `go.tag.json` keep exactly the tag they asked for.
+- Map values are not walked. A nil `map<string,[]string>` value stays `null`.
+- The flag needs generated types, so it cannot be combined with `-types=false`
+  or `-importTypesFrom`.
+
+Generate the client with the same flag as the server, so both sides agree on the
+struct tags.
 
 ## Set custom Go field meta tags in your RIDL file
 

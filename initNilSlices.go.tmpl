@@ -1,0 +1,57 @@
+{{- /*
+    Emits the statements that give one value its empty-array treatment.
+
+    Required lists become an empty list when nil, so they always serialize as
+    [] instead of null. Optional lists are left alone: their nil is meaningful
+    and drops out of the JSON entirely via the omitzero tag.
+
+    "Expr" is the addressable Go expression to fix, so the same template serves
+    both struct fields (x.Foo) and a method's return values (ret0).
+*/ -}}
+{{- define "initNilSlices" -}}
+{{- $expr := .Expr -}}
+{{- $type := .Type -}}
+{{- $optional := .Optional -}}
+{{- $typeMap := .TypeMap -}}
+{{- $keywordMap := .KeywordMap -}}
+{{- $typePrefix := .TypePrefix -}}
+{{- $typeMeta := .TypeMeta -}}
+{{- $depth := or .Depth 0 -}}
+{{- $loopVar := printf "i%d" $depth -}}
+
+{{- $customType := "" -}}
+{{- range $meta := $typeMeta -}}
+    {{- if exists $meta "go.field.type" -}}
+        {{- $customType = get $meta "go.field.type" -}}
+    {{- end -}}
+{{- end -}}
+
+{{- if $optional -}}
+{{- /* Nil is a value here, not a gap to fill. */ -}}
+
+{{- else if ne $customType "" -}}
+{{- /* The schema pinned its own Go type. Only a slice can take an empty
+       literal; anything else (json.RawMessage, a named type, a pointer) has
+       semantics we cannot know, so leave it untouched. */ -}}
+{{- if hasPrefix $customType "[]" }}
+	if {{$expr}} == nil {
+		{{$expr}} = {{$customType}}{}
+	}
+{{- end -}}
+
+{{- else if isListType $type }}
+	if {{$expr}} == nil {
+		{{$expr}} = {{template "field" dict "Type" $type "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix}}{}
+	}
+{{- $elem := listElemType $type -}}
+{{- if or (isStructType $elem) (isListType $elem) }}
+	for {{$loopVar}} := range {{$expr}} {
+		{{- template "initNilSlices" dict "Expr" (printf "%s[%s]" $expr $loopVar) "Type" $elem "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Depth" (add $depth 1) }}
+	}
+{{- end -}}
+
+{{- else if isStructType $type }}
+	{{$expr}}.initNilSlices()
+{{- end -}}
+
+{{- end -}}
