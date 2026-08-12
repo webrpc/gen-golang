@@ -12,6 +12,8 @@
 {{- $includeJsonTags := .JsonTags -}}
 {{- $includeStructTags := .StructTags -}}
 {{- $succinct := or .Succinct false -}}
+{{- /* Most callers render a type without struct tags and leave this unset. */ -}}
+{{- $allowOmitzero := or .Omitzero false -}}
 
 {{- $customType := "" -}}
 {{- $jsonName := $name -}}
@@ -40,7 +42,7 @@
 {{- /* Optional fields are omitted from JSON entirely when unset, so that clients
        can tell "absent" apart from an explicitly empty list. Skipped when the
        schema pins its own go.tag.json, or when the field is excluded already. */ -}}
-{{- $omitzero := and (or .Omitzero false) $optional (ne $jsonName "-") -}}
+{{- $omitzero := and $allowOmitzero $optional (ne $jsonName "-") -}}
 
 {{- /* omitzero drops any zero value, not just an unset one, so it only says
        "absent" on a type whose zero value is nil. Left to itself an optional
