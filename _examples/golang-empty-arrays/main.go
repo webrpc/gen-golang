@@ -25,9 +25,12 @@ type EmptyArraysRPC struct{}
 func (s *EmptyArraysRPC) GetReport(ctx context.Context, req GetReportRequest) (*GetReportResponse, error) {
 	if req.Id == "explicit" {
 		return &GetReportResponse{Report: &Report{
-			Optional: []string{},
-			Items:    []*Item{{}},
-			Matrix:   [][]string{nil},
+			Optional:  []string{},
+			Items:     []*Item{{}},
+			Matrix:    [][]string{nil},
+			Buckets:   map[string][]string{"a": nil},
+			ByName:    map[string]*Item{"a": {}},
+			OptCounts: map[string]uint32{},
 		}}, nil
 	}
 	return &GetReportResponse{Report: &Report{}}, nil

@@ -6,6 +6,7 @@
 {{- $typePrefix := .TypePrefix -}}
 {{- $json := .Json -}}
 {{- $opts := .Opts -}}
+{{- $structTypes := .StructTypes -}}
 
 {{- $hasSuccinct := false -}}
 {{- range $_, $service := $services -}}
@@ -160,7 +161,7 @@ func (s *{{$serviceName}}) serve{{firstLetterToUpper $method.Name}}JSON(ctx cont
 	}
 
 	{{- if gt (len $method.Outputs) 0}}
-{{ if $opts.fixEmptyArrays }}{{ range $i, $output := $method.Outputs }}{{ template "initNilSlices" dict "Expr" (printf "ret%d" $i) "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta }}{{ end }}{{ end }}
+{{ if $opts.fixEmptyArrays }}{{ range $i, $output := $method.Outputs }}{{ template "initNilSlices" dict "Expr" (printf "ret%d" $i) "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "StructTypes" $structTypes }}{{ end }}{{ end }}
 	respPayload := struct {
 	{{- range $i, $output := $method.Outputs}}
 		Ret{{$i}} {{template "field" dict "Name" $output.Name "Type" $output.Type "Optional" $output.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $output.Meta "JsonTags" true "Omitzero" $opts.fixEmptyArrays}}

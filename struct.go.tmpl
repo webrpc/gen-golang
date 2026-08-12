@@ -6,6 +6,7 @@
 {{- $typeMap := .TypeMap -}}
 {{- $typePrefix := .TypePrefix -}}
 {{- $opts := .Opts -}}
+{{- $structTypes := .StructTypes -}}
 
 type {{$name}} struct {
 {{- range $_, $field := $fields -}}
@@ -31,7 +32,7 @@ func (x *{{$name}}) initNilSlices() {
 			{{- $fieldName = get $meta "go.field.name" -}}
 		{{- end -}}
 	{{- end -}}
-	{{- template "initNilSlices" dict "Expr" (printf "x.%s" $fieldName) "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "Indent" "\t" }}
+	{{- template "initNilSlices" dict "Expr" (printf "x.%s" $fieldName) "Type" $field.Type "Optional" $field.Optional "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "TypeMeta" $field.Meta "StructTypes" $structTypes }}
 {{- end }}
 }
 {{- end }}

@@ -95,6 +95,16 @@
 {{- set $typeMap "string" "string" -}}
 {{- set $typeMap "timestamp" "time.Time" -}}
 
+{{- /* Names of the schema's struct types. A list element or map value is only
+       a struct if its name is in here; the type is a bare string by then, so
+       there is nothing else left to tell it apart from an enum or an alias. */ -}}
+{{- $structTypes := dict -}}
+{{- range $_, $type := .Types -}}
+  {{- if eq $type.Kind "struct" -}}
+    {{- set $structTypes (printf "%v" $type.Name) true -}}
+  {{- end -}}
+{{- end -}}
+
 {{- /* Determine if BigInt helpers are needed. */ -}}
 
 {{- $usesBigInts := SchemaBigIntFieldsByType .WebRPCSchema -}}
@@ -168,7 +178,7 @@ func WebRPCSchemaHash() string {
 
 {{/* Schema types */}}
 {{- if eq $opts.importTypesFrom "" }}
-{{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Opts" $opts }}
+{{ template "types" dict "Services" .Services "Types" .Types "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Opts" $opts "StructTypes" $structTypes }}
 {{ end -}}
 
 {{- "\n" -}}
@@ -182,7 +192,7 @@ func WebRPCSchemaHash() string {
 
 {{/* Server */}}
 {{- if $opts.server }}
-{{ template "server" dict "BasePath" .BasePath "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Json" $json "Opts" $opts }}
+{{ template "server" dict "BasePath" .BasePath "Services" .Services "TypeMap" $typeMap "KeywordMap" $keywordMap "TypePrefix" $typePrefix "Json" $json "Opts" $opts "StructTypes" $structTypes }}
 {{ template "webrpcMethods" dict "BasePath" .BasePath "Services" .Services }}
 {{ end -}}
 

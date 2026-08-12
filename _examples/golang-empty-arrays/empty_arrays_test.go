@@ -34,6 +34,9 @@ func TestEmptyArrays(t *testing.T) {
 			"required": [],
 			"items":    [],
 			"matrix":   [],
+			"counts":   {},
+			"buckets":  {},
+			"byName":   {},
 			"raw":      null,
 			"count":    0
 		}}`, post(t, "/rpc/EmptyArrays/GetReport", `{"id":"empty"}`))
@@ -43,12 +46,16 @@ func TestEmptyArrays(t *testing.T) {
 		// An explicitly empty optional list survives as [], and the nil lists
 		// nested inside the item and the matrix are filled in too.
 		assert.JSONEq(t, `{"report":{
-			"required": [],
-			"optional": [],
-			"items":    [{"tags": []}],
-			"matrix":   [[]],
-			"raw":      null,
-			"count":    0
+			"required":  [],
+			"optional":  [],
+			"items":     [{"tags": []}],
+			"matrix":    [[]],
+			"counts":    {},
+			"buckets":   {"a": []},
+			"byName":    {"a": {"tags": []}},
+			"optCounts": {},
+			"raw":       null,
+			"count":     0
 		}}`, post(t, "/rpc/EmptyArrays/GetReport", `{"id":"explicit"}`))
 	})
 

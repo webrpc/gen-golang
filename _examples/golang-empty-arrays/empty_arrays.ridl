@@ -16,6 +16,12 @@ struct Report
   - items: []Item
     # Nested lists are walked all the way down.
   - matrix: [][]string
+    # Required maps get the same treatment as required lists.
+  - counts: map<string,uint32>
+    # Map values are walked too, both the lists and the structs.
+  - buckets: map<string,[]string>
+  - byName: map<string,Item>
+  - optCounts?: map<string,uint32>
     # The schema pins its own Go type, so the generator leaves it alone.
     # An empty json.RawMessage is not valid JSON and would fail to marshal.
   - raw: any
