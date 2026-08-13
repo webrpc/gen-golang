@@ -205,4 +205,22 @@ func (r *streamReader) handleReadError(err error) error {
 {{- end }}
 
 {{- end -}}
+
+// Clients bundles one client per service, all sharing the same address and
+// HTTP client. Construct them once with NewClients and use the fields you
+// need. Skip it when services need different transports (e.g. separate admin
+// vs user credentials).
+type Clients struct {
+{{- range $_, $service := $services}}
+	{{$service.Name}} {{$service.Name}}Client
+{{- end}}
+}
+
+func NewClients(addr string, client HTTPClient) Clients {
+	return Clients{
+{{- range $_, $service := $services}}
+		{{$service.Name}}: New{{firstLetterToUpper $service.Name}}Client(addr, client),
+{{- end}}
+	}
+}
 {{- end -}}

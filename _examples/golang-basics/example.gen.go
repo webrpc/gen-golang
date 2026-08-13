@@ -585,6 +585,18 @@ func (r *streamReader) handleReadError(err error) error {
 		return ErrWebrpcClientAborted.WithCause(err)
 	}
 	return ErrWebrpcBadResponse.WithCausef("reading stream: %w", err)
+} // Clients bundles one client per service, all sharing the same address and
+// HTTP client. Construct them once with NewClients and use the fields you
+// need. Skip it when services need different transports (e.g. separate admin
+// vs user credentials).
+type Clients struct {
+	Example ExampleClient
+}
+
+func NewClients(addr string, client HTTPClient) Clients {
+	return Clients{
+		Example: NewExampleClient(addr, client),
+	}
 }
 
 //
