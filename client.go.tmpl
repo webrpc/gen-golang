@@ -216,8 +216,8 @@ type Client struct {
 {{- end}}
 }
 
-func NewClient(addr string, client HTTPClient) Client {
-	return Client{
+func NewClient(addr string, client HTTPClient) *Client {
+	return &Client{
 {{- range $_, $service := $services}}
 		{{$service.Name}}: New{{firstLetterToUpper $service.Name}}Client(addr, client),
 {{- end}}
