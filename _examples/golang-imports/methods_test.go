@@ -68,3 +68,20 @@ func TestMethodsMountRouterNeutral(t *testing.T) {
 	// The middleware ran only on the @auth method.
 	assert.Equal(t, []string{"/rpc/ExampleAPI/Ping"}, authed)
 }
+
+// Server aggregates the Methods() of every non-nil service, so a whole API can be
+// mounted from one struct literal; nil fields are skipped.
+func TestServer(t *testing.T) {
+	t.Run("aggregates a set service", func(t *testing.T) {
+		ms := Server{ExampleAPI: &ExampleRPC{}}.Methods(nil)
+		require.Len(t, ms, 5)
+		for _, m := range ms {
+			assert.Equal(t, "ExampleAPI", m.Service())
+			assert.True(t, strings.HasPrefix(m.Path, "/rpc/ExampleAPI/"))
+		}
+	})
+
+	t.Run("skips nil services", func(t *testing.T) {
+		assert.Empty(t, Server{}.Methods(nil))
+	})
+}
