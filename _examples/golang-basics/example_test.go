@@ -89,6 +89,17 @@ func TestGetUser(t *testing.T) {
 		assert.Contains(t, rpcErr.Unwrap().Error(), "911")
 	}
 
+	{ // userID == 1234: a joined WebRPCError must keep its typed status, not degrade to a generic endpoint error
+		user, err := client.GetUser(context.Background(), nil, "a", 1234)
+		assert.Nil(t, user)
+		assert.Error(t, err)
+		assert.ErrorIs(t, err, ErrUserNotFound)
+
+		rpcErr, ok := err.(WebRPCError)
+		require.True(t, ok)
+		assert.Equal(t, 400300, rpcErr.Code)
+	}
+
 	{ // userID == 31337, expect unauthorized
 		user, err := client.GetUser(context.Background(), nil, "a", 31337)
 		assert.Nil(t, user)

@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -89,6 +90,11 @@ func (s *ExampleServiceRPC) GetUser(ctx context.Context, header map[string]strin
 	}
 	if userID == 666 {
 		panic("oh no")
+	}
+	if userID == 1234 {
+		// A WebRPCError joined with a second error. The transport must recover
+		// the typed status through the join, not degrade to a generic endpoint error.
+		return nil, errors.Join(ErrUserNotFound.WithCausef("unknown user id %d", userID), errors.New("secondary failure"))
 	}
 
 	return &User{

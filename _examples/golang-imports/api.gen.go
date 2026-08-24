@@ -283,8 +283,8 @@ func (s *exampleAPIService) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "application/json":
 		if s.OnRequest != nil {
 			if err := s.OnRequest(w, r); err != nil {
-				rpcErr, ok := err.(WebRPCError)
-				if !ok {
+				var rpcErr WebRPCError
+				if !errors.As(err, &rpcErr) {
 					rpcErr = ErrWebrpcEndpoint.WithCause(err)
 				}
 				s.sendErrorJSON(w, r, rpcErr)
@@ -305,8 +305,8 @@ func (s *exampleAPIService) servePingJSON(ctx context.Context, w http.ResponseWr
 	// Call service method implementation.
 	err := s.ExampleAPIServer.Ping(ctx)
 	if err != nil {
-		rpcErr, ok := err.(WebRPCError)
-		if !ok {
+		var rpcErr WebRPCError
+		if !errors.As(err, &rpcErr) {
 			rpcErr = ErrWebrpcEndpoint.WithCause(err)
 		}
 		s.sendErrorJSON(w, r, rpcErr)
@@ -324,8 +324,8 @@ func (s *exampleAPIService) serveStatusJSON(ctx context.Context, w http.Response
 	// Call service method implementation.
 	ret0, err := s.ExampleAPIServer.Status(ctx)
 	if err != nil {
-		rpcErr, ok := err.(WebRPCError)
-		if !ok {
+		var rpcErr WebRPCError
+		if !errors.As(err, &rpcErr) {
 			rpcErr = ErrWebrpcEndpoint.WithCause(err)
 		}
 		s.sendErrorJSON(w, r, rpcErr)
@@ -352,8 +352,8 @@ func (s *exampleAPIService) serveGetUsersJSON(ctx context.Context, w http.Respon
 	// Call service method implementation.
 	ret0, ret1, err := s.ExampleAPIServer.GetUsers(ctx)
 	if err != nil {
-		rpcErr, ok := err.(WebRPCError)
-		if !ok {
+		var rpcErr WebRPCError
+		if !errors.As(err, &rpcErr) {
 			rpcErr = ErrWebrpcEndpoint.WithCause(err)
 		}
 		s.sendErrorJSON(w, r, rpcErr)
@@ -388,8 +388,8 @@ func (s *exampleAPIService) sendErrorJSON(w http.ResponseWriter, r *http.Request
 }
 
 func RespondWithError(w http.ResponseWriter, err error) {
-	rpcErr, ok := err.(WebRPCError)
-	if !ok {
+	var rpcErr WebRPCError
+	if !errors.As(err, &rpcErr) {
 		rpcErr = ErrWebrpcEndpoint.WithCause(err)
 	}
 
@@ -421,8 +421,8 @@ func succinctHandler[I any, O any](method string, fn func(context.Context, I) (O
 
 		respPayload, err := fn(ctx, reqPayload)
 		if err != nil {
-			rpcErr, ok := err.(WebRPCError)
-			if !ok {
+			var rpcErr WebRPCError
+			if !errors.As(err, &rpcErr) {
 				rpcErr = ErrWebrpcEndpoint.WithCause(err)
 			}
 			sendError(w, r, rpcErr)
